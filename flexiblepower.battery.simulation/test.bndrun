@@ -7,21 +7,21 @@
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.configadmin)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.runtime.simulation)'
 -runbundles: biz.aQute.bnd.annotation;version='[1.52.3,1.52.4)',\
-	ch.qos.logback.classic;version='[1.0.7,1.0.8)',\
-	ch.qos.logback.core;version='[1.0.7,1.0.8)',\
-	flexiblepower.api;version='[4.0.0,4.0.1)',\
-	flexiblepower.api.ext;version='[4.0.0,4.0.1)',\
+	ch.qos.logback.classic;version='[1.0.13,1.0.14)',\
+	ch.qos.logback.core;version='[1.0.13,1.0.14)',\
+	com.google.gwt.servlet;version='[2.5.0,2.5.1)',\
+	flexiblepower.api;version='[1.0.0,1.0.1)',\
+	flexiblepower.api.ext;version='[1.0.0,1.0.1)',\
 	flexiblepower.battery.simulation;version=latest,\
-	flexiblepower.runtime.simulation;version='[2.0.0,2.0.1)',\
+	flexiblepower.runtime.simulation;version='[1.0.0,1.0.1)',\
 	org.apache.commons.fileupload;version='[1.2.2,1.2.3)',\
 	org.apache.commons.io;version='[2.4.0,2.4.1)',\
-	org.apache.felix.configadmin;version='[1.4.0,1.4.1)',\
-	org.apache.felix.framework.security;version='[2.0.1,2.0.2)',\
+	org.apache.felix.configadmin;version='[1.6.0,1.6.1)',\
+	org.apache.felix.framework.security;version='[2.2.0,2.2.1)',\
 	org.apache.felix.http.jetty;version='[2.2.0,2.2.1)',\
 	org.apache.felix.metatype;version='[1.0.6,1.0.7)',\
-	org.apache.felix.scr;version='[1.6.0,1.6.1)',\
-	org.apache.felix.webconsole;version='[4.0.0,4.0.1)',\
+	org.apache.felix.scr;version='[1.6.2,1.6.3)',\
+	org.apache.felix.webconsole;version='[4.2.0,4.2.1)',\
 	org.apache.felix.webconsole.plugins.ds;version='[1.0.0,1.0.1)',\
-	org.json;version='[1.0.0,1.0.1)',\
-	osgi.cmpn;version='[4.3.0,4.3.1)',\
-	slf4j.api;version='[1.7.2,1.7.3)'
+	osgi.cmpn;version='[4.3.1,4.3.2)',\
+	slf4j.api;version='[1.7.5,1.7.6)'
