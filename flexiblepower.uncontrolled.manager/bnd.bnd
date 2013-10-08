@@ -1,0 +1,6 @@
+-include: ../cnf/base.bnd
+-buildpath: ${default-buildpath}
+
+Bundle-Version: 1.0.0
+Private-Package: org.flexiblepower.uncontrolled.manager
+Service-Component: org.flexiblepower.uncontrolled.manager.*
