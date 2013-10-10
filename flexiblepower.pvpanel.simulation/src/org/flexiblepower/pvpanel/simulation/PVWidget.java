@@ -34,7 +34,7 @@ public class PVWidget implements Widget {
         }
     }
 
-    private final static DateFormat FORMATTER = new SimpleDateFormat("HH:mm:ss");
+    private static final DateFormat FORMATTER = new SimpleDateFormat("HH:mm:ss");
 
     private final PVSimulation simulation;
 

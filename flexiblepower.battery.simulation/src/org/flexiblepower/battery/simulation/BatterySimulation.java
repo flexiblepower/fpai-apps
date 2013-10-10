@@ -220,6 +220,8 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
             case DISCHARGE:
                 amountOfCharge = -dischargeSpeed.doubleValue(WATT);
                 break;
+            default:
+                throw new AssertionError();
             }
 
             double stateOfChargeInJoules = stateOfCharge.doubleValue(JOULE) + (amountOfCharge * duration);
