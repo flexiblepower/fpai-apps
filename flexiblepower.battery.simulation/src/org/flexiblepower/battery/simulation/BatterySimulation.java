@@ -64,7 +64,7 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
         @Meta.AD(deflt = "0.9", description = "Charge efficiency (% from 0 to 1)")
         double chargeEfficiency();
 
-        @Meta.AD(deflt = "0.8", description = "Discharge efficiency (% from 0 to 1)")
+        @Meta.AD(deflt = "0.9", description = "Discharge efficiency (% from 0 to 1)")
         double dischargeEfficiency();
 
         @Meta.AD(deflt = "50", description = "Self discharge power [W]")
@@ -154,35 +154,50 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
     private BatteryWidget widget;
 
     @Activate
-    public void init(BundleContext bundleContext, Map<String, Object> properties) {
-        configuration = Configurable.createConfigurable(Config.class, properties);
+    public void activate(BundleContext context, Map<String, Object> properties) {
+        try {
+            configuration = Configurable.createConfigurable(Config.class, properties);
 
-        totalCapacity = Measure.valueOf(configuration.totalCapacity(), KWH);
-        chargeSpeed = Measure.valueOf(configuration.chargePower(), WATT);
-        dischargeSpeed = Measure.valueOf(configuration.dischargePower(), WATT);
-        selfDischargeSpeed = Measure.valueOf(configuration.selfDischargePower(), WATT);
-        stateOfCharge = Measure.valueOf(totalCapacity.doubleValue(JOULE) * configuration.initialStateOfCharge(), JOULE);
-        mode = BatteryMode.IDLE;
+            totalCapacity = Measure.valueOf(configuration.totalCapacity(), KWH);
+            chargeSpeed = Measure.valueOf(configuration.chargePower(), WATT);
+            dischargeSpeed = Measure.valueOf(configuration.dischargePower(), WATT);
+            selfDischargeSpeed = Measure.valueOf(configuration.selfDischargePower(), WATT);
+            stateOfCharge = Measure.valueOf(totalCapacity.doubleValue(JOULE) * configuration.initialStateOfCharge(),
+                                            JOULE);
+            mode = BatteryMode.IDLE;
 
-        String applianceId = (String) properties.get("applianceId");
-        observationProviderRegistration = new ObservationProviderRegistrationHelper(this).observationType(BatteryState.class)
-                                                                                         .observationOf(applianceId)
-                                                                                         .observedBy(applianceId)
-                                                                                         .register();
+            observationProviderRegistration = new ObservationProviderRegistrationHelper(this).observationType(BatteryState.class)
+                                                                                             .observationOf(configuration.resourceId())
+                                                                                             .observedBy(getClass().getName())
+                                                                                             .register();
 
-        publish(new Observation<BatteryState>(timeService.getTime(), new State(getRelativeStateOfCharge(), mode)));
+            publish(new Observation<BatteryState>(timeService.getTime(), new State(getRelativeStateOfCharge(), mode)));
 
-        scheduledFuture = scheduler.scheduleAtFixedRate(this, 0, configuration.updateInterval(), TimeUnit.SECONDS);
+            scheduledFuture = scheduler.scheduleAtFixedRate(this, 0, configuration.updateInterval(), TimeUnit.SECONDS);
 
-        widget = new BatteryWidget(this);
-        widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
+            widget = new BatteryWidget(this);
+            widgetRegistration = context.registerService(Widget.class, widget, null);
+        } catch (RuntimeException ex) {
+            logger.error("Error during initialization of the battery simulation: " + ex.getMessage(), ex);
+            deactivate();
+            throw ex;
+        }
     }
 
     @Deactivate
     public void deactivate() {
-        widgetRegistration.unregister();
-        observationProviderRegistration.unregister();
-        scheduledFuture.cancel(false);
+        if (widgetRegistration != null) {
+            widgetRegistration.unregister();
+            widgetRegistration = null;
+        }
+        if (observationProviderRegistration != null) {
+            observationProviderRegistration.unregister();
+            observationProviderRegistration = null;
+        }
+        if (scheduledFuture != null) {
+            scheduledFuture.cancel(false);
+            scheduledFuture = null;
+        }
     }
 
     private TimeService timeService;
