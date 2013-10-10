@@ -39,6 +39,9 @@ public class PVSimulation extends AbstractResourceDriver<UncontrolledState, Unco
     interface Config {
         @Meta.AD(deflt = "pvpanel", description = "Resource identifier")
         String resourceId();
+
+        @Meta.AD(deflt = "5", description = "Frequency in which updates will be send out in seconds")
+        int updateFrequency();
     }
 
     private double demand = 0;
@@ -52,21 +55,36 @@ public class PVSimulation extends AbstractResourceDriver<UncontrolledState, Unco
 
     @Activate
     public void activate(BundleContext bundleContext, Map<String, Object> properties) {
-        config = Configurable.createConfigurable(Config.class, properties);
-        observationProviderRegistration = new ObservationProviderRegistrationHelper(this).observationType(UncontrolledState.class)
-                                                                                         .observationOf(config.resourceId())
-                                                                                         .observedBy(config.resourceId())
-                                                                                         .register();
-        scheduledFuture = schedulerService.scheduleAtFixedRate(this, 0, 5, TimeUnit.SECONDS);
-        widget = new PVWidget(this);
-        widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
+        try {
+            config = Configurable.createConfigurable(Config.class, properties);
+            observationProviderRegistration = new ObservationProviderRegistrationHelper(this).observationType(UncontrolledState.class)
+                                                                                             .observationOf(config.resourceId())
+                                                                                             .observedBy(getClass().getName())
+                                                                                             .register();
+            scheduledFuture = schedulerService.scheduleAtFixedRate(this, 0, config.updateFrequency(), TimeUnit.SECONDS);
+            widget = new PVWidget(this);
+            widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
+        } catch (RuntimeException ex) {
+            logger.error("Error during initialization of the PV simulation: " + ex.getMessage(), ex);
+            deactivate();
+            throw ex;
+        }
     }
 
     @Deactivate
     public void deactivate() {
-        widgetRegistration.unregister();
-        scheduledFuture.cancel(false);
-        observationProviderRegistration.unregister();
+        if (widgetRegistration != null) {
+            widgetRegistration.unregister();
+            widgetRegistration = null;
+        }
+        if (observationProviderRegistration != null) {
+            observationProviderRegistration.unregister();
+            observationProviderRegistration = null;
+        }
+        if (scheduledFuture != null) {
+            scheduledFuture.cancel(false);
+            scheduledFuture = null;
+        }
     }
 
     private ScheduledExecutorService schedulerService;
@@ -86,14 +104,7 @@ public class PVSimulation extends AbstractResourceDriver<UncontrolledState, Unco
     @Override
     public synchronized void run() {
         try {
-            if (weather == Weather.moon) {
-                demand = 0;
-            } else if (weather == Weather.clouds) {
-                demand = -200 - (int) (201 * Math.random());
-            } else {
-                demand = -1500 - (int) (101 * Math.random());
-            }
-
+            demand = -weather.getProduction(Math.random());
             final Date currentDate = timeService.getTime();
 
             publish(new Observation<UncontrolledState>(currentDate, getCurrentState()));
