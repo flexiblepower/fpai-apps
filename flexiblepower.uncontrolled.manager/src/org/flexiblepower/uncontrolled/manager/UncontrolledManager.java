@@ -10,7 +10,7 @@ import javax.measure.unit.SI;
 import org.flexiblepower.observation.Observation;
 import org.flexiblepower.observation.ObservationProvider;
 import org.flexiblepower.rai.Allocation;
-import org.flexiblepower.rai.UncontrolledLGControlSpace;
+import org.flexiblepower.rai.UncontrolledControlSpace;
 import org.flexiblepower.rai.values.EnergyProfile;
 import org.flexiblepower.ral.ResourceManager;
 import org.flexiblepower.ral.drivers.uncontrolled.UncontrolledControlParameters;
@@ -28,7 +28,7 @@ import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = ResourceManager.class)
 public class UncontrolledManager extends
-                                AbstractResourceManager<UncontrolledLGControlSpace, UncontrolledState, UncontrolledControlParameters> {
+                                AbstractResourceManager<UncontrolledControlSpace, UncontrolledState, UncontrolledControlParameters> {
 
     @Meta.OCD
     interface Config {
@@ -42,7 +42,7 @@ public class UncontrolledManager extends
     private Config config;
 
     public UncontrolledManager() {
-        super(UncontrolledDriver.class, UncontrolledLGControlSpace.class);
+        super(UncontrolledDriver.class, UncontrolledControlSpace.class);
     }
 
     private TimeService timeService;
@@ -70,13 +70,13 @@ public class UncontrolledManager extends
         publish(constructControlSpace(observation.getValue()));
     }
 
-    private UncontrolledLGControlSpace constructControlSpace(UncontrolledState uncontrolledState) {
+    private UncontrolledControlSpace constructControlSpace(UncontrolledState uncontrolledState) {
         Measure<Double, Energy> energy = Measure.valueOf(uncontrolledState.getDemand().doubleValue(SI.WATT) * config.expirationTime(),
                                                          SI.JOULE);
         EnergyProfile energyProfile = EnergyProfile.create()
                                                    .add(Measure.valueOf(config.expirationTime(), SI.SECOND), energy)
                                                    .build();
         Date now = timeService.getTime();
-        return new UncontrolledLGControlSpace(config.resourceId(), now, energyProfile);
+        return new UncontrolledControlSpace(config.resourceId(), now, energyProfile);
     }
 }
