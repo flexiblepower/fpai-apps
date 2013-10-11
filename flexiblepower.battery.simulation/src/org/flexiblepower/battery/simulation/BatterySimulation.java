@@ -18,7 +18,7 @@ import javax.measure.quantity.Power;
 
 import org.flexiblepower.battery.simulation.BatterySimulation.Config;
 import org.flexiblepower.observation.Observation;
-import org.flexiblepower.observation.ObservationProviderRegistrationHelper;
+import org.flexiblepower.observation.ext.ObservationProviderRegistrationHelper;
 import org.flexiblepower.ral.ResourceDriver;
 import org.flexiblepower.ral.drivers.battery.BatteryControlParameters;
 import org.flexiblepower.ral.drivers.battery.BatteryDriver;

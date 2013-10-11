@@ -4,7 +4,6 @@ import java.util.Date;
 import java.util.Map;
 
 import javax.measure.Measure;
-import javax.measure.quantity.Duration;
 import javax.measure.quantity.Energy;
 import javax.measure.unit.SI;
 
@@ -19,7 +18,6 @@ import org.flexiblepower.ral.drivers.uncontrolled.UncontrolledDriver;
 import org.flexiblepower.ral.drivers.uncontrolled.UncontrolledState;
 import org.flexiblepower.ral.ext.AbstractResourceManager;
 import org.flexiblepower.time.TimeService;
-import org.flexiblepower.time.TimeUtil;
 import org.flexiblepower.uncontrolled.manager.UncontrolledManager.Config;
 
 import aQute.bnd.annotation.component.Activate;
@@ -73,19 +71,12 @@ public class UncontrolledManager extends
     }
 
     private UncontrolledLGControlSpace constructControlSpace(UncontrolledState uncontrolledState) {
-        Measure<Double, Duration> expirationTime = Measure.valueOf((double) config.expirationTime(), SI.SECOND);
         Measure<Double, Energy> energy = Measure.valueOf(uncontrolledState.getDemand().doubleValue(SI.WATT) * config.expirationTime(),
                                                          SI.JOULE);
-        EnergyProfile energyProfile = new EnergyProfile.Builder().add(Measure.valueOf(config.expirationTime(),
-                                                                                      SI.SECOND),
-                                                                      energy).build();
+        EnergyProfile energyProfile = EnergyProfile.create()
+                                                   .add(Measure.valueOf(config.expirationTime(), SI.SECOND), energy)
+                                                   .build();
         Date now = timeService.getTime();
-        return new UncontrolledLGControlSpace(config.resourceId(),
-                                              now,
-                                              TimeUtil.add(now, expirationTime),
-                                              TimeUtil.add(now, expirationTime),
-                                              now,
-                                              energyProfile);
+        return new UncontrolledLGControlSpace(config.resourceId(), now, energyProfile);
     }
-
 }

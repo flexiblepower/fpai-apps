@@ -12,7 +12,7 @@ import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
 import org.flexiblepower.observation.Observation;
-import org.flexiblepower.observation.ObservationProviderRegistrationHelper;
+import org.flexiblepower.observation.ext.ObservationProviderRegistrationHelper;
 import org.flexiblepower.pvpanel.simulation.PVSimulation.Config;
 import org.flexiblepower.ral.ResourceDriver;
 import org.flexiblepower.ral.drivers.uncontrolled.UncontrolledControlParameters;
