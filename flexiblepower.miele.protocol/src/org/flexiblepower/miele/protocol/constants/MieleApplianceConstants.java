@@ -35,11 +35,11 @@ public interface MieleApplianceConstants {
     /**
 	 * 
 	 */
-    String APPLIANCE_ACTION_SUPERCOOLING_ON = "SuperKühlen Ein";
+    String APPLIANCE_ACTION_SUPERCOOLING_ON = "SuperKÃ¼hlen Ein";
     /**
 	 * 
 	 */
-    String APPLIANCE_ACTION_SUPERCOOLING_OFF = "SuperKühlen Aus";
+    String APPLIANCE_ACTION_SUPERCOOLING_OFF = "SuperKÃ¼hlen Aus";
 
     // Action names (key) English
     /**
@@ -160,23 +160,23 @@ public interface MieleApplianceConstants {
     /**
 	 * 
 	 */
-    String APPLIANCE_CLASS_DE = "Gerät";
+    String APPLIANCE_CLASS_DE = "GerÃ¤t";
     /**
 	 * 
 	 */
-    String APPLIANCE_STATE_DE = "Gerätestatus";
+    String APPLIANCE_STATE_DE = "GerÃ¤testatus";
     /**
 	 * 
 	 */
-    String REFRIGERATOR_STATE_DE = "Kühlstatus";
+    String REFRIGERATOR_STATE_DE = "KÃ¼hlstatus";
     /**
 	 * 
 	 */
-    String REFRIGERATOR_TARGET_TEMPERATURE_DE = "Ziel-Kühltemperatur";
+    String REFRIGERATOR_TARGET_TEMPERATURE_DE = "Ziel-KÃ¼hltemperatur";
     /**
 	 * 
 	 */
-    String REFRIGERATOR_CURRENT_TEMPERATURE_DE = "Aktuelle Kühltemperatur";
+    String REFRIGERATOR_CURRENT_TEMPERATURE_DE = "Aktuelle KÃ¼hltemperatur";
     /**
 	 * 
 	 */
@@ -287,11 +287,11 @@ public interface MieleApplianceConstants {
     /**
 	 * 
 	 */
-    int MA_STATE_PROGRAM = 3; // Programm gewählt
+    int MA_STATE_PROGRAM = 3; // Programm gewÃ¤hlt
     /**
 	 * 
 	 */
-    int MA_STATE_WAITING = 4; // Start verzögert
+    int MA_STATE_WAITING = 4; // Start verzÃ¶gert
     /**
 	 * 
 	 */
@@ -323,7 +323,7 @@ public interface MieleApplianceConstants {
     /**
 	 * 
 	 */
-    int MA_STATE_SUPERCOOL = 14; // Superkühlen
+    int MA_STATE_SUPERCOOL = 14; // SuperkÃ¼hlen
     /**
 	 * 
 	 */
@@ -351,11 +351,11 @@ public interface MieleApplianceConstants {
     /**
 	 * 
 	 */
-    String STATE_VALUE_PROGRAM_DE = "Programm gewählt";
+    String STATE_VALUE_PROGRAM_DE = "Programm gewÃ¤hlt";
     /**
 	 * 
 	 */
-    String STATE_VALUE_WAITING_DE = "Start verzögert";
+    String STATE_VALUE_WAITING_DE = "Start verzÃ¶gert";
     /**
 	 * 
 	 */
@@ -387,7 +387,7 @@ public interface MieleApplianceConstants {
     /**
 	 * 
 	 */
-    String STATE_VALUE_SUPERCOOL_DE = "Superkühlen";
+    String STATE_VALUE_SUPERCOOL_DE = "SuperkÃ¼hlen";
     /**
 	 * 
 	 */
@@ -521,7 +521,7 @@ public interface MieleApplianceConstants {
     /**
 	 * 
 	 */
-    String DISHWASHER_CLASS_NAME_DE = "Geschirrspüler";
+    String DISHWASHER_CLASS_NAME_DE = "GeschirrspÃ¼ler";
     /**
 	 * 
 	 */
@@ -561,7 +561,7 @@ public interface MieleApplianceConstants {
     /**
 	 * 
 	 */
-    String REFRIGERATOR_FREEZER_CLASS_NAME_DE = "Kühl-Gefrierkombi";
+    String REFRIGERATOR_FREEZER_CLASS_NAME_DE = "KÃ¼hl-Gefrierkombi";
     /**
 	 * 
 	 */
@@ -569,7 +569,7 @@ public interface MieleApplianceConstants {
     /**
 	 * 
 	 */
-    String REFRIGERATOR_CLASS_NAME_DE = "Kühlschrank";
+    String REFRIGERATOR_CLASS_NAME_DE = "KÃ¼hlschrank";
     /**
 	 * 
 	 */

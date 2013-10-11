@@ -72,7 +72,7 @@ public interface MieleGatewayConstants {
     /**
 	 * 
 	 */
-    String ERROR_MSG_ACTION_EXECUTE = "Fehler: start Aktion kann derzeit nicht ausgeführt werden";
+    String ERROR_MSG_ACTION_EXECUTE = "Fehler: start Aktion kann derzeit nicht ausgefÃ¼hrt werden";
     /**
 	 * 
 	 */
