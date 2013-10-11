@@ -28,6 +28,6 @@ public interface MieleDishWasherConstants extends MieleApplianceConstants {
     /**
 	 * 
 	 */
-    String PROGRAM_STRONG_65C = "Stark 65°C";
+    String PROGRAM_STRONG_65C = "Stark 65C";
 
 }

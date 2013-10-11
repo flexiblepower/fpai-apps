@@ -96,23 +96,23 @@ public interface MieleGatewayXmlConstants {
     /**
 	 * 
 	 */
-    String MA_APPLIANCE_STATUS = "Gerätestatus";
+    String MA_APPLIANCE_STATUS = "Geratestatus";
     /**
 	 * 
 	 */
-    String MA_APPLIANCE_TYPE = "Gerät";
+    String MA_APPLIANCE_TYPE = "Gerat";
     /**
 	 * 
 	 */
-    String MA_FRIDGE_STATUS = "Kühlstatus";
+    String MA_FRIDGE_STATUS = "Kuhlstatus";
     /**
 	 * 
 	 */
-    String MA_FRIDGE_ACTUAL_TEMPERATURE = "Aktuelle Kühltemperatur";
+    String MA_FRIDGE_ACTUAL_TEMPERATURE = "Aktuelle Kuhltemperatur";
     /**
 	 * 
 	 */
-    String MA_FRIDGE_TARGET_TEMPERATURE = "Ziel-Kühltemperatur";
+    String MA_FRIDGE_TARGET_TEMPERATURE = "Ziel-Kuhltemperatur";
     /**
 	 * 
 	 */

@@ -287,7 +287,7 @@ public class MieleGatewayMessageParser extends DefaultHandler {
 
         if (s != null && !s.trim().isEmpty()) {
             try {
-                String curTempStr = s.replace("°C", "");
+                String curTempStr = s.replace("Â°C", "");
                 temperature = Float.parseFloat(curTempStr);
 
             } catch (NumberFormatException nfe) {
