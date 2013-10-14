@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="fpai-extras" default="build">
-	<property name="version" value="1.0-SNAPSHOT" />
+	<property name="targetversion" value="13.10" />
 
-	<property name="releasedir" value="/var/www/html/releases/fpai-extras" />
+	<property name="releasedir" value="/var/www/html/releases/${ant.project.name}" />
 
 	<fileset id="build" dir="..">
 		<include name="*/build.xml" />
@@ -15,6 +15,42 @@
 		<exclude name="*.test/*" />
 	</fileset>
 
+	<target name="snapshot">
+		<property name="version" value="${targetversion}-SNAPSHOT" />
+
+		<antcall target="clean" />
+		<antcall target="release" />
+		<antcall target="coverage-report" />
+		<antcall target="test" />
+		<antcall target="checkstyle" />
+		<antcall target="publishrelease" />
+		<antcall target="publishjavadoc" />
+	</target>
+
+	<target name="nightly">
+		<property name="version" value="${targetversion}-${DSTAMP}-NIGHTLY" />
+		
+		<antcall target="clean" />
+		<antcall target="release" />
+		<antcall target="coverage-report" />
+		<antcall target="test" />
+		<antcall target="checkstyle" />
+		<antcall target="publishrelease" />
+		<antcall target="publishjavadoc" />
+	</target>
+
+	<target name="really-do-release">
+		<property name="version" value="${targetversion}" />
+		
+		<antcall target="clean" />
+		<antcall target="release" />
+		<antcall target="coverage-report" />
+		<antcall target="test" />
+		<antcall target="checkstyle" />
+		<antcall target="publishrelease" />
+		<antcall target="publishjavadoc" />
+	</target>
+	
 	<target name="echo">
 		<subant target="echo">
 			<fileset refId="build" />
