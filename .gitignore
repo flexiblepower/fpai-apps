@@ -1,0 +1,9 @@
+# Generate Java / Eclipse generated stuff
+.metadata
+*.swp
+cnf/db
+cnf/cache
+bin
+bin_test
+generated
+*playground
