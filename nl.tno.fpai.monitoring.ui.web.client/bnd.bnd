@@ -1,0 +1,14 @@
+Service-Component: *
+Bundle-Activator: nl.tno.fpai.monitoring.ui.web.client.Activator
+
+Private-Package: nl.tno.fpai.monitoring.ui.web.client
+
+-buildpath: \
+	osgi.core;version="[4.3,5.0)",\
+	osgi.cmpn;version="[4.3,5.0)",\
+	com.google.gson,\
+	org.apache.felix.http.jetty,\
+	biz.aQute.bnd.annotation,\
+	com.mysql.jdbc
+
+-includeresource: res

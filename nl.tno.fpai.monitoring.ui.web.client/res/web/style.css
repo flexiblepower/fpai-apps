@@ -1,0 +1,39 @@
+body {
+	font: 10px sans-serif;
+}
+
+#query {
+	width: 100%;
+	height: 200px;
+	
+	border: 1px solid #DDD;
+}
+
+label[for=query] {
+	display: block;
+}
+
+#options-area {
+	text-align: right;
+}
+
+#chart-area {
+	border: 1px solid #DDD;
+	margin: 1em 0;
+}
+
+.axis path,.axis line {
+	fill: none;
+	stroke: #000;
+	shape-rendering: crispEdges;
+}
+
+.line {
+	fill: none;
+	stroke: steelblue;
+	stroke-width: .5px;
+}
+
+.bar {
+  fill: steelblue;
+}

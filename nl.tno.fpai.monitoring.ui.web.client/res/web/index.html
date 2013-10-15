@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+	
+	<head>
+		<link rel="stylesheet" type="text/css" href="style.css">
+	</head>
+	
+	<body>
+		<div id="input-area">
+			<label for="query">Query</label>
+			<textarea id="query">
+select
+	day_of_week,
+	avg(temperature),
+	std(temperature)
+from
+	`fact_nl.tno.fpai.logging.example.heatpump`
+	join dim_date on dateId = dim_date.id
+where 
+	month = 1
+group by day_of_week;
+			</textarea>
+			<!-- <textarea id="query">
+select
+	timestamp,
+	temperature
+from
+	`fact_nl.tno.fpai.logging.example.heatpump`
+	join dim_date on dateId = dim_date.id
+where 
+	day_of_year = 1;
+			</textarea> -->
+	
+			<div id="input-options-area">
+				<label for="chart-type">Chart type (not yet implemented)</label>
+				<select id="chart-type">
+					<option id="chart-type-bar">line</option>
+					<option id="chart-type-bar">bar</option>
+				</select>
+				<button id="execute-query" onclick="chartQuery(document.getElementById('query').value, document.getElementById('chart-type').value)">Execute query</button>
+			</div>
+		</div>
+		
+		<div id="output-area">
+			<div id="chart-area"></div>
+			Url to data: <span id="data-url">...</span>
+			<div id="input-options-area">
+				<!-- <button id="clear-chart" onclick="clearChart()">clear</button> -->
+			</div>
+		</div>
+	
+		<script src="http://d3js.org/d3.v3.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="chart.js" type="text/javascript"></script>
+	</body>
+
+</html>
