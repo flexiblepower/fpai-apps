@@ -1,12 +1,14 @@
 -runfw: org.apache.felix.framework;version='[4,5)'
 -runee: JavaSE-1.6
 
--runbundles: ch.qos.logback.classic;version='[1.0.0,1.0.1)',\
+-runbundles: \
+	nl.tno.fpai.monitoring.ui.web.client;version=latest,\
+	nl.tno.fpai.monitoring.ui.web.service;version=latest,\
+	com.mysql.jdbc;version='[5.1.26,5.1.27)',\
+	ch.qos.logback.classic;version='[1.0.0,1.0.1)',\
 	ch.qos.logback.core;version='[1.0.0,1.0.1)',\
 	com.google.gwt.servlet;version='[2.5.0,2.5.1)',\
-	com.mysql.jdbc;version='[5.1.26,5.1.27)',\
 	javax.servlet;version='[2.5.0,2.5.1)',\
-	nl.tno.fpai.logging.ui.web;version=latest,\
 	org.apache.felix.configadmin;version='[1.4.0,1.4.1)',\
 	org.apache.felix.gogo.command;version='[0.12.0,0.12.1)',\
 	org.apache.felix.gogo.runtime;version='[0.10.0,0.10.1)',\
@@ -35,5 +37,6 @@
 	osgi.identity;filter:='(&(osgi.identity=slf4j.api)(version>=1.7.5))',\
 	osgi.identity;filter:='(&(osgi.identity=org.slf4j.osgi-over-slf4j)(version>=1.7.5))',\
 	osgi.identity;filter:='(osgi.identity=com.mysql.jdbc)',\
-	osgi.identity;filter:='(osgi.identity=nl.tno.fpai.logging.ui.web)'
+	osgi.identity;filter:='(osgi.identity=nl.tno.fpai.monitoring.ui.web.service)',\
+	osgi.identity;filter:='(osgi.identity=nl.tno.fpai.monitoring.ui.web.client)'
 -resolve.effective: active
