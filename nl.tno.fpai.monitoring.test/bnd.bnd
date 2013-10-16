@@ -1,0 +1,7 @@
+Private-Package: nl.tno.fpai.monitoring.test
+Service-Component: *
+-buildpath: biz.aQute.bnd.annotation,\
+	osgi.cmpn,\
+	osgi.core,\
+	flexiblepower.api,\
+	flexiblepower.api.ext
