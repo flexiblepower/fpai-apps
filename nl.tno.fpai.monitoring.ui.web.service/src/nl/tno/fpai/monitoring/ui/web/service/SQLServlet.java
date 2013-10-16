@@ -3,7 +3,6 @@ package nl.tno.fpai.monitoring.ui.web.service;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -14,16 +13,20 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.osgi.service.jdbc.DataSourceFactory;
+import javax.sql.DataSource;
 
 import aQute.bnd.annotation.component.Component;
+import aQute.bnd.annotation.component.Reference;
 
 @Component(properties = { "alias=/ui/sql" }, immediate = true)
 public class SQLServlet extends HttpServlet implements Servlet {
 	private static final long serialVersionUID = 1L;
-	private DataSourceFactory dsf;
-	private com.mysql.jdbc.Driver driver;
+	private DataSource dataSource;
+
+	@Reference
+	public void setDataSource(DataSource dataSource) {
+		this.dataSource = dataSource;
+	}
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -32,40 +35,46 @@ public class SQLServlet extends HttpServlet implements Servlet {
 		PrintWriter out = resp.getWriter();
 
 		String sql = req.getParameter("q");
-
-		Connection con = connect();
-		Statement stmt = null;
-		ResultSet rs = null;
+		// out.print("/*\n   results for query:\n      ");
+		// out.print(sql.trim().replaceAll("\n", "\n      "));
+		// out.print("\n*/\n");
 
 		try {
-			stmt = con.createStatement();
-			rs = stmt.executeQuery(sql);
+			Connection con = dataSource.getConnection();
+			Statement stmt = null;
+			ResultSet rs = null;
 
-			ResultSetMetaData meta = rs.getMetaData();
-			int columnCount = meta.getColumnCount();
+			try {
+				stmt = con.createStatement();
+				rs = stmt.executeQuery(sql);
 
-			for (int i = 1; i <= columnCount; i++) {
-				out.print(meta.getColumnName(i));
-				out.print("\t");
-			}
-			out.print("\n");
+				ResultSetMetaData meta = rs.getMetaData();
+				int columnCount = meta.getColumnCount();
 
-			while (rs.next()) {
 				for (int i = 1; i <= columnCount; i++) {
-					out.print(rs.getString(i));
-
-					if (i < columnCount) {
-						out.print("\t");
-					}
+					out.print(meta.getColumnName(i));
+					out.print("\t");
 				}
 				out.print("\n");
+
+				while (rs.next()) {
+					for (int i = 1; i <= columnCount; i++) {
+						out.print(rs.getString(i));
+
+						if (i < columnCount) {
+							out.print("\t");
+						}
+					}
+					out.print("\n");
+				}
+			} finally {
+				close(rs);
+				close(stmt);
+				close(con);
 			}
 		} catch (SQLException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} finally {
-			close(rs);
-			close(stmt);
-			close(con);
 		}
 	}
 
@@ -93,39 +102,6 @@ public class SQLServlet extends HttpServlet implements Servlet {
 				con.close();
 			} catch (Exception e) {
 			}
-		}
-	}
-
-	// private void close(Closeable closeable) {
-	// if (closeable != null) {
-	// try {
-	// closeable.close();
-	// } catch (Exception e) {
-	// }
-	// }
-	// }
-
-	// @Reference
-	// public void setDataSourceFactory(DataSourceFactory dsf) {
-	// this.dsf = dsf;
-	// }
-
-	private Connection connect() {
-		try {
-			// return this.dsf.createDataSource(new Properties() {
-			// {
-			// put("url", "jdbc:mysql://localhost:3306\ts");
-			// put("user", "client");
-			// put("password", "client");
-			// }
-			// }).getConnection();
-
-			Class.forName("com.mysql.jdbc.Driver");
-			Connection con = DriverManager.getConnection(
-					"jdbc:mysql://localhost:3306/ts", "client", "client");
-			return con;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
 		}
 	}
 }
