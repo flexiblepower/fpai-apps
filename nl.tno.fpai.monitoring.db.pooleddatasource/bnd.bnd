@@ -1,0 +1,9 @@
+Private-Package: nl.tno.fpai.monitoring.db.pooleddatasource
+
+Service-Component: *
+
+-buildpath: flexiblepower.api,\
+	biz.aQute.bnd.annotation,\
+	osgi.cmpn;version='[4.3,5.0)',\
+	slf4j.api
+	
