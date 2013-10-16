@@ -1,5 +1,41 @@
 <?xml version='1.0' encoding='utf-8'?>
-<repository increment='1381259310352' name='Local' xmlns='http://www.osgi.org/xmlns/repository/v1.0.0'>
+<repository increment='1381932625698' name='Local' xmlns='http://www.osgi.org/xmlns/repository/v1.0.0'>
+  <resource>
+    <capability namespace='osgi.identity'>
+      <attribute name='osgi.identity' value='org.ops4j.pax.jdbc.mysql'/>
+      <attribute name='type' value='osgi.bundle'/>
+      <attribute name='version' type='Version' value='0.3.0'/>
+    </capability>
+    <capability namespace='osgi.content'>
+      <attribute name='osgi.content' value='8c07e7b057bbad0148d3e1b0d783d32a81e1e9839df4e5828a6abad82f67f326'/>
+      <attribute name='url' value='org.ops4j.pax.jdbc.mysql/org.ops4j.pax.jdbc.mysql-0.3.0.jar'/>
+      <attribute name='size' type='Long' value='5447'/>
+      <attribute name='mime' value='application/vnd.osgi.bundle'/>
+    </capability>
+    <capability namespace='osgi.wiring.bundle'>
+      <attribute name='osgi.wiring.bundle' value='org.ops4j.pax.jdbc.mysql'/>
+      <attribute name='bundle-version' type='Version' value='0.3.0'/>
+    </capability>
+    <capability namespace='osgi.wiring.host'>
+      <attribute name='osgi.wiring.host' value='org.ops4j.pax.jdbc.mysql'/>
+      <attribute name='bundle-version' type='Version' value='0.3.0'/>
+    </capability>
+    <requirement namespace='osgi.wiring.package'>
+      <directive name='filter' value='(&amp;(osgi.wiring.package=com.mysql.jdbc)(version&gt;=5.1.0)(!(version&gt;=6.0.0)))'/>
+    </requirement>
+    <requirement namespace='osgi.wiring.package'>
+      <directive name='filter' value='(&amp;(osgi.wiring.package=com.mysql.jdbc.jdbc2.optional)(version&gt;=5.1.0)(!(version&gt;=6.0.0)))'/>
+    </requirement>
+    <requirement namespace='osgi.wiring.package'>
+      <directive name='filter' value='(osgi.wiring.package=javax.sql)'/>
+    </requirement>
+    <requirement namespace='osgi.wiring.package'>
+      <directive name='filter' value='(&amp;(osgi.wiring.package=org.osgi.framework)(version&gt;=1.5.0)(!(version&gt;=2.0.0)))'/>
+    </requirement>
+    <requirement namespace='osgi.wiring.package'>
+      <directive name='filter' value='(&amp;(osgi.wiring.package=org.osgi.service.jdbc)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))'/>
+    </requirement>
+  </resource>
   <resource>
     <capability namespace='osgi.identity'>
       <attribute name='osgi.identity' value='com.mysql.jdbc'/>
