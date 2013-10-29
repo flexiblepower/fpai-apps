@@ -3,6 +3,7 @@
 *.swp
 cnf/db
 cnf/cache
+cnf/felix
 cnf/release
 bin
 bin_test
