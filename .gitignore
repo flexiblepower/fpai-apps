@@ -7,6 +7,8 @@ cnf/release
 bin
 bin_test
 generated
+cobertura.ser
+instrumented
 *playground
 
 # GWT generated stuff
