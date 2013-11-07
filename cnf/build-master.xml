@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="fpai-extras" default="build">
+	<property name="project.title" value="FPAI Extra bundles" />
 	<property name="targetversion" value="14.02" />
-	<property name="deployment-repos" value="http://openemf.labsgn.tno.nl/releases/fpai/13.10/repo" />
 	<import file="../cnf.shared/build-jenkins.xml" />
 </project>
