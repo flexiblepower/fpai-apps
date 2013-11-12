@@ -4,10 +4,12 @@ import static javax.measure.unit.SI.JOULE;
 import static javax.measure.unit.SI.SECOND;
 import static javax.measure.unit.SI.WATT;
 
+import java.util.Date;
 import java.util.Map;
 
 import javax.measure.Measurable;
 import javax.measure.Measure;
+import javax.measure.quantity.Duration;
 import javax.measure.quantity.Energy;
 import javax.measure.quantity.Power;
 
@@ -53,7 +55,7 @@ public class BatteryManager extends
 
     private TimeService timeService;
     private Config config;
-    private Measure<Integer, javax.measure.quantity.Duration> expirationTime;
+    private Measurable<Duration> expirationTime;
 
     @Reference
     public void setTimeService(TimeService timeService) {
@@ -72,10 +74,11 @@ public class BatteryManager extends
         ConstraintList<Power> chargeSpeed = ConstraintList.create(WATT).addSingle(state.getChargeSpeed()).build();
         ConstraintList<Power> dischargeSpeed = ConstraintList.create(WATT).addSingle(state.getDischargeSpeed()).build();
 
+        Date now = timeService.getTime();
         publish(new StorageControlSpace(config.resourceId(),
-                                        timeService.getTime(),
-                                        TimeUtil.add(timeService.getTime(), expirationTime),
-                                        TimeUtil.add(timeService.getTime(), expirationTime),
+                                        now,
+                                        TimeUtil.add(now, expirationTime),
+                                        null,
                                         state.getTotalCapacity(),
                                         (float) state.getStateOfCharge(),
                                         chargeSpeed,
