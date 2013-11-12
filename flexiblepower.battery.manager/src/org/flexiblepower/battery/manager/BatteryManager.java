@@ -15,7 +15,6 @@ import org.flexiblepower.battery.manager.BatteryManager.Config;
 import org.flexiblepower.observation.Observation;
 import org.flexiblepower.observation.ObservationProvider;
 import org.flexiblepower.rai.Allocation;
-import org.flexiblepower.rai.BufferControlSpace;
 import org.flexiblepower.rai.StorageControlSpace;
 import org.flexiblepower.rai.values.ConstraintList;
 import org.flexiblepower.rai.values.EnergyProfile;
@@ -36,7 +35,8 @@ import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = ResourceManager.class)
-public class BatteryManager extends AbstractResourceManager<BufferControlSpace, BatteryState, BatteryControlParameters> {
+public class BatteryManager extends
+                           AbstractResourceManager<StorageControlSpace, BatteryState, BatteryControlParameters> {
     interface Config {
         @Meta.AD(deflt = "battery", description = "Resource identifier")
         String resourceId();
@@ -48,7 +48,7 @@ public class BatteryManager extends AbstractResourceManager<BufferControlSpace, 
     private BatteryState lastBatteryState = null;
 
     public BatteryManager() {
-        super(BatteryDriver.class, BufferControlSpace.class);
+        super(BatteryDriver.class, StorageControlSpace.class);
     }
 
     private TimeService timeService;
