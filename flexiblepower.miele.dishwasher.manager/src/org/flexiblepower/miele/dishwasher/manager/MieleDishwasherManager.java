@@ -90,7 +90,7 @@ public class MieleDishwasherManager extends
             // TODO: send empty control space?
             currentState = null;
             changedState = timeService.getTime();
-        } else if (!state.getStartTime().equals(currentState.getStartTime())) {
+        } else if (currentState == null || !state.getStartTime().equals(currentState.getStartTime())) {
             currentState = state;
             changedState = timeService.getTime();
 
