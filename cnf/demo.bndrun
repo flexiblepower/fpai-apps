@@ -2,8 +2,7 @@
 -runee: JavaSE-1.6
 -runvm: -Dlogback.configurationFile=../cnf/logback.xml
 
--runrequires: \
-	osgi.identity;filter:='(osgi.identity=org.apache.felix.configadmin)',\
+-runrequires: osgi.identity;filter:='(osgi.identity=org.apache.felix.configadmin)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.http.whiteboard)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.webconsole)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.webconsole.plugins.ds)',\
@@ -15,9 +14,13 @@
 	osgi.identity;filter:='(osgi.identity=flexiblepower.uncontrolled.manager)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.ui)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.ui.resourceinfo)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.ui.runtime)'
--runbundles: \
-	biz.aQute.bnd.annotation;version='[1.52.3,1.52.4)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.ui.runtime)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.miele.dishwasher.driver)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.miele.dishwasher.manager)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.miele.protocol)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.miele.refrigerator.driver)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.miele.refrigerator.manager)'
+-runbundles: biz.aQute.bnd.annotation;version='[1.52.3,1.52.4)',\
 	ch.qos.logback.classic;version='[1.0.13,1.0.14)',\
 	ch.qos.logback.core;version='[1.0.13,1.0.14)',\
 	com.google.gson;version='[2.2.4,2.2.5)',\
@@ -26,6 +29,11 @@
 	flexiblepower.api.ext;version='[1.0.0,1.0.1)',\
 	flexiblepower.battery.manager;version=latest,\
 	flexiblepower.battery.simulation;version=latest,\
+	flexiblepower.miele.dishwasher.driver;version=latest,\
+	flexiblepower.miele.dishwasher.manager;version=latest,\
+	flexiblepower.miele.protocol;version=latest,\
+	flexiblepower.miele.refrigerator.driver;version=latest,\
+	flexiblepower.miele.refrigerator.manager;version=latest,\
 	flexiblepower.pvpanel.simulation;version=latest,\
 	flexiblepower.runtime;version='[1.0.0,1.0.1)',\
 	flexiblepower.ui;version='[1.0.0,1.0.1)',\
