@@ -1,4 +1,5 @@
--buildpath: ${default-buildpath}, flexiblepower.miele.protocol;version=project
+-buildpath: ${default-buildpath},\
+	flexiblepower.miele.protocol
 
 Bundle-Version: 1.0.0.${qualifier}
 Private-Package: org.flexiblepower.miele.refrigerator.driver
