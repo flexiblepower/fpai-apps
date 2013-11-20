@@ -1,0 +1,9 @@
+-buildpath: ${default-buildpath}
+
+Bundle-Version: 1.0.0-${qualifier}
+Export-Package: nl.tno.hexabus.api
+Private-Package: \
+	nl.tno.hexabus.driver,\
+	nl.tno.hexabus.widget,\
+	de.fraunhofer.itwm.hexabus
+Service-Component: *
