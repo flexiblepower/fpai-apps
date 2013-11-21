@@ -1,10 +1,16 @@
 package org.flexiblepower.miele.refrigerator.driver;
 
+import static javax.measure.unit.SI.CELSIUS;
+
 import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+
+import javax.measure.Measurable;
+import javax.measure.Measure;
+import javax.measure.quantity.Temperature;
 
 import org.flexiblepower.miele.protocol.MieleAppliance;
 import org.flexiblepower.miele.protocol.MieleApplianceAction;
@@ -37,20 +43,20 @@ public class MieleRefrigeratorDriver extends AbstractResourceDriver<Refrigerator
                                                                                                                      Runnable {
     static final class State implements RefrigeratorState {
         private final boolean isConnected;
-        private final double currTemp, targetTemp, minTemp;
+        private final Measurable<Temperature> currTemp, targetTemp, minTemp;
         private final boolean supercool;
 
         State() {
             isConnected = false;
-            currTemp = targetTemp = minTemp = Double.NaN;
+            currTemp = targetTemp = minTemp = null;
             supercool = false;
         }
 
         State(MieleFridgeFreezerInfoMessage msg) {
             isConnected = true;
-            currTemp = msg.getRefrigeratorTemperature();
-            targetTemp = msg.getRefrigeratorTargetTemperature();
-            minTemp = 4.0;
+            currTemp = Measure.valueOf(msg.getRefrigeratorTemperature(), CELSIUS);
+            targetTemp = Measure.valueOf(msg.getRefrigeratorTargetTemperature(), CELSIUS);
+            minTemp = Measure.valueOf(4, CELSIUS);
             supercool = msg.getRefrigeratorState() == MieleApplianceConstants.MA_STATE_SUPERCOOL;
         }
 
@@ -60,17 +66,17 @@ public class MieleRefrigeratorDriver extends AbstractResourceDriver<Refrigerator
         }
 
         @Override
-        public double getCurrentTemperature() {
+        public Measurable<Temperature> getCurrentTemperature() {
             return currTemp;
         }
 
         @Override
-        public double getTargetTemperature() {
+        public Measurable<Temperature> getTargetTemperature() {
             return targetTemp;
         }
 
         @Override
-        public double getMinimumTemperature() {
+        public Measurable<Temperature> getMinimumTemperature() {
             return minTemp;
         }
 

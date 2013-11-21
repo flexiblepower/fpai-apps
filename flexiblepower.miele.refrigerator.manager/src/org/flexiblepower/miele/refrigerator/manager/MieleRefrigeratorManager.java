@@ -1,6 +1,7 @@
 package org.flexiblepower.miele.refrigerator.manager;
 
 import static javax.measure.unit.NonSI.HOUR;
+import static javax.measure.unit.SI.CELSIUS;
 import static javax.measure.unit.SI.JOULE;
 import static javax.measure.unit.SI.KILO;
 import static javax.measure.unit.SI.WATT;
@@ -94,9 +95,9 @@ public class MieleRefrigeratorManager extends
         currentState = observation.getValue();
 
         RefrigeratorState state = observation.getValue();
-        double maxTemp = state.getTargetTemperature();
-        double minTemp = state.getMinimumTemperature();
-        double curTemp = state.getCurrentTemperature();
+        double maxTemp = state.getTargetTemperature().doubleValue(CELSIUS);
+        double minTemp = state.getMinimumTemperature().doubleValue(CELSIUS);
+        double curTemp = state.getCurrentTemperature().doubleValue(CELSIUS);
 
         // Calculate state of charge
         double stateOfCharge = (maxTemp - curTemp) / (maxTemp - minTemp);
