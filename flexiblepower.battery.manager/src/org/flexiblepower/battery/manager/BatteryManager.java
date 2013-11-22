@@ -98,7 +98,7 @@ public class BatteryManager extends AbstractResourceManager<BufferControlSpace, 
 
     @Override
     public void handleAllocation(Allocation allocation) {
-        ResourceDriver<BatteryState, BatteryControlParameters> driver = getDriver();
+        ResourceDriver<? extends BatteryState, ? super BatteryControlParameters> driver = getDriver();
         if (allocation != null && driver != null) {
             EnergyProfile energyProfile = allocation.getEnergyProfile();
             Measurable<Energy> energyValue = energyProfile.getElementForOffset(Measure.valueOf(0, SECOND)).getEnergy();

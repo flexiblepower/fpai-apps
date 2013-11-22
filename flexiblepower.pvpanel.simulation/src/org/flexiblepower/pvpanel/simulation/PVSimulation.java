@@ -15,10 +15,8 @@ import org.flexiblepower.observation.Observation;
 import org.flexiblepower.observation.ext.ObservationProviderRegistrationHelper;
 import org.flexiblepower.pvpanel.simulation.PVSimulation.Config;
 import org.flexiblepower.ral.ResourceDriver;
-import org.flexiblepower.ral.drivers.uncontrolled.UncontrolledControlParameters;
-import org.flexiblepower.ral.drivers.uncontrolled.UncontrolledDriver;
 import org.flexiblepower.ral.drivers.uncontrolled.UncontrolledState;
-import org.flexiblepower.ral.ext.AbstractResourceDriver;
+import org.flexiblepower.ral.ext.UncontrolledResourceDriver;
 import org.flexiblepower.time.TimeService;
 import org.flexiblepower.ui.Widget;
 import org.osgi.framework.BundleContext;
@@ -32,9 +30,7 @@ import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = ResourceDriver.class)
-public class PVSimulation extends AbstractResourceDriver<UncontrolledState, UncontrolledControlParameters> implements
-                                                                                                          UncontrolledDriver,
-                                                                                                          Runnable {
+public class PVSimulation extends UncontrolledResourceDriver<UncontrolledState> implements Runnable {
     @Meta.OCD
     interface Config {
         @Meta.AD(deflt = "pvpanel", description = "Resource identifier")
@@ -120,11 +116,6 @@ public class PVSimulation extends AbstractResourceDriver<UncontrolledState, Unco
     public void setWeather(Weather weather) {
         this.weather = weather;
         run();
-    }
-
-    @Override
-    public void setControlParameters(UncontrolledControlParameters resourceControlParameters) {
-        // Nothing to control!
     }
 
     protected UncontrolledState getCurrentState() {
