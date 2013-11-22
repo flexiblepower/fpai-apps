@@ -43,20 +43,20 @@ public class MieleDishwasherManager extends
         String resourceId();
     }
 
-    private final DishwasherWidget widget;
-
     public MieleDishwasherManager() {
         super(DishwasherDriver.class, TimeShifterControlSpace.class);
         widget = new DishwasherWidget(this);
     }
 
     private Config config;
+    private DishwasherWidget widget;
     private ServiceRegistration<Widget> widgetRegistration;
 
     @Activate
     public void activate(Map<String, Object> properties, BundleContext bundleContext) {
         try {
             config = Configurable.createConfigurable(Config.class, properties);
+            widget = new DishwasherWidget(this);
             widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
         } catch (RuntimeException ex) {
             logger.error("Error during activation of the MieleDishwasherManager", ex);
@@ -67,10 +67,8 @@ public class MieleDishwasherManager extends
 
     @Deactivate
     public void deactivate() {
-        if (widgetRegistration != null) {
-            widgetRegistration.unregister();
-            widgetRegistration = null;
-        }
+        widgetRegistration.unregister();
+        widget = null;
     }
 
     private TimeService timeService;
@@ -92,7 +90,7 @@ public class MieleDishwasherManager extends
             // TODO: send empty control space?
             currentState = null;
             changedState = timeService.getTime();
-        } else if (!state.getStartTime().equals(currentState.getStartTime())) {
+        } else if (currentState == null || !state.getStartTime().equals(currentState.getStartTime())) {
             currentState = state;
             changedState = timeService.getTime();
 

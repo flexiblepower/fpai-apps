@@ -4,10 +4,12 @@ import static javax.measure.unit.SI.JOULE;
 import static javax.measure.unit.SI.SECOND;
 import static javax.measure.unit.SI.WATT;
 
+import java.util.Date;
 import java.util.Map;
 
 import javax.measure.Measurable;
 import javax.measure.Measure;
+import javax.measure.quantity.Duration;
 import javax.measure.quantity.Energy;
 import javax.measure.quantity.Power;
 
@@ -15,7 +17,6 @@ import org.flexiblepower.battery.manager.BatteryManager.Config;
 import org.flexiblepower.observation.Observation;
 import org.flexiblepower.observation.ObservationProvider;
 import org.flexiblepower.rai.Allocation;
-import org.flexiblepower.rai.BufferControlSpace;
 import org.flexiblepower.rai.StorageControlSpace;
 import org.flexiblepower.rai.values.ConstraintList;
 import org.flexiblepower.rai.values.EnergyProfile;
@@ -36,7 +37,8 @@ import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = ResourceManager.class)
-public class BatteryManager extends AbstractResourceManager<BufferControlSpace, BatteryState, BatteryControlParameters> {
+public class BatteryManager extends
+                           AbstractResourceManager<StorageControlSpace, BatteryState, BatteryControlParameters> {
     interface Config {
         @Meta.AD(deflt = "battery", description = "Resource identifier")
         String resourceId();
@@ -48,12 +50,12 @@ public class BatteryManager extends AbstractResourceManager<BufferControlSpace, 
     private BatteryState lastBatteryState = null;
 
     public BatteryManager() {
-        super(BatteryDriver.class, BufferControlSpace.class);
+        super(BatteryDriver.class, StorageControlSpace.class);
     }
 
     private TimeService timeService;
     private Config config;
-    private Measure<Integer, javax.measure.quantity.Duration> expirationTime;
+    private Measurable<Duration> expirationTime;
 
     @Reference
     public void setTimeService(TimeService timeService) {
@@ -72,10 +74,11 @@ public class BatteryManager extends AbstractResourceManager<BufferControlSpace, 
         ConstraintList<Power> chargeSpeed = ConstraintList.create(WATT).addSingle(state.getChargeSpeed()).build();
         ConstraintList<Power> dischargeSpeed = ConstraintList.create(WATT).addSingle(state.getDischargeSpeed()).build();
 
+        Date now = timeService.getTime();
         publish(new StorageControlSpace(config.resourceId(),
-                                        timeService.getTime(),
-                                        TimeUtil.add(timeService.getTime(), expirationTime),
-                                        TimeUtil.add(timeService.getTime(), expirationTime),
+                                        now,
+                                        TimeUtil.add(now, expirationTime),
+                                        null,
                                         state.getTotalCapacity(),
                                         (float) state.getStateOfCharge(),
                                         chargeSpeed,

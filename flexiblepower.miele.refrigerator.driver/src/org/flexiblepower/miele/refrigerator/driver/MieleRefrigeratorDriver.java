@@ -154,6 +154,9 @@ public class MieleRefrigeratorDriver extends AbstractResourceDriver<Refrigerator
         try {
             MieleGatewayMessage infoMsg = mieleProtocol.performApplianceAction(appliance,
                                                                                MieleApplianceAction.createInfoAction(appliance));
+
+            logger.debug("info msg: " + infoMsg.toString());
+
             if (infoMsg instanceof MieleFridgeFreezerInfoMessage) {
                 return new State((MieleFridgeFreezerInfoMessage) infoMsg);
             } else {

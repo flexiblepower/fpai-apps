@@ -48,21 +48,20 @@ public class MieleRefrigeratorManager extends
         String resourceId();
     }
 
-    private final RefrigeratorWidget widget;
-    private ServiceRegistration<Widget> widgetRegistration;
-
     public MieleRefrigeratorManager() {
         super(RefrigeratorDriver.class, BufferControlSpace.class);
-        widget = new RefrigeratorWidget(this);
     }
 
     private Config config;
+    private RefrigeratorWidget widget;
+    private ServiceRegistration<Widget> widgetRegistration;
 
     @Activate
-    public void activate(Map<String, Object> properties, BundleContext bundleContext) {
+    public void activate(BundleContext context, Map<String, Object> properties) {
         try {
             config = Configurable.createConfigurable(Config.class, properties);
-            widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
+            widget = new RefrigeratorWidget(this);
+            widgetRegistration = context.registerService(Widget.class, widget, null);
         } catch (RuntimeException ex) {
             logger.error("Error during activation of the MieleRefrigeratorManager", ex);
             deactivate();
@@ -72,10 +71,8 @@ public class MieleRefrigeratorManager extends
 
     @Deactivate
     public void deactivate() {
-        if (widgetRegistration != null) {
-            widgetRegistration.unregister();
-            widgetRegistration = null;
-        }
+        widgetRegistration.unregister();
+        widget = null;
     }
 
     private TimeService timeService;
@@ -90,6 +87,8 @@ public class MieleRefrigeratorManager extends
     @Override
     public void consume(ObservationProvider<? extends RefrigeratorState> source,
                         Observation<? extends RefrigeratorState> observation) {
+
+        logger.debug("Observation consumede by miele refr");
 
         // store latest state (volatile, use only for single write in this method)
         currentState = observation.getValue();
