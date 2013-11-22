@@ -1,4 +1,5 @@
--buildpath: ${default-buildpath}
+-buildpath: ${default-buildpath},\
+	junit.osgi
 
 Bundle-Version: 1.0.0-${qualifier}
 Export-Package: nl.tno.hexabus.api
