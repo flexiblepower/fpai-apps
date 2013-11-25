@@ -2,6 +2,8 @@ package org.flexiblepower.miele.refrigerator.manager;
 
 import java.util.Locale;
 
+import javax.measure.unit.SI;
+
 import org.flexiblepower.ral.drivers.refrigerator.RefrigeratorState;
 import org.flexiblepower.ui.Widget;
 
@@ -53,9 +55,9 @@ public class RefrigeratorWidget implements Widget {
         RefrigeratorState state = fridge.getCurrentState();
         if (state != null) {
             return new Update(state.getSupercoolMode(),
-                              String.format(locale, TEMP, state.getCurrentTemperature()),
-                              String.format(locale, TEMP, state.getMinimumTemperature()),
-                              String.format(locale, TEMP, state.getTargetTemperature()));
+                              String.format(locale, TEMP, state.getCurrentTemperature().doubleValue(SI.CELSIUS)),
+                              String.format(locale, TEMP, state.getMinimumTemperature().doubleValue(SI.CELSIUS)),
+                              String.format(locale, TEMP, state.getTargetTemperature().doubleValue(SI.CELSIUS)));
         } else {
             return new Update(false, "Not Available", "Not Available", "Not Available");
         }
