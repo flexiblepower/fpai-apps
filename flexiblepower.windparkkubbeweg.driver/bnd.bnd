@@ -1,0 +1,10 @@
+-buildpath: ${default-buildpath},\
+	junit.osgi
+
+Bundle-Version: 1.0.0-${qualifier}
+Export-Package: nl.tno.hexabus.api
+Private-Package: \
+	flexiblepower.windparkkubbeweg.driver,\
+	nl.tno.hexabus.widget,\
+	de.fraunhofer.itwm.hexabus
+Service-Component: *
