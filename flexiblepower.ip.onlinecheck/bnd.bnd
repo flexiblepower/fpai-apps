@@ -1,0 +1,4 @@
+-buildpath: ${default-buildpath}
+Bundle-Version: 1.0.0.${qualifier}
+Service-Component: *
+Private-Package: org.flexiblepower.ip.onlinecheck

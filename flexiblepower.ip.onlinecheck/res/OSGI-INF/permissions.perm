@@ -1,0 +1,8 @@
+(org.osgi.framework.PackagePermission "org.flexiblepower.observation" "import")
+(org.osgi.framework.PackagePermission "org.flexiblepower.observation.ext" "import")
+(org.osgi.framework.PackagePermission "org.flexiblepower.time" "import")
+(org.osgi.framework.PackagePermission "org.osgi.framework" "import")
+(org.osgi.framework.PackagePermission "org.slf4j" "import")
+(org.osgi.framework.ServicePermission "java.util.concurrent.ScheduledExecutorService" "get")
+(org.osgi.framework.ServicePermission "org.flexiblepower.time.TimeService" "get")
+(org.osgi.framework.ServicePermission "org.flexiblepower.observation.ObservationProvider" "register")
