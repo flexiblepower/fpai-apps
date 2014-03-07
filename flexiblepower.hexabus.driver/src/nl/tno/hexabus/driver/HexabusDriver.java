@@ -16,6 +16,7 @@ import org.flexiblepower.observation.Observation;
 import org.flexiblepower.ral.ResourceDriver;
 import org.flexiblepower.ral.ext.AbstractResourceDriver;
 import org.flexiblepower.time.TimeService;
+import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +34,8 @@ import de.fraunhofer.itwm.hexabus.HexabusInfoPacket;
 
 @Component(designateFactory = Config.class, provide = ResourceDriver.class, immediate = true)
 public class HexabusDriver extends AbstractResourceDriver<HexabusState, HexabusControlParameters> {
+    private static final Logger log = LoggerFactory.getLogger(HexabusDriver.class);
+
     public interface Config {
         @Meta.AD(description = "The IPv6 address of the Hexabus device (found on the label)",
                  deflt = "fe80::50:c4ff:fe04:819a")
@@ -98,7 +101,7 @@ public class HexabusDriver extends AbstractResourceDriver<HexabusState, HexabusC
     private ScheduledFuture<?> schedule;
 
     @Activate
-    public void activate(Map<String, ?> properties) {
+    public void activate(BundleContext context, Map<String, ?> properties) {
         Config config = Configurable.createConfigurable(Config.class, properties);
         try {
             logger = LoggerFactory.getLogger(HexabusDriver.class + "." + config.resource_id());
@@ -145,7 +148,11 @@ public class HexabusDriver extends AbstractResourceDriver<HexabusState, HexabusC
 
     @Override
     public void setControlParameters(HexabusControlParameters resourceControlParameters) {
-
+        try {
+            switchEndpoint.writeEndpoint(resourceControlParameters.isSwitchedOn());
+        } catch (IOException ex) {
+            log.error("Couldn't switch to [" + resourceControlParameters.isSwitchedOn() + "], I/O Error", ex);
+        }
     }
 
     private long currentPower;
@@ -191,5 +198,9 @@ public class HexabusDriver extends AbstractResourceDriver<HexabusState, HexabusC
     public void switchTo(boolean on) throws IOException {
         logger.debug("Switching {} to {}", dev.getInetAddress(), on ? "on" : "off");
         dev.getByEid(1).writeEndpoint(on);
+    }
+
+    public InetAddress getAddress() {
+        return dev.getInetAddress();
     }
 }

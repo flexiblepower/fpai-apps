@@ -62,6 +62,15 @@ public class HexabusLifecycle implements Runnable {
         this.scheduler = scheduler;
     }
 
+    @Reference(dynamic = true, multiple = true, optional = true)
+    public void addDriver(HexabusDriver driver) {
+        drivers.put(driver.getAddress(), driver);
+    }
+
+    public void removeDriver(HexabusDriver driver) {
+        drivers.remove(driver.getAddress());
+    }
+
     private BundleContext bundleContext;
 
     @Activate
@@ -158,19 +167,16 @@ public class HexabusLifecycle implements Runnable {
                 if (!drivers.containsKey(source)) {
                     logger.debug("New device detected {}", source);
                     drivers.put(source, null);
-
                     for (HexabusLifecycleListener l : listeners) {
                         l.newHexabusDetected(this, source);
                     }
                 }
 
                 HexabusDriver driver = drivers.get(source);
-                if (packet.getPacketType() == PacketType.INFO) {
-                    if (driver != null) {
-                        HexabusInfoPacket infoPacket = (HexabusInfoPacket) packet;
-                        if (infoPacket.getEid() == 2) {
-                            driver.update(infoPacket);
-                        }
+                if (driver != null && packet.getPacketType() == PacketType.INFO) {
+                    HexabusInfoPacket infoPacket = (HexabusInfoPacket) packet;
+                    if (infoPacket.getEid() == 2) {
+                        driver.update(infoPacket);
                     }
                 }
             } catch (IOException ex) {
