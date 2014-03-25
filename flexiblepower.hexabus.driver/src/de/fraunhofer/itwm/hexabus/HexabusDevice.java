@@ -112,8 +112,7 @@ public class HexabusDevice {
             for (int i = 1; i < 32; i++) {
                 if (((reply >>> (i - 1)) & 1) != 0) {
                     HexabusEndpointQueryPacket epquery = new HexabusEndpointQueryPacket(i + eidOffset);
-                    sendPacket(epquery);
-                    HexabusPacket packet = hexabus.receivePacket();
+                    HexabusPacket packet = query(epquery);
 
                     switch (packet.getPacketType()) {
                     case ERROR:
@@ -154,6 +153,26 @@ public class HexabusDevice {
 
     public void sendPacket(HexabusPacket packet) throws IOException {
         hexabus.sendPacket(packet, address, port);
+    }
+
+    public HexabusPacket query(HexabusPacket packet) throws IOException {
+        HexabusPacket receivedPacket = null;
+        int tried = 0;
+        while (receivedPacket == null && tried < 6) {
+            sendPacket(packet);
+            try {
+                receivedPacket = hexabus.receivePacket(address);
+            } catch (IllegalStateException ex) {
+                // Missed the response, just try again
+            }
+            tried++;
+        }
+
+        if (receivedPacket == null) {
+            throw new IOException("Never got a response to the query [" + packet + "]");
+        } else {
+            return receivedPacket;
+        }
     }
 
     public HexabusPacket receivePacket() throws IOException {

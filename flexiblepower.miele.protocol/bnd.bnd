@@ -1,14 +1,6 @@
--buildpath: ${default-buildpath}
-
-Bundle-Version: 1.0.0.${qualifier}
-Export-Package: \
-	org.flexiblepower.miele.protocol,\
-	org.flexiblepower.miele.protocol.constants,\
-	org.flexiblepower.miele.protocol.messages
-Private-Package: \
-	org.flexiblepower.miele.protocol.configuration,\
-	org.flexiblepower.miele.protocol.http,\
-	org.flexiblepower.miele.protocol.impl,\
-	org.flexiblepower.miele.protocol.utils,\
-	org.flexiblepower.miele.protocol.xml
-Service-Component: org.flexiblepower.miele.protocol.impl.*
+-buildpath: ${default-buildpath},\
+	junit.osgi
+Private-Package: org.flexiblepower.protocol.mielegateway,\
+	org.flexiblepower.protocol.mielegateway.xml
+Export-Package: org.flexiblepower.protocol.mielegateway.api
+Bundle-Version: 2.0.0.${qualifier}

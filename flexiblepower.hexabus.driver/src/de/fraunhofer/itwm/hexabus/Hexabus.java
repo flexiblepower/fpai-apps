@@ -115,13 +115,13 @@ public class Hexabus implements Closeable {
         return receivePacket(null);
     }
 
-    public HexabusPacket receivePacket(InetAddress from) throws IOException {
+    public HexabusPacket receivePacket(InetAddress from, int... expectedType) throws IOException {
         try {
             if (from != null) {
                 if (!receivedPackets.containsKey(from)) {
                     receivedPackets.put(from, new ArrayBlockingQueue<HexabusPacket>(32));
                 }
-                HexabusPacket packet = receivedPackets.get(from).poll(10, TimeUnit.SECONDS);
+                HexabusPacket packet = receivedPackets.get(from).poll(30, TimeUnit.SECONDS);
                 if (packet != null) {
                     allReceivedPackets.remove(packet);
                     return packet;
@@ -129,7 +129,7 @@ public class Hexabus implements Closeable {
                     throw new NoResponseException("No response within 10 seconds.");
                 }
             } else {
-                HexabusPacket packet = allReceivedPackets.poll(10, TimeUnit.SECONDS);
+                HexabusPacket packet = allReceivedPackets.poll(30, TimeUnit.SECONDS);
                 if (packet != null) {
                     receivedPackets.get(packet.getSourceAddress()).remove(packet);
                     return packet;

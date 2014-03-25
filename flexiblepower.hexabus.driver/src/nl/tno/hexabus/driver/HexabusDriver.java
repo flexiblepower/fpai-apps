@@ -110,18 +110,32 @@ public class HexabusDriver extends AbstractResourceDriver<HexabusState, HexabusC
             InetAddress address = InetAddress.getByName(config.inet_address());
             dev = new HexabusDevice(hexabus, address, config.port());
             logger.debug("Started device {}, fetching endpoints", address);
-            logger.debug("Started device {}, got endpoints {}", address, dev.fetchEndpoints());
-
-            switchEndpoint = dev.getByEid(1);
-            if (switchEndpoint.getDataType() != DataType.BOOL) {
-                logger.warn("Expected a switch endpoint at address 1, but it wasn't");
-                switchEndpoint = null;
+            try {
+                logger.debug("Started device {}, got endpoints {}", address, dev.fetchEndpoints());
+            } catch (IOException ex) {
+                logger.warn("Could not fetch endpoints for device{}", address);
             }
 
-            loadEndpoint = dev.getByEid(2);
-            if (loadEndpoint.getDataType() != DataType.UINT32) {
-                logger.warn("Expected a switch endpoint at address 2, but it wasn't");
-                loadEndpoint = null;
+            try {
+                switchEndpoint = dev.getByEid(1);
+                if (switchEndpoint.getDataType() != DataType.BOOL) {
+                    logger.warn("Expected a switch endpoint at address 1, but it wasn't");
+                    switchEndpoint = null;
+                }
+            } catch (IllegalArgumentException ex) {
+                logger.warn("Expected a switch endpoint at address 1, but there was nothing");
+                dev.addEndpoint(1, DataType.BOOL);
+            }
+
+            try {
+                loadEndpoint = dev.getByEid(2);
+                if (loadEndpoint.getDataType() != DataType.UINT32) {
+                    logger.warn("Expected a switch endpoint at address 2, but it wasn't");
+                    loadEndpoint = dev.addEndpoint(2, DataType.UINT32);
+                }
+            } catch (IllegalArgumentException ex) {
+                logger.warn("Expected a switch endpoint at address 2, but there was nothing");
+                dev.addEndpoint(2, DataType.UINT32);
             }
 
             schedule = scheduler.scheduleAtFixedRate(new Runnable() {
@@ -141,9 +155,6 @@ public class HexabusDriver extends AbstractResourceDriver<HexabusState, HexabusC
         } catch (UnknownHostException e) {
             logger.error("The given address is not a valid address: " + e.getMessage());
             throw new IllegalArgumentException("The given address is not a valid address: " + e.getMessage());
-        } catch (IOException e) {
-            logger.error("Could not read the remote endpoints: " + e.getMessage());
-            throw new IllegalStateException("Could not read the remote endpoints: " + e.getMessage(), e);
         }
     }
 

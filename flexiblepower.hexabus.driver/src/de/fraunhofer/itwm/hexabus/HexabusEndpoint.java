@@ -102,9 +102,7 @@ public class HexabusEndpoint {
             throw new IllegalArgumentException("Wrong data type. " + dataType + " expected.");
         }
         HexabusPacket packet = new HexabusQueryPacket(eid);
-        device.sendPacket(packet);
-        // Receive reply
-        packet = device.receivePacket();
+        packet = device.query(packet);
         switch (packet.getPacketType()) {
         case ERROR:
             throw new IllegalArgumentException("Error packet received: " + ((HexabusErrorPacket) packet).getErrorCode());
@@ -120,9 +118,7 @@ public class HexabusEndpoint {
             throw new IllegalArgumentException("Wrong data type. " + dataType + " expected");
         }
         HexabusPacket packet = new HexabusQueryPacket(eid);
-        device.sendPacket(packet);
-        // Receive reply
-        packet = device.receivePacket();
+        packet = device.query(packet);
         switch (packet.getPacketType()) {
         case ERROR:
             throw new IllegalArgumentException("Error packet received: " + ((HexabusErrorPacket) packet).getErrorCode());
@@ -138,9 +134,7 @@ public class HexabusEndpoint {
             throw new IllegalArgumentException("Wrong data type. " + dataType + " expected");
         }
         HexabusPacket packet = new HexabusQueryPacket(eid);
-        device.sendPacket(packet);
-        // Receive reply
-        packet = device.receivePacket();
+        packet = device.query(packet);
         switch (packet.getPacketType()) {
         case ERROR:
             throw new IllegalArgumentException("Error packet received: " + ((HexabusErrorPacket) packet).getErrorCode());
@@ -156,9 +150,7 @@ public class HexabusEndpoint {
             throw new IllegalArgumentException("Wrong data type. " + dataType + " expected");
         }
         HexabusPacket packet = new HexabusQueryPacket(eid);
-        device.sendPacket(packet);
-        // Receive reply
-        packet = device.receivePacket();
+        packet = device.query(packet);
         switch (packet.getPacketType()) {
         case ERROR:
             throw new IllegalArgumentException("Error packet received: " + ((HexabusErrorPacket) packet).getErrorCode());
@@ -174,9 +166,7 @@ public class HexabusEndpoint {
             throw new IllegalArgumentException("Wrong data type. " + dataType + " expected");
         }
         HexabusPacket packet = new HexabusQueryPacket(eid);
-        device.sendPacket(packet);
-        // Receive reply
-        packet = device.receivePacket();
+        packet = device.query(packet);
         switch (packet.getPacketType()) {
         case ERROR:
             throw new IllegalArgumentException("Error packet received: " + ((HexabusErrorPacket) packet).getErrorCode());
@@ -192,9 +182,7 @@ public class HexabusEndpoint {
             throw new IllegalArgumentException("Wrong data type. " + dataType + " expected");
         }
         HexabusPacket packet = new HexabusQueryPacket(eid);
-        device.sendPacket(packet);
-        // Receive reply
-        packet = device.receivePacket();
+        packet = device.query(packet);
         switch (packet.getPacketType()) {
         case ERROR:
             throw new IllegalArgumentException("Error packet received: " + ((HexabusErrorPacket) packet).getErrorCode());

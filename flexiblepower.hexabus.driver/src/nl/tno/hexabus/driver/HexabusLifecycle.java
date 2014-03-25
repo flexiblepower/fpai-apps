@@ -97,7 +97,8 @@ public class HexabusLifecycle implements Runnable {
                 NetworkInterface iface = null;
                 while (interfaces.hasMoreElements()) {
                     iface = interfaces.nextElement();
-                    if (iface.getDisplayName().contains("HEXABUS")) {
+                    logger.debug("Testing interface with name {}", iface.getDisplayName());
+                    if (iface.getDisplayName().contains("HEXABUS") || iface.getDisplayName().contains("usb")) {
                         logger.debug("Using interface {}", iface);
                         break;
                     }
