@@ -29,9 +29,6 @@ angular.module('hexabusApp', [])
 		}])
 	.controller('HexabusCtrl', ['$scope', '$timeout', 'pollingService', 
 		function($scope, $timeout, pollingService) {
-			$scope.detectedDevices = [];
-			pollingService.start($scope, 'detectedDevices', 'getNewAdresses');
-
-			$scope.onlineDevices = [];
-			pollingService.start($scope, 'onlineDevices', 'getDevices');
+			$scope.devices = [];
+			pollingService.start($scope, 'devices', 'getInfo');
 		}]);

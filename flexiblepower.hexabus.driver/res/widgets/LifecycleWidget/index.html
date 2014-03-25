@@ -1,8 +1,15 @@
+<script type="text/javascript" src="angular.min.js"></script>
 <link rel="stylesheet" href="style.css" />
-<div id="hexabus" class="center dashboard">
+<div id="hexabus" class="center dashboard" ng-app="hexabusApp">
+<div ng-controller="HexabusCtrl">
 	<h1>Newly detected devices</h1>
 	<div id="detecteddevices">
-		<p>None detected so far</p>
+		<p ng-repeat="device in detectedDevices">{{device}}</p>
+	</div>
+	<h1>Devices that are online</h1>
+	<div id="devices">
+		<p ng-repeat="device in onlineDevices">{{device.name}} is on {{device.address}}</p>
 	</div>
 	<script type="text/javascript" src="script.js"></script>
+</div>
 </div>

@@ -1,0 +1,18 @@
+#hexabus {
+	position: absolute;
+	top: 13em;
+	left: 1em;
+	right: 1em;
+	padding: 1em;
+	background: white;
+	min-height: 60%;
+}
+h1 {
+	font-size: 150%;
+}
+
+#icon {
+	position: absolute;
+	bottom: 0;
+	right: 1em;
+}

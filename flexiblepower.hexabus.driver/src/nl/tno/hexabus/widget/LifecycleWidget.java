@@ -63,7 +63,7 @@ public class LifecycleWidget implements Widget {
     public Collection<String> getNewAdresses() {
         List<String> result = new ArrayList<String>();
         for (InetAddress address : lifecycle.getNewAddresses()) {
-            result.add(address.toString());
+            result.add(address.getHostAddress());
         }
         return result;
     }

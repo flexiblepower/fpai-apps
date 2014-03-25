@@ -13,10 +13,12 @@ import nl.tno.hexabus.api.HexabusState;
 import nl.tno.hexabus.driver.HexabusDriver.Config;
 
 import org.flexiblepower.observation.Observation;
+import org.flexiblepower.observation.ext.ObservationProviderRegistrationHelper;
 import org.flexiblepower.ral.ResourceDriver;
 import org.flexiblepower.ral.ext.AbstractResourceDriver;
 import org.flexiblepower.time.TimeService;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +34,7 @@ import de.fraunhofer.itwm.hexabus.HexabusDevice;
 import de.fraunhofer.itwm.hexabus.HexabusEndpoint;
 import de.fraunhofer.itwm.hexabus.HexabusInfoPacket;
 
-@Component(designateFactory = Config.class, provide = ResourceDriver.class, immediate = true)
+@Component(designateFactory = Config.class, provide = {}, immediate = true)
 public class HexabusDriver extends AbstractResourceDriver<HexabusState, HexabusControlParameters> {
     private static final Logger log = LoggerFactory.getLogger(HexabusDriver.class);
 
@@ -132,6 +134,10 @@ public class HexabusDriver extends AbstractResourceDriver<HexabusState, HexabusC
                     }
                 }
             }, 0, 10, TimeUnit.SECONDS);
+
+            serviceRegistration = new ObservationProviderRegistrationHelper(this).observationType(State.class)
+                                                                                 .register(ResourceDriver.class,
+                                                                                           HexabusDriver.class);
         } catch (UnknownHostException e) {
             logger.error("The given address is not a valid address: " + e.getMessage());
             throw new IllegalArgumentException("The given address is not a valid address: " + e.getMessage());
@@ -143,6 +149,7 @@ public class HexabusDriver extends AbstractResourceDriver<HexabusState, HexabusC
 
     @Deactivate
     public void deactivate() {
+        serviceRegistration.unregister();
         schedule.cancel(false);
     }
 
@@ -157,6 +164,7 @@ public class HexabusDriver extends AbstractResourceDriver<HexabusState, HexabusC
 
     private long currentPower;
     private boolean switchedOn;
+    private ServiceRegistration<?> serviceRegistration;
 
     public long getCurrentPower() {
         return currentPower;
