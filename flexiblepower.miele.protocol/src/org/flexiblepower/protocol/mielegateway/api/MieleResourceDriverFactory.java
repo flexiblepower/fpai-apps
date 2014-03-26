@@ -21,18 +21,19 @@ public abstract class MieleResourceDriverFactory<RS extends ResourceState, RCP e
 
 	public abstract boolean canHandleType(String type);
 
-	public abstract D create();
+	public abstract D create(ActionPerformer actionPerformer);
 
-	public final synchronized D create(String name) {
+	public final synchronized D create(String name,
+			ActionPerformer actionPerformer) {
 		if (!registrations.containsKey(name)) {
-			D driver = create();
+			D driver = create(actionPerformer);
 
 			ObservationProviderRegistrationHelper helper = new ObservationProviderRegistrationHelper(
-					this);
+					driver);
 			ServiceRegistration<?> registration = helper.observationOf(name)
 					.observedBy(driver.getClass().getName())
 					.observationType(observationClass)
-					.setProperty("resource.id", name)
+					.setProperty("resourceId", name)
 					.register(ResourceDriver.class);
 
 			registrations.put(name, registration);

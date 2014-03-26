@@ -15,6 +15,8 @@ import org.flexiblepower.protocol.mielegateway.api.MieleResourceDriverFactory;
 import org.flexiblepower.protocol.mielegateway.xml.Device;
 import org.flexiblepower.protocol.mielegateway.xml.XMLUtil;
 import org.osgi.framework.BundleContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 
 import aQute.bnd.annotation.component.Activate;
@@ -34,6 +36,9 @@ public class MieleProtocolHandler implements Runnable {
 		@Meta.AD(deflt = "10", description = "The time in seconds between polls")
 		public int pollingTime();
 	}
+
+	private static final Logger log = LoggerFactory
+			.getLogger(MieleProtocolHandler.class);
 
 	private ScheduledExecutorService executorService;
 
@@ -73,41 +78,54 @@ public class MieleProtocolHandler implements Runnable {
 	public void deactivate() {
 	}
 
-	private final Map<String, MieleResourceDriver<?, ?>> drivers = new HashMap<String, MieleResourceDriver<?, ?>>();
+	private final Map<String, MieleResourceDriverWrapper> wrappers = new HashMap<String, MieleResourceDriverWrapper>();
 
 	@Override
 	public void run() {
 		Document document = XMLUtil.get().parseXml(homebusURL);
 		if (document != null) {
-			List<Device> devices = Device.parseDevices(document
+			List<Device> devicesResult = Device.parseDevices(document
 					.getDocumentElement());
 
-			for (Device device : devices) {
-				if (device.getName() != null) {
-					if (!drivers.containsKey(device.getName())) {
+			log.debug("Received devices: {}", devicesResult);
+
+			for (Device deviceResult : devicesResult) {
+				if (deviceResult.getName() != null) {
+					if (!wrappers.containsKey(deviceResult.getName())) {
 						for (MieleResourceDriverFactory<?, ?, MieleResourceDriver<?, ?>> factory : factories) {
-							if (factory.canHandleType(device.getName())) {
+							if (factory.canHandleType(deviceResult.getType())) {
+								MieleResourceDriverWrapper wrapper = new MieleResourceDriverWrapper();
 								MieleResourceDriver<?, ?> driver = factory
-										.create(device.getName());
-								drivers.put(device.getName(), driver);
+										.create(deviceResult.getName(), wrapper);
+								wrapper.setDriver(driver);
+								wrappers.put(deviceResult.getName(), wrapper);
+
+								log.info("Created driver for {}",
+										deviceResult.getName());
 								break;
 							}
 						}
 					}
 				}
 
-				MieleResourceDriver<?, ?> driver = drivers
-						.get(device.getName());
-				if (driver != null
-						&& device.getActions().containsKey("Details")) {
+				MieleResourceDriverWrapper wrapper = wrappers.get(deviceResult
+						.getName());
+				if (wrapper != null
+						&& deviceResult.getActions().containsKey("Details")) {
 					Document detailDoc = XMLUtil.get().parseXml(
-							device.getActions().get("Details"));
+							deviceResult.getActions().get("Details"));
 					if (detailDoc != null) {
 						Device detailDevice = Device.parseDevice(detailDoc
 								.getDocumentElement());
-						driver.updateState(detailDevice.getInformation(),
+						log.debug("Got info for {}: {}",
+								deviceResult.getName(), detailDevice);
+						wrapper.updateState(detailDevice.getInformation(),
 								detailDevice.getActions());
 					}
+				} else {
+					log.warn(
+							"Got a device for which there is no driver available. (Name={}, Type={})",
+							deviceResult.getName(), deviceResult.getType());
 				}
 			}
 		}

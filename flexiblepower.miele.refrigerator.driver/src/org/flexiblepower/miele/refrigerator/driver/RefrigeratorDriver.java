@@ -8,12 +8,11 @@ import javax.measure.quantity.Temperature;
 import javax.measure.unit.SI;
 
 import org.flexiblepower.observation.Observation;
+import org.flexiblepower.protocol.mielegateway.api.ActionPerformer;
 import org.flexiblepower.protocol.mielegateway.api.MieleResourceDriver;
 import org.flexiblepower.ral.drivers.refrigerator.RefrigeratorControlParameters;
 import org.flexiblepower.ral.drivers.refrigerator.RefrigeratorState;
 import org.flexiblepower.time.TimeService;
-
-import aQute.bnd.annotation.component.Reference;
 
 public class RefrigeratorDriver extends MieleResourceDriver<RefrigeratorState, RefrigeratorControlParameters> implements
                                                                                                              org.flexiblepower.ral.drivers.refrigerator.RefrigeratorDriver {
@@ -66,11 +65,8 @@ public class RefrigeratorDriver extends MieleResourceDriver<RefrigeratorState, R
         }
     }
 
-    private TimeService timeService;
-
-    @Reference
-    public void setTimeService(TimeService timeService) {
-        this.timeService = timeService;
+    public RefrigeratorDriver(ActionPerformer actionPerformer, TimeService timeService) {
+        super(actionPerformer, timeService);
     }
 
     @Override

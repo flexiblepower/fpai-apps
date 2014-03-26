@@ -9,16 +9,15 @@ import java.util.Map;
 import javax.measure.Measure;
 
 import org.flexiblepower.observation.Observation;
+import org.flexiblepower.protocol.mielegateway.api.ActionPerformer;
+import org.flexiblepower.protocol.mielegateway.api.ActionResult;
 import org.flexiblepower.protocol.mielegateway.api.MieleResourceDriver;
-import org.flexiblepower.protocol.mielegateway.xml.ActionResult;
 import org.flexiblepower.rai.values.EnergyProfile;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherControlParameters;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherState;
 import org.flexiblepower.time.TimeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import aQute.bnd.annotation.component.Reference;
 
 public class DishwasherDriver extends MieleResourceDriver<DishwasherState, DishwasherControlParameters> implements
                                                                                                        org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver {
@@ -60,13 +59,11 @@ public class DishwasherDriver extends MieleResourceDriver<DishwasherState, Dishw
         public EnergyProfile getEnergyProfile() {
             return EnergyProfile.create().add(Measure.valueOf(1, HOUR), Measure.valueOf(1, KWH)).build();
         }
+
     }
 
-    private TimeService timeService;
-
-    @Reference
-    public void setTimeService(TimeService timeService) {
-        this.timeService = timeService;
+    public DishwasherDriver(ActionPerformer actionPerformer, TimeService timeService) {
+        super(actionPerformer, timeService);
     }
 
     @Override

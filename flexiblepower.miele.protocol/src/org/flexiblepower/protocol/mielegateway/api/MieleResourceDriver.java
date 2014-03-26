@@ -1,23 +1,18 @@
 package org.flexiblepower.protocol.mielegateway.api;
 
-import java.net.URL;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
-import java.util.Set;
 
 import javax.measure.Measurable;
 import javax.measure.Measure;
 import javax.measure.quantity.Temperature;
 import javax.measure.unit.SI;
 
-import org.flexiblepower.protocol.mielegateway.xml.ActionResult;
-import org.flexiblepower.protocol.mielegateway.xml.XMLUtil;
 import org.flexiblepower.ral.ResourceControlParameters;
 import org.flexiblepower.ral.ResourceState;
 import org.flexiblepower.ral.ext.AbstractResourceDriver;
-import org.w3c.dom.Document;
+import org.flexiblepower.time.TimeService;
 
 public abstract class MieleResourceDriver<RS extends ResourceState, RCP extends ResourceControlParameters>
 		extends AbstractResourceDriver<RS, RCP> {
@@ -75,36 +70,18 @@ public abstract class MieleResourceDriver<RS extends ResourceState, RCP extends 
 		return null;
 	}
 
-	public final void updateState(Map<String, String> information,
-			Map<String, URL> actions) {
-		this.actions = actions; // Cache the actions;
-		updateState(information);
+	private final ActionPerformer actionPerformer;
+	protected final TimeService timeService;
+
+	public MieleResourceDriver(ActionPerformer actionPerformer,
+			TimeService timeService) {
+		this.actionPerformer = actionPerformer;
+		this.timeService = timeService;
 	}
 
 	public abstract void updateState(Map<String, String> information);
 
-	private Map<String, URL> actions = Collections.emptyMap();
-
-	public final Set<String> getActiveActions() {
-		return actions.keySet();
-	}
-
 	public final ActionResult performAction(String action) {
-		ActionResult result = null;
-		URL url = actions.get(action);
-		if (url != null) {
-			Document document = XMLUtil.get().parseXml(url);
-			if (document != null) {
-				result = ActionResult.parse(document.getDocumentElement());
-			}
-		}
-
-		if (result != null) {
-			return result;
-		} else {
-			return new ActionResult(false,
-					"Action could not be performed, see logs for more info",
-					"Missing action");
-		}
+		return actionPerformer.performAction(action);
 	}
 }

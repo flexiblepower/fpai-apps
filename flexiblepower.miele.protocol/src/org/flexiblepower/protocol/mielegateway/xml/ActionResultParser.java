@@ -1,16 +1,23 @@
 package org.flexiblepower.protocol.mielegateway.xml;
 
+import org.flexiblepower.protocol.mielegateway.api.ActionResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-public class ActionResult {
+public class ActionResultParser {
 	private static final Logger log = LoggerFactory
-			.getLogger(ActionResult.class);
+			.getLogger(ActionResultParser.class);
 
-	public static ActionResult parse(Element element) {
+	private static final ActionResultParser instance = new ActionResultParser();
+
+	public static final ActionResultParser get() {
+		return instance;
+	}
+
+	public ActionResult parse(Element element) {
 		boolean isOk;
 		if ("ok".equals(element.getNodeName())) {
 			isOk = true;
@@ -41,33 +48,5 @@ public class ActionResult {
 		} else {
 			return new ActionResult(isOk, message, type);
 		}
-	}
-
-	private final boolean isOk;
-	private final String message;
-	private final String errorType;
-
-	public ActionResult(boolean isOk, String message, String errorType) {
-		this.isOk = isOk;
-		this.message = message;
-		this.errorType = errorType;
-	}
-
-	public String getErrorType() {
-		return errorType;
-	}
-
-	public String getMessage() {
-		return message;
-	}
-
-	public boolean isOk() {
-		return isOk;
-	}
-
-	@Override
-	public String toString() {
-		return "ActionResult [" + (isOk ? "ok" : "error") + ": " + message
-				+ (errorType == null ? "" : " (" + errorType + ")") + "]";
 	}
 }
