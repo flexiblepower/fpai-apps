@@ -39,7 +39,7 @@ public class RefrigeratorWidget implements Widget {
         }
     }
 
-    private static final String TEMP = "%2.1f C";
+    private static final String TEMP = "%2.1f °C";
 
     private final MieleRefrigeratorManager fridge;
 
