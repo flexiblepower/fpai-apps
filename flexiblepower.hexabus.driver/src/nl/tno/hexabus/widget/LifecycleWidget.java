@@ -82,7 +82,7 @@ public class LifecycleWidget implements Widget {
             Dictionary<String, Object> properties = new Hashtable<String, Object>();
             properties.put("inet.address", desc.getAddress());
             properties.put("port", 61616);
-            properties.put("resource.id", desc.getName());
+            properties.put("resourceId", desc.getName());
             config.update(properties);
         } catch (IOException ex) {
             log.error("Couldn't create config for the HexabusDriver, I/O error", ex);

@@ -48,7 +48,7 @@ public class HexabusDriver extends AbstractResourceDriver<HexabusState, HexabusC
 
         @Meta.AD(description = "The resourceId as needed for the FPAI framework to be wired to an energy app",
                  deflt = "hexabus1")
-        String resource_id();
+        String resourceId();
     }
 
     static class State implements HexabusState {
@@ -106,7 +106,7 @@ public class HexabusDriver extends AbstractResourceDriver<HexabusState, HexabusC
     public void activate(BundleContext context, Map<String, ?> properties) {
         Config config = Configurable.createConfigurable(Config.class, properties);
         try {
-            logger = LoggerFactory.getLogger(HexabusDriver.class + "." + config.resource_id());
+            logger = LoggerFactory.getLogger(HexabusDriver.class + "." + config.resourceId());
             InetAddress address = InetAddress.getByName(config.inet_address());
             dev = new HexabusDevice(hexabus, address, config.port());
             logger.debug("Started device {}, fetching endpoints", address);
@@ -149,9 +149,12 @@ public class HexabusDriver extends AbstractResourceDriver<HexabusState, HexabusC
                 }
             }, 0, 10, TimeUnit.SECONDS);
 
-            serviceRegistration = new ObservationProviderRegistrationHelper(this).observationType(State.class)
-                                                                                 .register(ResourceDriver.class,
-                                                                                           HexabusDriver.class);
+            ObservationProviderRegistrationHelper helper = new ObservationProviderRegistrationHelper(this);
+            serviceRegistration = helper.observationType(State.class)
+                                        .observationOf(config.inet_address())
+                                        .observedBy(HexabusDriver.class.getName())
+                                        .setProperty("resourceId", config.resourceId())
+                                        .register(ResourceDriver.class, HexabusDriver.class);
         } catch (UnknownHostException e) {
             logger.error("The given address is not a valid address: " + e.getMessage());
             throw new IllegalArgumentException("The given address is not a valid address: " + e.getMessage());

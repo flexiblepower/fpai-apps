@@ -16,19 +16,20 @@ import aQute.bnd.annotation.component.Reference;
 
 @Component
 public class HexabusWidget implements Widget {
+    private static final String RESOURCE_ID = "resourceId";
     private final Map<String, HexabusDriver> drivers = new HashMap<String, HexabusDriver>();
 
     @Reference(multiple = true, dynamic = true)
     public void addDriver(HexabusDriver driver, Map<String, Object> properties) {
-        if (properties.containsKey("resource.id")) {
-            String id = properties.get("resource.id").toString();
+        if (properties.containsKey(RESOURCE_ID)) {
+            String id = properties.get(RESOURCE_ID).toString();
             drivers.put(id, driver);
         }
     }
 
     public void removeDriver(HexabusDriver driver, Map<String, Object> properties) {
-        if (properties.containsKey("resource.id")) {
-            String id = properties.get("resource.id").toString();
+        if (properties.containsKey(RESOURCE_ID)) {
+            String id = properties.get(RESOURCE_ID).toString();
             drivers.remove(id);
         }
     }
