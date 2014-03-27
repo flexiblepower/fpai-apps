@@ -1,0 +1,10 @@
+#loading {
+	position: absolute;
+	left: 45%;
+	top: 40%;
+}
+
+p {
+	height: 1.2em;
+	display: none;
+}
