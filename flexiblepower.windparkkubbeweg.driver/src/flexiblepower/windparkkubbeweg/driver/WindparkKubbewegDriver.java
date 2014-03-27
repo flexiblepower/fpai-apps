@@ -20,9 +20,8 @@ import javax.measure.unit.SI;
 import org.flexiblepower.observation.Observation;
 import org.flexiblepower.observation.ext.ObservationProviderRegistrationHelper;
 import org.flexiblepower.ral.ResourceDriver;
-import org.flexiblepower.ral.drivers.uncontrolled.UncontrolledControlParameters;
 import org.flexiblepower.ral.drivers.uncontrolled.UncontrolledState;
-import org.flexiblepower.ral.ext.AbstractResourceDriver;
+import org.flexiblepower.ral.ext.UncontrolledResourceDriver;
 import org.flexiblepower.time.TimeService;
 import org.osgi.framework.ServiceRegistration;
 import org.slf4j.Logger;
@@ -40,8 +39,7 @@ import flexiblepower.windparkkubbeweg.driver.WindparkKubbewegDriver.Config;
  * Virtual windmill based on real data from www.windparkkubbeweg.nl. Production gets updated every minute.
  */
 @Component(designateFactory = Config.class, provide = ResourceDriver.class, immediate = true)
-public class WindparkKubbewegDriver extends AbstractResourceDriver<UncontrolledState, UncontrolledControlParameters> implements
-                                                                                                                    Runnable {
+public class WindparkKubbewegDriver extends UncontrolledResourceDriver<UncontrolledState> implements Runnable {
     public interface Config {
         @Meta.AD(description = "The url of the page with the windmills",
                  deflt = "http://www.windparkkubbeweg.nl/molens.php")
@@ -51,7 +49,7 @@ public class WindparkKubbewegDriver extends AbstractResourceDriver<UncontrolledS
                  deflt = "windmill")
         String resourceId();
 
-        @Meta.AD(description = "The factor to multiply the production of the windmill with", deflt = "0.01")
+        @Meta.AD(description = "The factor to multiply the production of the windmill with", deflt = "0.001")
         double factor();
     }
 
@@ -148,11 +146,6 @@ public class WindparkKubbewegDriver extends AbstractResourceDriver<UncontrolledS
         } catch (Exception e) {
             logger.warn("Error while retrieving data", e);
         }
-    }
-
-    @Override
-    public void setControlParameters(UncontrolledControlParameters resourceControlParameters) {
-        // nothing to control
     }
 
 }
