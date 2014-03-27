@@ -13,42 +13,38 @@ import org.flexiblepower.protocol.mielegateway.xml.XMLUtil;
 import org.w3c.dom.Document;
 
 public class MieleResourceDriverWrapper implements ActionPerformer {
-	private MieleResourceDriver<?, ?> driver;
+    private MieleResourceDriver<?, ?> driver;
 
-	public void setDriver(MieleResourceDriver<?, ?> driver) {
-		this.driver = driver;
-	}
+    public void setDriver(MieleResourceDriver<?, ?> driver) {
+        this.driver = driver;
+    }
 
-	public final void updateState(Map<String, String> information,
-			Map<String, URL> actions) {
-		this.actions = actions; // Cache the actions;
-		driver.updateState(information);
-	}
+    public final void updateState(Map<String, String> information, Map<String, URL> actions) {
+        this.actions = actions; // Cache the actions;
+        driver.updateState(information);
+    }
 
-	private Map<String, URL> actions = Collections.emptyMap();
+    private Map<String, URL> actions = Collections.emptyMap();
 
-	public final Set<String> getActiveActions() {
-		return actions.keySet();
-	}
+    public final Set<String> getActiveActions() {
+        return actions.keySet();
+    }
 
-	@Override
-	public ActionResult performAction(String action) {
-		ActionResult result = null;
-		URL url = actions.get(action);
-		if (url != null) {
-			Document document = XMLUtil.get().parseXml(url);
-			if (document != null) {
-				result = ActionResultParser.get().parse(
-						document.getDocumentElement());
-			}
-		}
+    @Override
+    public ActionResult performAction(String action) {
+        ActionResult result = null;
+        URL url = actions.get(action);
+        if (url != null) {
+            Document document = XMLUtil.get().parseXml(url);
+            if (document != null) {
+                result = ActionResultParser.get().parse(document.getDocumentElement());
+            }
+        }
 
-		if (result != null) {
-			return result;
-		} else {
-			return new ActionResult(false,
-					"Action could not be performed, see logs for more info",
-					"Missing action");
-		}
-	}
+        if (result != null) {
+            return result;
+        } else {
+            return new ActionResult(false, "Action could not be performed, see logs for more info", "Missing action");
+        }
+    }
 }

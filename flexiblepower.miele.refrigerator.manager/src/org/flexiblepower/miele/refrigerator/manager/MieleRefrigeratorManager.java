@@ -100,6 +100,7 @@ public class MieleRefrigeratorManager extends
 
         // Calculate state of charge
         double stateOfCharge = (maxTemp - curTemp) / (maxTemp - minTemp);
+        stateOfCharge = Math.max(0, Math.min(1, stateOfCharge));
 
         // Create control space
         Measurable<Energy> totalCapacity = Measure.valueOf(10, KILO(JOULE));
