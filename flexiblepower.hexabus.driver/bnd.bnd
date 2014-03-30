@@ -6,5 +6,8 @@ Export-Package: nl.tno.hexabus.api
 Private-Package: \
 	nl.tno.hexabus.driver,\
 	nl.tno.hexabus.widget,\
-	de.fraunhofer.itwm.hexabus
+	nl.tno.hexabus.protocol
 Service-Component: *
+
+#Main-Class: nl.tno.hexabus.protocol.Channel
+#Class-Path: slf4j.api-1.7.5.jar ch.qos.logback.classic-1.0.13.jar ch.qos.logback.core-1.0.13.jar
