@@ -1,6 +1,8 @@
 -buildpath: ${default-buildpath},\
 	junit.osgi
-Private-Package: org.flexiblepower.protocol.mielegateway,\
+Private-Package: \
+	org.flexiblepower.protocol.mielegateway,\
+	org.flexiblepower.protocol.mielegateway.multicast,\
 	org.flexiblepower.protocol.mielegateway.xml
 Export-Package: org.flexiblepower.protocol.mielegateway.api
 Bundle-Version: 2.0.0.${qualifier}
