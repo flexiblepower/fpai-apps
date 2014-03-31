@@ -47,6 +47,7 @@ public class Device {
         }
 
         String name = null, type = null;
+        Integer id = null;
         Map<String, String> information = null;
         Map<String, URL> actions = null;
 
@@ -56,6 +57,8 @@ public class Device {
             if (node.getNodeType() == Node.ELEMENT_NODE) {
                 if (node.getNodeName().equals("name")) {
                     name = node.getTextContent();
+                } else if (node.getNodeName().equals("UID")) {
+                    id = Integer.parseInt(node.getTextContent());
                 } else if (node.getNodeName().equals("type")) {
                     type = node.getTextContent();
                 } else if (node.getNodeName().equals("information")) {
@@ -70,7 +73,7 @@ public class Device {
             log.warn("Missing information or actions for the device with name [{}]", name);
             return null;
         } else {
-            return new Device(name, type, information, actions);
+            return new Device(name, id, type, information, actions);
         }
     }
 
@@ -116,12 +119,14 @@ public class Device {
         return result;
     }
 
+    private final Integer id;
     private final String name, type;
     private final Map<String, String> information;
     private final Map<String, URL> actions;
 
-    public Device(String name, String type, Map<String, String> information, Map<String, URL> actions) {
+    public Device(String name, Integer id, String type, Map<String, String> information, Map<String, URL> actions) {
         this.name = name;
+        this.id = id;
         this.type = type;
         this.information = Collections.unmodifiableMap(information);
         this.actions = Collections.unmodifiableMap(actions);
@@ -129,6 +134,10 @@ public class Device {
 
     public String getName() {
         return name;
+    }
+
+    public Integer getId() {
+        return id;
     }
 
     public String getType() {
@@ -145,6 +154,15 @@ public class Device {
 
     @Override
     public String toString() {
-        return "Device [" + name + " (" + type + ") information=" + information + " actions=" + actions + "]";
+        return "Device [" + name
+               + " ("
+               + type
+               + "."
+               + id
+               + ") information="
+               + information
+               + " actions="
+               + actions
+               + "]";
     }
 }

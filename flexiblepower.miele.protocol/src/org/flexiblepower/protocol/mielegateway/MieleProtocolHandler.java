@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.flexiblepower.protocol.mielegateway.MieleProtocolHandler.Config;
@@ -26,8 +27,10 @@ import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
-@Component(immediate = true, provide = {}, designateFactory = Config.class)
+@Component(immediate = true, provide = MieleProtocolHandler.class, designateFactory = Config.class)
 public class MieleProtocolHandler implements Runnable {
+    private static final Logger log = LoggerFactory.getLogger(MieleProtocolHandler.class);
+
     @Meta.OCD(description = "Protocol handler for the Miele Gateway")
     public static interface Config {
         @Meta.AD(deflt = "miele-gateway.labsgn.tno.nl", description = "The hostname where the gateway can be reached")
@@ -36,8 +39,6 @@ public class MieleProtocolHandler implements Runnable {
         @Meta.AD(deflt = "10", description = "The time in seconds between polls")
         public int pollingTime();
     }
-
-    private static final Logger log = LoggerFactory.getLogger(MieleProtocolHandler.class);
 
     private ScheduledExecutorService executorService;
 
@@ -59,22 +60,32 @@ public class MieleProtocolHandler implements Runnable {
 
     private URL homebusURL;
 
+    private ScheduledFuture<?> future;
+
     @Activate
     public void activate(BundleContext context, Map<String, Object> properties) throws MalformedURLException {
         Config config = Configurable.createConfigurable(MieleProtocolHandler.Config.class, properties);
         homebusURL = new URL("http://" + config.hostname() + "/homebus");
 
-        executorService.scheduleWithFixedDelay(this, 0, config.pollingTime(), TimeUnit.SECONDS);
+        future = executorService.scheduleWithFixedDelay(this, 0, config.pollingTime(), TimeUnit.SECONDS);
     }
 
     @Deactivate
     public void deactivate() {
+        future.cancel(false);
     }
 
-    private final Map<String, MieleResourceDriverWrapper> wrappers = new HashMap<String, MieleResourceDriverWrapper>();
+    private final Map<Integer, MieleResourceDriverWrapper> wrappers = new HashMap<Integer, MieleResourceDriverWrapper>();
+
+    public void handleUpdate(int id, String key, String value) {
+        MieleResourceDriverWrapper wrapper = wrappers.get(id);
+        if (wrapper != null) {
+            updateDriver(wrapper);
+        }
+    }
 
     @Override
-    public void run() {
+    public synchronized void run() {
         Document document = XMLUtil.get().parseXml(homebusURL);
         if (document != null) {
             List<Device> devicesResult = Device.parseDevices(document.getDocumentElement());
@@ -82,35 +93,49 @@ public class MieleProtocolHandler implements Runnable {
             log.debug("Received devices: {}", devicesResult);
 
             for (Device deviceResult : devicesResult) {
-                if (deviceResult.getName() != null) {
-                    if (!wrappers.containsKey(deviceResult.getName())) {
-                        for (MieleResourceDriverFactory<?, ?, MieleResourceDriver<?, ?>> factory : factories) {
-                            if (factory.canHandleType(deviceResult.getType())) {
-                                MieleResourceDriverWrapper wrapper = new MieleResourceDriverWrapper();
-                                MieleResourceDriver<?, ?> driver = factory.create(deviceResult.getName(), wrapper);
-                                wrapper.setDriver(driver);
-                                wrappers.put(deviceResult.getName(), wrapper);
-
-                                log.info("Created driver for {}", deviceResult.getName());
-                                break;
-                            }
-                        }
+                if (deviceResult.getName() != null && deviceResult.getId() != null) {
+                    MieleResourceDriverWrapper wrapper = getWrapper(deviceResult.getId(), deviceResult);
+                    if (wrapper != null) {
+                        updateDriver(wrapper);
+                    } else {
+                        log.warn("Got a device for which there is no driver available. (Name={}, Type={})",
+                                 deviceResult.getName(),
+                                 deviceResult.getType());
                     }
                 }
+            }
+        }
+    }
 
-                MieleResourceDriverWrapper wrapper = wrappers.get(deviceResult.getName());
-                if (wrapper != null && deviceResult.getActions().containsKey("Details")) {
-                    Document detailDoc = XMLUtil.get().parseXml(deviceResult.getActions().get("Details"));
-                    if (detailDoc != null) {
-                        Device detailDevice = Device.parseDevice(detailDoc.getDocumentElement());
-                        log.debug("Got info for {}: {}", deviceResult.getName(), detailDevice);
-                        wrapper.updateState(detailDevice.getInformation(), detailDevice.getActions());
-                    }
-                } else {
-                    log.warn("Got a device for which there is no driver available. (Name={}, Type={})",
-                             deviceResult.getName(),
-                             deviceResult.getType());
+    private MieleResourceDriverWrapper getWrapper(int id, Device deviceResult) {
+        if (!wrappers.containsKey(id) && deviceResult.getActions().containsKey("Details")) {
+            for (MieleResourceDriverFactory<?, ?, MieleResourceDriver<?, ?>> factory : factories) {
+                if (factory.canHandleType(deviceResult.getType())) {
+                    MieleResourceDriverWrapper wrapper = new MieleResourceDriverWrapper();
+                    MieleResourceDriver<?, ?> driver = factory.create(deviceResult.getName(), wrapper);
+                    wrapper.setDriver(driver);
+                    wrapper.setDetailsURL(deviceResult.getActions().get("Details"));
+                    wrappers.put(id, wrapper);
+
+                    log.info("Created driver for {}", deviceResult.getName());
+                    break;
                 }
+            }
+        }
+
+        return wrappers.get(id);
+    }
+
+    private void updateDriver(MieleResourceDriverWrapper wrapper) {
+        Document detailDoc = XMLUtil.get().parseXml(wrapper.getDetailsURL());
+        if (detailDoc != null) {
+            Device detailDevice = Device.parseDevice(detailDoc.getDocumentElement());
+            log.debug("Got device update wrapper={} information={} actions={}",
+                      wrapper,
+                      detailDevice.getInformation(),
+                      detailDevice.getActions());
+            if (detailDevice != null) {
+                wrapper.updateState(detailDevice.getInformation(), detailDevice.getActions());
             }
         }
     }

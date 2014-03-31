@@ -13,7 +13,16 @@ import org.flexiblepower.protocol.mielegateway.xml.XMLUtil;
 import org.w3c.dom.Document;
 
 public class MieleResourceDriverWrapper implements ActionPerformer {
+    private URL detailsURL;
     private MieleResourceDriver<?, ?> driver;
+
+    public URL getDetailsURL() {
+        return detailsURL;
+    }
+
+    public void setDetailsURL(URL detailsURL) {
+        this.detailsURL = detailsURL;
+    }
 
     public void setDriver(MieleResourceDriver<?, ?> driver) {
         this.driver = driver;
@@ -46,5 +55,10 @@ public class MieleResourceDriverWrapper implements ActionPerformer {
         } else {
             return new ActionResult(false, "Action could not be performed, see logs for more info", "Missing action");
         }
+    }
+
+    @Override
+    public String toString() {
+        return driver.getClass().getSimpleName();
     }
 }
