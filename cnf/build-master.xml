@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="fpai-demo" default="build">
+	<property name="project.title" value="FPAI Demonstration" />
+	<property name="targetversion" value="14.04" />
+	<import file="../cnf.shared/build-jenkins.xml" />
+</project>

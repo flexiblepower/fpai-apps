@@ -1,0 +1,4 @@
+-include: cnf.shared/build.bnd
+	
+Bundle-Category: FlexiblePower Application Infrastructure - Demonstration
+qualifier: SNAPSHOT-${tstamp}
