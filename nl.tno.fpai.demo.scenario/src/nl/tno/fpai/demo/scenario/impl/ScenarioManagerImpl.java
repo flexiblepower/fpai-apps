@@ -62,6 +62,7 @@ public class ScenarioManagerImpl implements ScenarioManager {
 
     private final Set<Configuration> configurations = Collections.synchronizedSet(new HashSet<Configuration>());
     private Map<String, Scenario> scenarios;
+    private volatile String status;
 
     @Activate
     public void activate(BundleContext context, Map<String, ?> properties) throws IOException {
@@ -86,6 +87,8 @@ public class ScenarioManagerImpl implements ScenarioManager {
         } finally {
             is.close();
         }
+
+        status = "Loaded scenario's, nothing started";
     }
 
     @Deactivate
@@ -99,26 +102,38 @@ public class ScenarioManagerImpl implements ScenarioManager {
     }
 
     @Override
-    public void startScenario(String name) {
+    public synchronized void startScenario(String name) {
         Scenario scenario = scenarios.get(name);
         if (scenario != null) {
             purgeAll();
             startScenario(scenario);
+            status = "Loaded scenario [" + name + "]";
         }
     }
 
-    private synchronized void purgeAll() {
+    public String getStatus() {
+        return status;
+    }
+
+    private void purgeAll() {
+        int count = 0;
+        status = "Purging old configurations " + count + "/" + configurations.size();
         for (Configuration configuration : configurations) {
             try {
                 configuration.delete();
+                count++;
+                status = "Purging old configurations " + count + "/" + configurations.size();
             } catch (IOException e) {
                 log.warn("Could not delete configuration " + configuration, e);
             }
         }
         configurations.clear();
+        status = "Loaded scenario's, nothing started";
     }
 
     private void startScenario(Scenario scenario) {
+        status = "Starting scenario [" + scenario.getName() + "] ";
+
         Map<String, Set<String>> idMap = new HashMap<String, Set<String>>();
         idMap = new HashMap<String, Set<String>>();
 
@@ -132,8 +147,16 @@ public class ScenarioManagerImpl implements ScenarioManager {
             idMap.put(idSet.getName(), ids);
         }
 
+        int count = 0;
+        status = "Starting scenario [" + scenario.getName() + "] " + count + "/" + scenario.getConfigurations().size();
         for (ScenarioConfiguration config : scenario.getConfigurations()) {
             startConfiguration(config, idMap);
+            count++;
+            status = "Starting scenario [" + scenario.getName()
+                     + "] "
+                     + count
+                     + "/"
+                     + scenario.getConfigurations().size();
         }
     }
 
