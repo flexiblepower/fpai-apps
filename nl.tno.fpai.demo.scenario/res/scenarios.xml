@@ -1,0 +1,40 @@
+<scenarios>
+	<scenario name="Clear">
+	</scenario>
+	
+	<scenario name="Timeshifter">
+		<config bundleId="flexiblepower.pvpanel.simulation" factoryId="org.flexiblepower.pvpanel.simulation.PvSimulation">
+			<resourceId>pvpanel</resourceId>
+			<updateFrequency>5</updateFrequency>
+		</config>
+		
+		<config bundleId="flexiblepower.uncontrolled.manager" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager">
+			<resourceId>pvpanel</resourceId>
+			<expirationTime>10</expirationTime>
+			<showWidget>false</showWidget>
+		</config>
+		
+		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.controller.PMController">
+			<resourceIds>pvpanel</resourceIds>
+			<cluster.id>ExampleCluster</cluster.id>
+			<location.id>ExampleLocation</location.id>
+			<messaging.protocol>INTERNAL_V1</messaging.protocol>
+			<bid.topic.suffix>UpdateBid</bid.topic.suffix>
+			<price.info.topic.suffix>UpdatePriceInfo</price.info.topic.suffix>
+			<broker.uri></broker.uri>
+			<update.interval>1</update.interval>
+			<actioneer.id>actioneer1</actioneer.id>
+		</config>
+		
+		<config bundleId="net.powermatcher.fpai.auctioneer" serviceId="net.powermatcher.fpai.auctioneer.AuctioneerManager">
+			<cluster.id>ExampleCluster</cluster.id>
+			<location.id>ExampleLocation</location.id>
+			<update.interval>1</update.interval>
+			<auctioneer.id>auctioneer1</auctioneer.id>
+			<minimum.price>0</minimum.price>
+			<maximum.price>0.25</maximum.price>
+			<matcher.price.log.level>FULL_LOGGING</matcher.price.log.level>
+			<significance>3</significance>
+		</config>
+	</scenario>
+</scenarios>
