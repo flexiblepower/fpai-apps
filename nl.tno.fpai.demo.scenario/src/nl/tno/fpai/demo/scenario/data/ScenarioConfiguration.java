@@ -14,7 +14,7 @@ public class ScenarioConfiguration {
 
         public Builder() {
             properties = new HashMap<String, String>();
-            type = Type.MULTIPLE;
+            type = null;
         }
 
         public Builder setBundleId(String bundleId) {
@@ -63,7 +63,15 @@ public class ScenarioConfiguration {
     private final Map<String, String> properties;
     private final Type type;
 
-    public ScenarioConfiguration(String bundleId, String id, String idRef, Type type, Map<String, String> properties) {
+    ScenarioConfiguration(String bundleId, String id, String idRef, Type type, Map<String, String> properties) {
+        if (bundleId == null || id == null || type == null || properties == null) {
+            throw new IllegalArgumentException("Missing information for scenario: bundleId=" + bundleId
+                                               + ", id="
+                                               + id
+                                               + ", type="
+                                               + type);
+        }
+
         this.bundleId = bundleId;
         this.id = id;
         this.idRef = idRef;
@@ -106,7 +114,11 @@ public class ScenarioConfiguration {
         } else {
             sb.append("\" serviceId=\"");
         }
-        sb.append(id).append("\" idRef=\"").append(idRef).append("\">\n");
+        sb.append(id).append("\"");
+        if (idRef != null) {
+            sb.append(" idRef=\"").append(idRef).append("\"");
+        }
+        sb.append(">\n");
         for (Entry<String, String> entry : properties.entrySet()) {
             for (int i = 0; i < indent + 1; i++) {
                 sb.append('\t');

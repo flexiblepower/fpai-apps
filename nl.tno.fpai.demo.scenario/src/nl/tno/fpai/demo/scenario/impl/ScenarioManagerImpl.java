@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Vector;
 import java.util.concurrent.atomic.AtomicLong;
 
 import nl.tno.fpai.demo.scenario.ScenarioManager;
@@ -30,6 +31,10 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
+import org.osgi.service.metatype.AttributeDefinition;
+import org.osgi.service.metatype.MetaTypeInformation;
+import org.osgi.service.metatype.MetaTypeService;
+import org.osgi.service.metatype.ObjectClassDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +52,9 @@ import aQute.bnd.annotation.metatype.Meta;
            configurationPolicy = ConfigurationPolicy.optional)
 public class ScenarioManagerImpl implements ScenarioManager {
     public interface Config {
-        @Meta.AD(deflt = "", description = "The file that should be loaded during activation.", required = false)
+        @Meta.AD(deflt = "scenarios.xml",
+                 description = "The file that should be loaded during activation.",
+                 required = false)
         String filename();
     }
 
@@ -60,19 +67,20 @@ public class ScenarioManagerImpl implements ScenarioManager {
         this.configurationAdmin = configurationAdmin;
     }
 
+    private MetaTypeService metatype;
+
+    @Reference
+    public void setMetatype(MetaTypeService metatype) {
+        this.metatype = metatype;
+    }
+
     private final Set<Configuration> configurations = Collections.synchronizedSet(new HashSet<Configuration>());
     private Map<String, Scenario> scenarios;
-    private volatile String status;
 
     @Activate
-    public void activate(BundleContext context, Map<String, ?> properties) throws IOException {
+    public void activate(BundleContext context, Map<String, ?> properties) throws Exception {
         Config config = Configurable.createConfigurable(Config.class, properties);
         String filename = config.filename();
-
-        if (filename == null || filename.isEmpty()) {
-            // No file given, ignore
-            return;
-        }
 
         InputStream is = getClass().getClassLoader().getResourceAsStream(filename);
         if (is == null) {
@@ -81,14 +89,21 @@ public class ScenarioManagerImpl implements ScenarioManager {
 
         try {
             scenarios = ScenarioReader.readScenarios(new InputStreamReader(is));
-        } catch (IOException ex) {
+
+            if (log.isDebugEnabled()) {
+                log.debug("Loaded scenarios");
+                for (Entry<String, Scenario> entry : scenarios.entrySet()) {
+                    log.debug("Loaded scenario [{}]\n{}", entry.getKey(), entry.getValue());
+                }
+            }
+        } catch (Exception ex) {
             log.warn("Could not load scenarios from file [" + filename + "]", ex);
             throw ex;
         } finally {
             is.close();
         }
 
-        status = "Loaded scenario's, nothing started";
+        setStatus("Loaded scenario's, nothing started");
     }
 
     @Deactivate
@@ -107,32 +122,60 @@ public class ScenarioManagerImpl implements ScenarioManager {
         if (scenario != null) {
             purgeAll();
             startScenario(scenario);
-            status = "Loaded scenario [" + name + "]";
+            setStatus("Loaded scenario [" + name + "]");
+        }
+    }
+
+    private volatile String status;
+    private volatile int count, total;
+
+    private void setStatus(int count) {
+        this.count = count;
+
+        if (log.isDebugEnabled()) {
+            log.debug("Status = {}", getStatus());
+        }
+    }
+
+    private void setStatus(String status) {
+        setStatus(status, 0);
+    }
+
+    private void setStatus(String status, int total) {
+        count = 0;
+        this.total = total;
+        this.status = status;
+
+        if (log.isDebugEnabled()) {
+            log.debug("Status = {}", getStatus());
         }
     }
 
     public String getStatus() {
-        return status;
+        if (total <= 0) {
+            return status;
+        } else {
+            return status + " " + count + "/" + total;
+        }
     }
 
     private void purgeAll() {
         int count = 0;
-        status = "Purging old configurations " + count + "/" + configurations.size();
+        setStatus("Purging old configurations", configurations.size());
         for (Configuration configuration : configurations) {
             try {
                 configuration.delete();
-                count++;
-                status = "Purging old configurations " + count + "/" + configurations.size();
+                setStatus(++count);
             } catch (IOException e) {
                 log.warn("Could not delete configuration " + configuration, e);
             }
         }
         configurations.clear();
-        status = "Loaded scenario's, nothing started";
+        setStatus("Loaded scenario's, nothing started");
     }
 
     private void startScenario(Scenario scenario) {
-        status = "Starting scenario [" + scenario.getName() + "] ";
+        setStatus("Starting scenario [" + scenario.getName() + "] ", scenario.getConfigurations().size());
 
         Map<String, Set<String>> idMap = new HashMap<String, Set<String>>();
         idMap = new HashMap<String, Set<String>>();
@@ -148,67 +191,63 @@ public class ScenarioManagerImpl implements ScenarioManager {
         }
 
         int count = 0;
-        status = "Starting scenario [" + scenario.getName() + "] " + count + "/" + scenario.getConfigurations().size();
         for (ScenarioConfiguration config : scenario.getConfigurations()) {
             startConfiguration(config, idMap);
-            count++;
-            status = "Starting scenario [" + scenario.getName()
-                     + "] "
-                     + count
-                     + "/"
-                     + scenario.getConfigurations().size();
+            setStatus(++count);
         }
     }
 
     private void startConfiguration(ScenarioConfiguration config, Map<String, Set<String>> idMap) {
         try {
-            String location = getBundleLocation(config.getBundleId());
-            if (location != null) {
+            Bundle bundle = getBundle(config.getBundleId());
+            if (bundle != null) {
                 Set<String> ids = idMap.get(config.getIdRef());
                 if (ids != null) {
                     for (String id : ids) {
-                        startConfiguration(config, location, id, idMap);
+                        startConfiguration(config, bundle, id, idMap);
                     }
                 } else {
                     String id = UUID.randomUUID().toString();
-                    startConfiguration(config, location, id, idMap);
+                    startConfiguration(config, bundle, id, idMap);
                 }
             } else {
                 log.info("Ignoring configuration, the given bundle can not be found\n" + config);
             }
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             log.error("Could not create configuration", ex);
         }
     }
 
     private void startConfiguration(ScenarioConfiguration config,
-                                    String location,
+                                    Bundle bundle,
                                     String id,
                                     Map<String, Set<String>> idMap) throws IOException {
+        Dictionary<String, String[]> properties = translateProperties(config.getProperties(), id, idMap);
+        MetaTypeInformation metaTypeInformation = metatype.getMetaTypeInformation(bundle);
+        ObjectClassDefinition objectClassDefinition = metaTypeInformation.getObjectClassDefinition(config.getId(), null);
+        Dictionary<String, Object> transformedProperties = transformTypes(objectClassDefinition, properties);
+
         Configuration configuration;
         if (config.getType() == Type.MULTIPLE) {
-            configuration = configurationAdmin.createFactoryConfiguration(config.getId(), location);
+            configuration = configurationAdmin.createFactoryConfiguration(config.getId(), bundle.getLocation());
         } else {
-            configuration = configurationAdmin.getConfiguration(config.getId(), location);
+            configuration = configurationAdmin.getConfiguration(config.getId(), bundle.getLocation());
         }
-        configuration.update(translateProperties(config.getProperties(), id, idMap));
+        configuration.update(transformedProperties);
         configurations.add(configuration);
     }
 
-    private Dictionary<String, ?> translateProperties(Map<String, String> properties,
-                                                      String id,
-                                                      Map<String, Set<String>> idMap) {
-        Dictionary<String, Object> result = new Hashtable<String, Object>();
+    private Dictionary<String, String[]> translateProperties(Map<String, String> properties,
+                                                             String id,
+                                                             Map<String, Set<String>> idMap) {
+        Dictionary<String, String[]> result = new Hashtable<String, String[]>();
         for (Entry<String, String> entry : properties.entrySet()) {
-            Object value = translate(Arrays.asList(entry.getValue().split(",")), id, idMap);
-            if (value != null) {
-                result.put(entry.getKey(), value);
-            }
+            result.put(entry.getKey(), translateValue(Arrays.asList(entry.getValue().split(",")), id, idMap));
         }
         return result;
     }
 
-    private Object translate(List<String> values, String id, Map<String, Set<String>> idMap) {
+    private String[] translateValue(List<String> values, String id, Map<String, Set<String>> idMap) {
         List<String> newValues = new ArrayList<String>(values.size());
         for (String value : values) {
             newValues.add(value.replace("%id%", id));
@@ -238,16 +277,132 @@ public class ScenarioManagerImpl implements ScenarioManager {
         if (newValues.size() == 0) {
             return null;
         } else if (newValues.size() == 1) {
-            return newValues.get(0);
+            return new String[] { newValues.get(0) };
         } else {
             return newValues.toArray(new String[newValues.size()]);
         }
     }
 
-    private String getBundleLocation(String bundleId) {
+    private Dictionary<String, Object> transformTypes(ObjectClassDefinition objectClassDefinition,
+                                                      Dictionary<String, String[]> properties) {
+        Dictionary<String, Object> result = new Hashtable<String, Object>();
+
+        for (AttributeDefinition attributeDefinition : objectClassDefinition.getAttributeDefinitions(ObjectClassDefinition.ALL)) {
+            String key = attributeDefinition.getID();
+            String[] current = properties.get(key);
+            if (current == null) {
+                current = attributeDefinition.getDefaultValue();
+            }
+
+            if (attributeDefinition.getCardinality() < 0) {
+                // Should use a vector
+                Vector<Object> vector = new Vector<Object>(current.length);
+                for (String value : current) {
+                    vector.add(parse(attributeDefinition.getType(), value));
+                }
+            } else if (attributeDefinition.getCardinality() > 0) {
+                // Should use an array
+                result.put(key, parse(attributeDefinition.getType(), current));
+            } else {
+                // Must be a single value
+                result.put(key, parse(attributeDefinition.getType(), current[0]));
+            }
+        }
+
+        return result;
+    }
+
+    private Object parse(int type, String[] value) {
+        switch (type) {
+        case AttributeDefinition.BOOLEAN: {
+            boolean[] array = new boolean[value.length];
+            for (int ix = 0; ix < array.length; ix++) {
+                array[ix] = Boolean.parseBoolean(value[ix]);
+            }
+            return array;
+        }
+        case AttributeDefinition.BYTE: {
+            byte[] array = new byte[value.length];
+            for (int ix = 0; ix < array.length; ix++) {
+                array[ix] = Byte.parseByte(value[ix]);
+            }
+            return array;
+        }
+        case AttributeDefinition.CHARACTER: {
+            char[] array = new char[value.length];
+            for (int ix = 0; ix < array.length; ix++) {
+                array[ix] = value[ix].isEmpty() ? ' ' : value[ix].charAt(0);
+            }
+            return array;
+        }
+        case AttributeDefinition.DOUBLE: {
+            double[] array = new double[value.length];
+            for (int ix = 0; ix < array.length; ix++) {
+                array[ix] = Double.parseDouble(value[ix]);
+            }
+            return array;
+        }
+        case AttributeDefinition.FLOAT: {
+            float[] array = new float[value.length];
+            for (int ix = 0; ix < array.length; ix++) {
+                array[ix] = Float.parseFloat(value[ix]);
+            }
+            return array;
+        }
+        case AttributeDefinition.INTEGER: {
+            int[] array = new int[value.length];
+            for (int ix = 0; ix < array.length; ix++) {
+                array[ix] = Integer.parseInt(value[ix]);
+            }
+            return array;
+        }
+        case AttributeDefinition.LONG: {
+            long[] array = new long[value.length];
+            for (int ix = 0; ix < array.length; ix++) {
+                array[ix] = Long.parseLong(value[ix]);
+            }
+            return array;
+        }
+        case AttributeDefinition.SHORT: {
+            short[] array = new short[value.length];
+            for (int ix = 0; ix < array.length; ix++) {
+                array[ix] = Short.parseShort(value[ix]);
+            }
+            return array;
+        }
+        default: {
+            return value;
+        }
+        }
+    }
+
+    private Object parse(int type, String value) {
+        switch (type) {
+        case AttributeDefinition.BOOLEAN:
+            return Boolean.parseBoolean(value);
+        case AttributeDefinition.BYTE:
+            return Byte.parseByte(value);
+        case AttributeDefinition.CHARACTER:
+            return value.isEmpty() ? ' ' : value.charAt(0);
+        case AttributeDefinition.DOUBLE:
+            return Double.parseDouble(value);
+        case AttributeDefinition.FLOAT:
+            return Float.parseFloat(value);
+        case AttributeDefinition.INTEGER:
+            return Integer.parseInt(value);
+        case AttributeDefinition.LONG:
+            return Long.parseLong(value);
+        case AttributeDefinition.SHORT:
+            return Short.parseShort(value);
+        default:
+            return value;
+        }
+    }
+
+    private Bundle getBundle(String bundleId) {
         for (Bundle bundle : FrameworkUtil.getBundle(getClass()).getBundleContext().getBundles()) {
             if (bundleId.equals(bundle.getSymbolicName())) {
-                return bundle.getLocation();
+                return bundle;
             }
         }
         return null;

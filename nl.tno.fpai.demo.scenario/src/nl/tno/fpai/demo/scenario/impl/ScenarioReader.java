@@ -73,12 +73,17 @@ public class ScenarioReader extends DefaultHandler {
 
                 currentConfig = new ScenarioConfiguration.Builder();
                 currentConfig.setBundleId(bundleId);
-                currentConfig.setFactoryId(factoryId);
+                if (serviceId != null) {
+                    currentConfig.setServiceId(serviceId);
+                } else if (factoryId != null) {
+                    currentConfig.setFactoryId(factoryId);
+                }
                 currentConfig.setIdRef(idRef);
                 currentConfig.setType(type);
             }
         } else if (configKey == null) {
             configKey = qName;
+            currentConfig.setProperty(configKey, "");
         } else {
             throw error("Unexpected element with name [" + qName + "]");
         }

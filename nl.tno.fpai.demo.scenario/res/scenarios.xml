@@ -3,7 +3,7 @@
 	</scenario>
 	
 	<scenario name="Timeshifter">
-		<config bundleId="flexiblepower.pvpanel.simulation" factoryId="org.flexiblepower.pvpanel.simulation.PvSimulation">
+		<config bundleId="flexiblepower.pvpanel.simulation" factoryId="org.flexiblepower.pvpanel.simulation.PVSimulation">
 			<resourceId>pvpanel</resourceId>
 			<updateFrequency>5</updateFrequency>
 		</config>
@@ -24,6 +24,7 @@
 			<broker.uri></broker.uri>
 			<update.interval>1</update.interval>
 			<actioneer.id>actioneer1</actioneer.id>
+			<small.widget>true</small.widget>
 		</config>
 		
 		<config bundleId="net.powermatcher.fpai.auctioneer" serviceId="net.powermatcher.fpai.auctioneer.AuctioneerManager">

@@ -58,4 +58,19 @@ public class Scenario {
     public List<ScenarioConfiguration> getConfigurations() {
         return configurations;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<scenario name=\"").append(name).append("\">\n");
+        for (IdSet idSet : idSets.values()) {
+            sb.append(idSet);
+        }
+        for (ScenarioConfiguration config : configurations) {
+            config.toString(sb, 1);
+            sb.append('\n');
+        }
+        sb.append("</scenario>");
+        return sb.toString();
+    }
 }
