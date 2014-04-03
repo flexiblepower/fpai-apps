@@ -38,7 +38,8 @@ public class MieleMulticastHandler {
     @Meta.OCD(description = "Configuration for the multicast service that reads multicast messages from the Miele home gateway.")
     public static interface Config {
         @Meta.AD(deflt = "true",
-                 description = "Should automatically create new handlers when a Miele home gateway is detected")
+                 description = "Should automatically create new handlers when a Miele home gateway is detected",
+                 required = false)
         public boolean automaticHandlerCreation();
     }
 
