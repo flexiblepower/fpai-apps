@@ -6,6 +6,11 @@
 		<config bundleId="flexiblepower.pvpanel.simulation" factoryId="org.flexiblepower.pvpanel.simulation.PVSimulation">
 			<resourceId>pvpanel</resourceId>
 			<updateFrequency>5</updateFrequency>
+			<powerWhenCloudy>-1</powerWhenCloudy>
+		</config>
+		
+		<config bundleId="flexiblepower.simulation.dishwasher.manager" factoryId="org.flexiblepower.simulation.dishwasher.manager.TimeShifterSimulationManager">
+			<resourceId>dishwasher</resourceId>
 		</config>
 		
 		<config bundleId="flexiblepower.uncontrolled.manager" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager">
@@ -15,7 +20,7 @@
 		</config>
 		
 		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.controller.PMController">
-			<resourceIds>pvpanel</resourceIds>
+			<resourceIds>pvpanel,dishwasher</resourceIds>
 			<cluster.id>ExampleCluster</cluster.id>
 			<location.id>ExampleLocation</location.id>
 			<messaging.protocol>INTERNAL_V1</messaging.protocol>
@@ -32,10 +37,64 @@
 			<location.id>ExampleLocation</location.id>
 			<update.interval>1</update.interval>
 			<auctioneer.id>auctioneer1</auctioneer.id>
-			<minimum.price>0</minimum.price>
+			<minimum.price>0.15</minimum.price>
 			<maximum.price>0.25</maximum.price>
 			<matcher.price.log.level>FULL_LOGGING</matcher.price.log.level>
 			<significance>3</significance>
 		</config>
+	</scenario>
+	
+	<scenario name="Smart Meter">
+		<config bundleId="flexiblepower.smartmeter.resource.driver" factoryId="org.flexiblepower.smartmeter.resource.driver.SmartMeterDriverImpl">
+			<resourceId>smartmeter</resourceId>
+			<getcomport>COM5</getcomport>
+		</config>
+		
+		<config bundleId="flexiblepower.smartmeter.resource.manager" factoryId="org.flexiblepower.smartmeter.manager.SmartMeterManager">
+			<resourceId>smartmeter</resourceId>
+		</config>
+		
+		<config bundleId="flexiblepower.battery.manager" factoryId="org.flexiblepower.battery.manager.BatteryManager">
+		</config>
+		
+		<config bundleId="flexiblepower.battery.simulation" factoryId="org.flexiblepower.battery.simulation.BatterySimulation">
+		</config>
+		
+		<config bundleId="flexiblepower.pvpanel.simulation" factoryId="org.flexiblepower.pvpanel.simulation.PVSimulation">
+			<resourceId>pvpanel</resourceId>
+			<updateFrequency>5</updateFrequency>
+			<powerWhenCloudy>-1</powerWhenCloudy>
+		</config>
+		
+		<config bundleId="flexiblepower.uncontrolled.manager" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager">
+			<resourceId>pvpanel</resourceId>
+			<expirationTime>10</expirationTime>
+			<showWidget>false</showWidget>
+		</config>
+		
+		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.controller.PMController">
+			<resourceIds>smartmeter,battery,pvpanel</resourceIds>
+			<cluster.id>ExampleCluster</cluster.id>
+			<location.id>ExampleLocation</location.id>
+			<messaging.protocol>INTERNAL_V1</messaging.protocol>
+			<bid.topic.suffix>UpdateBid</bid.topic.suffix>
+			<price.info.topic.suffix>UpdatePriceInfo</price.info.topic.suffix>
+			<broker.uri></broker.uri>
+			<update.interval>1</update.interval>
+			<actioneer.id>actioneer1</actioneer.id>
+			<small.widget>true</small.widget>
+		</config>
+		
+		<config bundleId="net.powermatcher.fpai.auctioneer" serviceId="net.powermatcher.fpai.auctioneer.AuctioneerManager">
+			<cluster.id>ExampleCluster</cluster.id>
+			<location.id>ExampleLocation</location.id>
+			<update.interval>1</update.interval>
+			<auctioneer.id>auctioneer1</auctioneer.id>
+			<minimum.price>0.15</minimum.price>
+			<maximum.price>0.25</maximum.price>
+			<matcher.price.log.level>FULL_LOGGING</matcher.price.log.level>
+			<significance>3</significance>
+		</config>
+	
 	</scenario>
 </scenarios>

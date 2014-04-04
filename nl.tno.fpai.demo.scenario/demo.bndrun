@@ -7,7 +7,6 @@
 	osgi.identity;filter:='(osgi.identity=flexiblepower.ui)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.ui.resourceinfo)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.ui.runtime)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.pvpanel.simulation)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.uncontrolled.manager)',\
 	osgi.identity;filter:='(osgi.identity=net.powermatcher.fpai.auctioneer)',\
 	osgi.identity;filter:='(osgi.identity=net.powermatcher.fpai.controller)',\
@@ -16,7 +15,13 @@
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.metatype)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.scr)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.webconsole)',\
-	osgi.identity;filter:='(osgi.identity=org.apache.felix.webconsole.plugins.ds)'
+	osgi.identity;filter:='(osgi.identity=org.apache.felix.webconsole.plugins.ds)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.dishwasher.manager)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.pvpanel.simulation)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.smartmeter.resource.driver)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.smartmeter.resource.manager)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.battery.manager)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.battery.simulation)'
 -runbundles: biz.aQute.bnd.annotation;version='[1.52.3,1.52.4)',\
 	ch.qos.logback.classic;version='[1.0.13,1.0.14)',\
 	ch.qos.logback.core;version='[1.0.13,1.0.14)',\
@@ -24,8 +29,13 @@
 	com.google.gwt.servlet;version='[2.5.0,2.5.1)',\
 	flexiblepower.api;version='[1.1.0,1.1.1)',\
 	flexiblepower.api.ext;version='[1.1.0,1.1.1)',\
-	flexiblepower.pvpanel.simulation;version='[1.0.0,1.0.1)',\
+	flexiblepower.battery.manager;version=latest,\
+	flexiblepower.battery.simulation;version=latest,\
+	flexiblepower.pvpanel.simulation;version=latest,\
 	flexiblepower.runtime;version='[1.0.1,1.0.2)',\
+	flexiblepower.simulation.dishwasher.manager;version=latest,\
+	flexiblepower.smartmeter.resource.driver;version=latest,\
+	flexiblepower.smartmeter.resource.manager;version=latest,\
 	flexiblepower.ui;version='[1.0.0,1.0.1)',\
 	flexiblepower.ui.resourceinfo;version='[1.0.0,1.0.1)',\
 	flexiblepower.ui.runtime;version='[1.0.0,1.0.1)',\
