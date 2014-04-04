@@ -1,6 +1,6 @@
 -runfw: org.apache.felix.framework;version='[4,5)'
 -runee: JavaSE-1.6
--runvm: -Dlogback.configurationFile=../cnf.shared/logback.xml
+-runvm: -Dlogback.configurationFile=../cnf/logback.xml
 
 -runrequires: osgi.identity;filter:='(osgi.identity=nl.tno.fpai.demo.scenario)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.runtime)',\
