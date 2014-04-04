@@ -1,0 +1,16 @@
+#loading {
+	position: absolute;
+	left: 45%;
+	top: 40%;
+}
+
+#icon {
+	position: absolute;
+	bottom: 0;
+	right: 1em;
+}
+
+p {
+	height: 1.2em;
+	display: none;
+}
