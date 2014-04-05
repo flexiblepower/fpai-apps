@@ -86,7 +86,12 @@ public class SmartMeterDevice implements SerialPortEventListener, Runnable {
 
     @Override
     public void serialEvent(SerialPortEvent serialPortEvent) {
-        if (serialPortEvent.getEventType() == SerialPortEvent.DATA_AVAILABLE) {
+
+        if (smartMeterListener == null) {
+            serialPort.close();
+        }
+
+        else if (serialPortEvent.getEventType() == SerialPortEvent.DATA_AVAILABLE) {
 
             try {
                 int nextByte;

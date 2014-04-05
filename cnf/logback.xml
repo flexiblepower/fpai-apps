@@ -6,6 +6,7 @@
     </appender>
     <logger name="org.flexiblepower.runtime.ui" level="ERROR" />
     <logger name="org.flexiblepower" level="DEBUG" />
+    <logger name="org.flexiblepower.battery" level="ERROR" />
     <logger name="net.powermatcher" level="ERROR" />
     <root level="INFO">
         <appender-ref ref="STDOUT" />

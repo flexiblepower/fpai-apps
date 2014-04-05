@@ -109,6 +109,7 @@ public class SmartMeterDriverImpl extends AbstractResourceDriver<SmartMeterState
     private ServiceRegistration<?> observationProviderRegistration;
 
     private Config config;
+    private SmartMeterDevice smartMeterDevice;
 
     @Activate
     public void activate(BundleContext bundleContext, Map<String, Object> properties) {
@@ -123,7 +124,8 @@ public class SmartMeterDriverImpl extends AbstractResourceDriver<SmartMeterState
                                                                                              .observedBy(applianceId)
                                                                                              .register();
 
-            meterThread = new Thread(new SmartMeterDevice(config.getcomport(), this), "Smart Meter Thread");
+            smartMeterDevice = new SmartMeterDevice(config.getcomport(), this);
+            meterThread = new Thread(smartMeterDevice, "Smart Meter Thread");
             meterThread.start();
 
             // scheduledFuture = schedulerService.scheduleAtFixedRate(this, 0, 5,
@@ -137,6 +139,11 @@ public class SmartMeterDriverImpl extends AbstractResourceDriver<SmartMeterState
     public void deactivate() {
         scheduledFuture.cancel(false);
         observationProviderRegistration.unregister();
+        if (smartMeterDevice != null) {
+            smartMeterDevice.disconnect();
+        }
+        meterThread.stop();
+        System.err.println("fadsasafdf");
     }
 
     private ScheduledExecutorService schedulerService;

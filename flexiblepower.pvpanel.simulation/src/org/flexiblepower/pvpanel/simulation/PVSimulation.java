@@ -45,6 +45,9 @@ public class PVSimulation extends AbstractResourceDriver<UncontrolledState, Unco
         @Meta.AD(deflt = "5", description = "Frequency in which updates will be send out in seconds")
         int updateFrequency();
 
+        @Meta.AD(deflt = "0", description = "Generated Power when inverter is in stand by")
+        double powerWhenStandBy();
+
         @Meta.AD(deflt = "200", description = "Generated Power when cloudy weather")
         int powerWhenCloudy();
 
@@ -53,7 +56,7 @@ public class PVSimulation extends AbstractResourceDriver<UncontrolledState, Unco
 
     }
 
-    private double demand = 0;
+    private double demand = -0.01;
     private double cloudy = 200;
     private double sunny = 1500;
     private Weather weather = Weather.moon;
@@ -136,6 +139,10 @@ public class PVSimulation extends AbstractResourceDriver<UncontrolledState, Unco
         try {
             demand = (int) -weather.getProduction(Math.random(), cloudy, sunny);
             final Date currentDate = timeService.getTime();
+
+            if (demand < 0.1 && demand > -0.1 && config.powerWhenStandBy() > 0) {
+                demand = config.powerWhenStandBy();
+            }
 
             publish(new Observation<UncontrolledState>(currentDate, getCurrentState()));
         } catch (Exception e) {

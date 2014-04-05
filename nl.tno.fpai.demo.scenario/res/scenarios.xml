@@ -1,12 +1,13 @@
 <scenarios>
-	<scenario name="Clear">
+	<scenario name="1. Clear">
 	</scenario>
 	
-	<scenario name="Timeshifter">
+	<scenario name="2. Timeshifter">
 		<config bundleId="flexiblepower.pvpanel.simulation" factoryId="org.flexiblepower.pvpanel.simulation.PVSimulation">
 			<resourceId>pvpanel</resourceId>
+			<powerWhenStandBy>0.01</powerWhenStandBy>
 			<updateFrequency>5</updateFrequency>
-			<powerWhenCloudy>-1</powerWhenCloudy>
+			<powerWhenCloudy>200</powerWhenCloudy>
 		</config>
 		
 		<config bundleId="flexiblepower.simulation.dishwasher.manager" factoryId="org.flexiblepower.simulation.dishwasher.manager.TimeShifterSimulationManager">
@@ -44,11 +45,7 @@
 		</config>
 	</scenario>
 	
-	<scenario name="Smart Meter">
-		<config bundleId="flexiblepower.smartmeter.resource.driver" factoryId="org.flexiblepower.smartmeter.resource.driver.SmartMeterDriverImpl">
-			<resourceId>smartmeter</resourceId>
-			<getcomport>COM5</getcomport>
-		</config>
+	<scenario name="3. Smart Meter">
 		
 		<config bundleId="flexiblepower.smartmeter.resource.manager" factoryId="org.flexiblepower.smartmeter.manager.SmartMeterManager">
 			<resourceId>smartmeter</resourceId>
@@ -63,7 +60,8 @@
 		<config bundleId="flexiblepower.pvpanel.simulation" factoryId="org.flexiblepower.pvpanel.simulation.PVSimulation">
 			<resourceId>pvpanel</resourceId>
 			<updateFrequency>5</updateFrequency>
-			<powerWhenCloudy>-1</powerWhenCloudy>
+			<powerWhenStandBy>0</powerWhenStandBy>
+			<powerWhenCloudy>200</powerWhenCloudy>
 		</config>
 		
 		<config bundleId="flexiblepower.uncontrolled.manager" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager">
