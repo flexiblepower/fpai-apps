@@ -21,7 +21,8 @@
 	osgi.identity;filter:='(osgi.identity=flexiblepower.smartmeter.resource.driver)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.smartmeter.resource.manager)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.battery.manager)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.battery.simulation)'
+	osgi.identity;filter:='(osgi.identity=flexiblepower.battery.simulation)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.uncontrolled.simulation)'
 -runbundles: biz.aQute.bnd.annotation;version='[1.52.3,1.52.4)',\
 	ch.qos.logback.classic;version='[1.0.13,1.0.14)',\
 	ch.qos.logback.core;version='[1.0.13,1.0.14)',\
@@ -40,6 +41,7 @@
 	flexiblepower.ui.resourceinfo;version='[1.0.0,1.0.1)',\
 	flexiblepower.ui.runtime;version='[1.0.0,1.0.1)',\
 	flexiblepower.uncontrolled.manager;version='[1.0.0,1.0.1)',\
+	flexiblepower.uncontrolled.simulation;version=latest,\
 	net.powermatcher.core.adapter;version='[0.9.0,0.9.1)',\
 	net.powermatcher.core.adapter.service;version='[0.9.0,0.9.1)',\
 	net.powermatcher.core.agent;version='[0.9.0,0.9.1)',\
