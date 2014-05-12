@@ -26,7 +26,7 @@ public class DishwasherDriverFactory extends
 
     @Override
     public boolean canHandleType(String type) {
-        return "DW_G1000".equals(type) || "G5985".equals(type);
+        return "DW_G1000".equals(type) || "G5985          ".equals(type);
     }
 
     @Override

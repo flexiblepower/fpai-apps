@@ -70,8 +70,11 @@ public class DishwasherDriver extends MieleResourceDriver<DishwasherState, Dishw
     public void updateState(Map<String, String> information) {
         // TODO: There is much more information, what to do with it?
         String state = information.get("State");
-        Date startTime = parseDate(information.get("Start Time"));
+        String startTimeString = information.get("Start Time");
+        Date startTime = parseDate(startTimeString);
+
         Integer smartStart = parseTime(information.get("Smart Start"));
+
         String program = information.get("Program");
         String phase = information.get("Phase");
         Integer remainingTime = parseTime(information.get("Remaining Time"));

@@ -65,7 +65,7 @@ public class MieleProtocolHandler implements Runnable {
     @Activate
     public void activate(BundleContext context, Map<String, Object> properties) throws MalformedURLException {
         Config config = Configurable.createConfigurable(MieleProtocolHandler.Config.class, properties);
-        homebusURL = new URL("http://" + config.hostname() + "/homebus");
+        homebusURL = new URL("http://" + config.hostname() + "/homebus/?language=en");
 
         future = executorService.scheduleWithFixedDelay(this, 0, config.pollingTime(), TimeUnit.SECONDS);
     }

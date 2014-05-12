@@ -19,12 +19,17 @@ public abstract class MieleResourceDriver<RS extends ResourceState, RCP extends 
 
     public static Integer parseTime(String value) {
         if (value != null) {
-            String[] parts = value.replace('H', ' ').split(":");
+            String[] parts = value.replace("h", "").split(":");
             try {
                 if (parts.length == 1) {
                     return Integer.parseInt(parts[0]);
                 } else if (parts.length == 2) {
-                    return Integer.parseInt(parts[0]) * 60 + Integer.parseInt(parts[1]);
+                    int hours = Integer.parseInt(parts[0]);
+                    int minutes = Integer.parseInt(parts[1]);
+
+                    minutes = (hours * 60) + minutes;
+
+                    return minutes;
                 }
             } catch (NumberFormatException ex) {
                 // Ignore, just return null, we don't understand it
