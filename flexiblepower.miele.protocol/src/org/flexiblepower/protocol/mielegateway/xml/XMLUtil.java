@@ -3,6 +3,7 @@ package org.flexiblepower.protocol.mielegateway.xml;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -37,7 +38,9 @@ public class XMLUtil {
         InputStream is = null;
         try {
             DocumentBuilder builder = factory.newDocumentBuilder();
-            is = url.openStream();
+            URLConnection connection = url.openConnection();
+            connection.setRequestProperty("Accept-Language", "en");
+            is = connection.getInputStream();
             return builder.parse(is);
         } catch (IOException e) {
             log.warn("I/O error while reading XML", e);
