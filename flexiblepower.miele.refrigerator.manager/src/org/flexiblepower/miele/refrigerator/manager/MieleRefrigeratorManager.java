@@ -94,7 +94,8 @@ public class MieleRefrigeratorManager extends
         currentState = observation.getValue();
 
         RefrigeratorState state = observation.getValue();
-        double maxTemp = state.getTargetTemperature().doubleValue(CELSIUS);
+        double maxTemp = state.getTargetTemperature().doubleValue(CELSIUS) + 1; // FIXME: added + 1, otherwise always
+                                                                                // mustrun.
         double minTemp = state.getMinimumTemperature().doubleValue(CELSIUS);
         double curTemp = state.getCurrentTemperature().doubleValue(CELSIUS);
 
@@ -104,7 +105,7 @@ public class MieleRefrigeratorManager extends
 
         // Create control space
         Measurable<Energy> totalCapacity = Measure.valueOf(10, KILO(JOULE));
-        ConstraintList<Power> chargeSpeed = ConstraintList.create(WATT).addSingle(300).build();
+        ConstraintList<Power> chargeSpeed = ConstraintList.create(WATT).addSingle(100).addSingle(300).build();
         Measurable<Power> selfDischarge = Measure.valueOf(50, WATT);
 
         Measurable<Duration> minOnPeriod = Measure.zero();
