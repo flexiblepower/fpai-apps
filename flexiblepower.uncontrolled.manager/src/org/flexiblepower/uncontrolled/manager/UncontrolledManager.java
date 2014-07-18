@@ -1,19 +1,22 @@
 package org.flexiblepower.uncontrolled.manager;
 
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Map;
 
 import javax.measure.Measurable;
 import javax.measure.Measure;
-import javax.measure.quantity.Energy;
+import javax.measure.quantity.Duration;
 import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
+import org.flexiblepower.efi.uncontrolled.UncontrolledAllocation;
+import org.flexiblepower.efi.uncontrolled.UncontrolledUpdate;
+import org.flexiblepower.efi.util.CommodityProfile;
 import org.flexiblepower.observation.Observation;
 import org.flexiblepower.observation.ObservationProvider;
-import org.flexiblepower.rai.Allocation;
-import org.flexiblepower.rai.UncontrolledControlSpace;
-import org.flexiblepower.rai.values.EnergyProfile;
+import org.flexiblepower.rai.comm.Allocation;
+import org.flexiblepower.rai.values.Commodity;
 import org.flexiblepower.ral.ResourceManager;
 import org.flexiblepower.ral.drivers.uncontrolled.UncontrolledControlParameters;
 import org.flexiblepower.ral.drivers.uncontrolled.UncontrolledDriver;
@@ -34,7 +37,7 @@ import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = ResourceManager.class)
 public class UncontrolledManager extends
-                                AbstractResourceManager<UncontrolledControlSpace, UncontrolledState, UncontrolledControlParameters> {
+                                AbstractResourceManager<Allocation, UncontrolledState, UncontrolledControlParameters> {
 
     @Meta.OCD
     interface Config {
@@ -82,8 +85,13 @@ public class UncontrolledManager extends
     }
 
     @Override
-    public void handleAllocation(Allocation allocation) {
-        // nothing to handle
+    public void handleAllocation(UncontrolledAllocation allocation) {
+        // Unconstrained Allocations have a maximum power production or consumption for a
+        // given duration.
+        Date startTime = allocation.getStartTime();
+
+        UncontrolledAllocation.Element element = allocation.getElement();
+
     }
 
     @Override
@@ -103,13 +111,21 @@ public class UncontrolledManager extends
         return config.resourceId();
     }
 
-    private UncontrolledControlSpace constructControlSpace(UncontrolledState uncontrolledState) {
-        Measure<Double, Energy> energy = Measure.valueOf(uncontrolledState.getDemand().doubleValue(SI.WATT) * config.expirationTime(),
-                                                         SI.JOULE);
-        EnergyProfile energyProfile = EnergyProfile.create()
-                                                   .add(Measure.valueOf(config.expirationTime(), SI.SECOND), energy)
-                                                   .build();
-        Date now = timeService.getTime();
-        return new UncontrolledControlSpace(config.resourceId(), now, energyProfile);
+    private UncontrolledUpdate constructControlSpace(UncontrolledState uncontrolledState) {
+        // Measure<Double, Energy> energy = Measure.valueOf(uncontrolledState.getDemand().doubleValue(SI.WATT) *
+        // config.expirationTime(),
+        // SI.JOULE);
+        // EnergyProfile energyProfile = EnergyProfile.create()
+        // .add(Measure.valueOf(config.expirationTime(), SI.SECOND), energy)
+        // .build();
+        // Date now = timeService.getTime();
+
+        Timestamp startTime = new Timestamp(0);
+        Timestamp endTime = new Timestamp(0);
+        final Measurable<Duration> allocationDelay = Measure.valueOf(60, SI.SECOND);
+
+        Map<Commodity, CommodityProfile> profiles = null;
+
+        return new UncontrolledUpdate(config.resourceId(), startTime, endTime, allocationDelay, profiles);
     }
 }
