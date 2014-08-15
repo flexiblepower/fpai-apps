@@ -15,6 +15,7 @@ import javax.measure.Measure;
 import javax.measure.quantity.Duration;
 import javax.measure.quantity.Energy;
 import javax.measure.quantity.Power;
+import javax.measure.unit.SI;
 
 import org.flexiblepower.battery.simulation.BatterySimulation.Config;
 import org.flexiblepower.observation.Observation;
@@ -26,7 +27,6 @@ import org.flexiblepower.ral.drivers.battery.BatteryMode;
 import org.flexiblepower.ral.drivers.battery.BatteryState;
 import org.flexiblepower.ral.ext.AbstractResourceDriver;
 import org.flexiblepower.time.TimeService;
-import org.flexiblepower.time.TimeUtil;
 import org.flexiblepower.ui.Widget;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -34,6 +34,7 @@ import org.osgi.framework.ServiceRegistration;
 import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Deactivate;
+import aQute.bnd.annotation.component.Modified;
 import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
@@ -50,7 +51,7 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
         long updateInterval();
 
         @Meta.AD(deflt = "1", description = "Total capacity [kWh]")
-        long totalCapacity();
+        double totalCapacity();
 
         @Meta.AD(deflt = "0.5", description = "Initial state of charge (% from 0 to 1)")
         double initialStateOfCharge();
@@ -117,12 +118,12 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
 
         @Override
         public Measurable<Duration> getMinimumOnTime() {
-            return TimeUtil.ZERO;
+            return minTimeOn;
         }
 
         @Override
         public Measurable<Duration> getMinimumOffTime() {
-            return TimeUtil.ZERO;
+            return minTimeOff;
         }
 
         @Override
@@ -141,6 +142,8 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
     private Measurable<Power> chargeSpeed;
     private Measurable<Power> selfDischargeSpeed;
     private Measurable<Energy> totalCapacity;
+    private Measurable<Duration> minTimeOn;
+    private Measurable<Duration> minTimeOff;
 
     private BatteryMode mode;
     private Measurable<Energy> stateOfCharge;
@@ -164,6 +167,9 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
             selfDischargeSpeed = Measure.valueOf(configuration.selfDischargePower(), WATT);
             stateOfCharge = Measure.valueOf(totalCapacity.doubleValue(JOULE) * configuration.initialStateOfCharge(),
                                             JOULE);
+            minTimeOn = Measure.valueOf(0, SI.SECOND);
+            minTimeOff = Measure.valueOf(0, SI.SECOND);
+
             mode = BatteryMode.IDLE;
 
             observationProviderRegistration = new ObservationProviderRegistrationHelper(this).observationType(BatteryState.class)
@@ -197,6 +203,27 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
         if (scheduledFuture != null) {
             scheduledFuture.cancel(false);
             scheduledFuture = null;
+        }
+    }
+
+    @Modified
+    public void modify(BundleContext context, Map<String, Object> properties) {
+        try {
+            configuration = Configurable.createConfigurable(Config.class, properties);
+
+            totalCapacity = Measure.valueOf(configuration.totalCapacity(), KWH);
+            chargeSpeed = Measure.valueOf(configuration.chargePower(), WATT);
+            dischargeSpeed = Measure.valueOf(configuration.dischargePower(), WATT);
+            selfDischargeSpeed = Measure.valueOf(configuration.selfDischargePower(), WATT);
+            stateOfCharge = Measure.valueOf(totalCapacity.doubleValue(JOULE) * configuration.initialStateOfCharge(),
+                                            JOULE);
+            minTimeOn = Measure.valueOf(2, SI.SECOND);
+            minTimeOff = Measure.valueOf(2, SI.SECOND);
+            mode = BatteryMode.IDLE;
+        } catch (RuntimeException ex) {
+            logger.error("Error during initialization of the battery simulation: " + ex.getMessage(), ex);
+            deactivate();
+            throw ex;
         }
     }
 

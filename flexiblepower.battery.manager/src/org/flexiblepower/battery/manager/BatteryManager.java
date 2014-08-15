@@ -4,12 +4,10 @@ import static javax.measure.unit.SI.JOULE;
 import static javax.measure.unit.SI.SECOND;
 import static javax.measure.unit.SI.WATT;
 
-import java.util.Date;
 import java.util.Map;
 
 import javax.measure.Measurable;
 import javax.measure.Measure;
-import javax.measure.quantity.Duration;
 import javax.measure.quantity.Energy;
 import javax.measure.quantity.Power;
 
@@ -55,12 +53,15 @@ public class BatteryManager extends
 
     private TimeService timeService;
     private Config config;
-    private Measurable<Duration> expirationTime;
+    private Measure<Integer, javax.measure.quantity.Duration> expirationTime;
 
     @Reference
     public void setTimeService(TimeService timeService) {
         this.timeService = timeService;
     }
+
+    double chargeSpeedGlobal = Double.MAX_VALUE;
+    double dischargeSpeedGlobal = Double.MIN_VALUE;
 
     @Override
     public void consume(ObservationProvider<? extends BatteryState> source,
@@ -73,12 +74,13 @@ public class BatteryManager extends
 
         ConstraintList<Power> chargeSpeed = ConstraintList.create(WATT).addSingle(state.getChargeSpeed()).build();
         ConstraintList<Power> dischargeSpeed = ConstraintList.create(WATT).addSingle(state.getDischargeSpeed()).build();
+        chargeSpeedGlobal = state.getChargeSpeed().doubleValue(WATT);
+        dischargeSpeedGlobal = -1 * state.getDischargeSpeed().doubleValue(WATT);
 
-        Date now = timeService.getTime();
         publish(new StorageControlSpace(config.resourceId(),
-                                        now,
-                                        TimeUtil.add(now, expirationTime),
-                                        null,
+                                        timeService.getTime(),
+                                        TimeUtil.add(timeService.getTime(), expirationTime),
+                                        TimeUtil.add(timeService.getTime(), expirationTime),
                                         state.getTotalCapacity(),
                                         (float) state.getStateOfCharge(),
                                         chargeSpeed,
@@ -101,18 +103,23 @@ public class BatteryManager extends
 
     @Override
     public void handleAllocation(Allocation allocation) {
-        ResourceDriver<? extends BatteryState, ? super BatteryControlParameters> driver = getDriver();
+
+    	ResourceDriver<? extends BatteryState, ? super BatteryControlParameters> driver = getDriver();
         if (allocation != null && driver != null) {
             EnergyProfile energyProfile = allocation.getEnergyProfile();
             Measurable<Energy> energyValue = energyProfile.getElementForOffset(Measure.valueOf(0, SECOND)).getEnergy();
             final double energy = energyValue.doubleValue(JOULE);
-            logger.debug("Setting energy level to " + energyValue);
+            final double power = energyProfile.getElementForOffset(Measure.valueOf(0, SECOND))
+                                              .getAveragePower()
+                                              .doubleValue(WATT);
+            logger.debug("----------------Setting energy level to " + power);
+            logger.debug("----------------Setting energy level to " + energyProfile.toString());
             driver.setControlParameters(new BatteryControlParameters() {
                 @Override
                 public BatteryMode getMode() {
-                    if (energy < -1e-9 && (lastBatteryState == null || lastBatteryState.getStateOfCharge() > 0)) {
+                    if (power <= dischargeSpeedGlobal && (lastBatteryState == null || lastBatteryState.getStateOfCharge() > 0)) {
                         return BatteryMode.DISCHARGE;
-                    } else if (energy > 1e-9 && (lastBatteryState == null || lastBatteryState.getStateOfCharge() < 1)) {
+                    } else if (energy >= chargeSpeedGlobal && (lastBatteryState == null || lastBatteryState.getStateOfCharge() < 1)) {
                         return BatteryMode.CHARGE;
                     } else {
                         return BatteryMode.IDLE;

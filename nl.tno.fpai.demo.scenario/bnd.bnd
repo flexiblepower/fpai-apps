@@ -1,0 +1,7 @@
+Bundle-Version: 1.0.0.${qualifier}
+Service-Component: *
+Export-Package: nl.tno.fpai.demo.scenario
+Private-Package: nl.tno.fpai.demo.scenario.*
+
+-buildpath: ${default-buildpath},\
+	org.apache.felix.metatype

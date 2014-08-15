@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="fpai-extras" default="build">
-	<property name="project.title" value="FPAI Extra bundles" />
-	<property name="targetversion" value="14.02" />
+<project name="fpai-devices" default="build">
+	<property name="project.title" value="FPAI Devices and Demonstration" />
+	<property name="targetversion" value="14.10" />
 	<import file="../cnf.shared/build-jenkins.xml" />
 </project>

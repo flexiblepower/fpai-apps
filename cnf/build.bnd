@@ -1,5 +1,4 @@
 -include: cnf.shared/build.bnd
 	
-Bundle-Category: FlexiblePower Application Infrastructure - Extra Packages
+Bundle-Category: FlexiblePower Application Infrastructure - Devices and Demonstration
 qualifier: SNAPSHOT-${tstamp}
-
