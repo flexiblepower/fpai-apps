@@ -1,0 +1,9 @@
+-buildpath:  \
+	${default-buildpath},\
+	flexiblepower.api.ext,\
+	junit.osgi,\
+	org.apache.felix.scr
+
+Bundle-Version: 1.0.0.${qualifier}
+Private-Package: *test
+Test-Cases: ${classes;CONCRETE;EXTENDS;junit.framework.TestCase},${classes;ANNOTATION;org.junit.Test}

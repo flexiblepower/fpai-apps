@@ -131,6 +131,10 @@ Runnable {
             return mode;
         }
 
+        @Override
+        public String toString() {
+            return "State [stateOfCharge=" + stateOfCharge + ", mode=" + mode + "]";
+        }
     }
 
     private Measurable<Power> dischargeSpeed;
@@ -229,12 +233,11 @@ Runnable {
 
     @Override
     public synchronized void run() {
-        logger.debug("Simulated battery has mode " + mode);
-
         Date currentTime = timeService.getTime();
         double duration = (currentTime.getTime() - startTime.getTime()) / 1000.0; // in seconds
         double amountOfCharge = 0; // in joules
 
+        logger.debug("Battery simulation step. Mode={} Timestep={}s", mode, duration);
         if (duration > 0) {
             switch (mode) {
             case IDLE:
@@ -263,7 +266,9 @@ Runnable {
 
             stateOfCharge = Measure.valueOf(stateOfChargeInJoules, JOULE);
 
-            publishState(new State(getRelativeStateOfCharge(), mode));
+            State state = new State(getRelativeStateOfCharge(), mode);
+            logger.debug("Publishing state {}", state);
+            publishState(state);
         }
         startTime = currentTime;
     }
@@ -271,7 +276,7 @@ Runnable {
     @Override
     protected void handleControlParameters(BatteryControlParameters controlParameters) {
         mode = controlParameters.getMode();
-        run();
+        // run();
     }
 
     private double getRelativeStateOfCharge() {
