@@ -1,4 +1,4 @@
-package org.flexiblepower.battery.simulation;
+package org.flexiblepower.simulation.battery;
 
 import static javax.measure.unit.NonSI.KWH;
 

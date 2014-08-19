@@ -1,4 +1,4 @@
-package org.flexiblepower.battery.simulation;
+package org.flexiblepower.simulation.battery;
 
 import static javax.measure.unit.NonSI.KWH;
 import static javax.measure.unit.SI.JOULE;
@@ -17,15 +17,13 @@ import javax.measure.quantity.Energy;
 import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
-import org.flexiblepower.battery.simulation.BatterySimulation.Config;
-import org.flexiblepower.observation.Observation;
-import org.flexiblepower.observation.ext.ObservationProviderRegistrationHelper;
-import org.flexiblepower.ral.ResourceDriver;
+import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.ral.drivers.battery.BatteryControlParameters;
 import org.flexiblepower.ral.drivers.battery.BatteryDriver;
 import org.flexiblepower.ral.drivers.battery.BatteryMode;
 import org.flexiblepower.ral.drivers.battery.BatteryState;
 import org.flexiblepower.ral.ext.AbstractResourceDriver;
+import org.flexiblepower.simulation.battery.BatterySimulation.Config;
 import org.flexiblepower.time.TimeService;
 import org.flexiblepower.ui.Widget;
 import org.osgi.framework.BundleContext;
@@ -39,14 +37,11 @@ import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
-@Component(designateFactory = Config.class, provide = ResourceDriver.class, immediate = true)
+@Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 public class BatterySimulation extends AbstractResourceDriver<BatteryState, BatteryControlParameters> implements
-                                                                                                     BatteryDriver,
-                                                                                                     Runnable {
+BatteryDriver,
+Runnable {
     interface Config {
-        @Meta.AD(deflt = "battery", description = "Resource identifier")
-        String resourceId();
-
         @Meta.AD(deflt = "5", description = "Interval between state updates [s]")
         long updateInterval();
 
@@ -150,7 +145,6 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
     private Date startTime;
     private Config configuration;
 
-    private ServiceRegistration<?> observationProviderRegistration;
     private ScheduledExecutorService scheduler;
     private ServiceRegistration<Widget> widgetRegistration;
 
@@ -172,12 +166,7 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
 
             mode = BatteryMode.IDLE;
 
-            observationProviderRegistration = new ObservationProviderRegistrationHelper(this).observationType(BatteryState.class)
-                                                                                             .observationOf(configuration.resourceId())
-                                                                                             .observedBy(getClass().getName())
-                                                                                             .register();
-
-            publish(new Observation<BatteryState>(timeService.getTime(), new State(getRelativeStateOfCharge(), mode)));
+            publishState(new State(getRelativeStateOfCharge(), mode));
 
             scheduledFuture = scheduler.scheduleAtFixedRate(this, 0, configuration.updateInterval(), TimeUnit.SECONDS);
 
@@ -195,10 +184,6 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
         if (widgetRegistration != null) {
             widgetRegistration.unregister();
             widgetRegistration = null;
-        }
-        if (observationProviderRegistration != null) {
-            observationProviderRegistration.unregister();
-            observationProviderRegistration = null;
         }
         if (scheduledFuture != null) {
             scheduledFuture.cancel(false);
@@ -244,7 +229,7 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
 
     @Override
     public synchronized void run() {
-        logger.debug("Simulated battery " + configuration.resourceId() + " has mode " + mode);
+        logger.debug("Simulated battery has mode " + mode);
 
         Date currentTime = timeService.getTime();
         double duration = (currentTime.getTime() - startTime.getTime()) / 1000.0; // in seconds
@@ -278,14 +263,14 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
 
             stateOfCharge = Measure.valueOf(stateOfChargeInJoules, JOULE);
 
-            publish(new Observation<BatteryState>(currentTime, new State(getRelativeStateOfCharge(), mode)));
+            publishState(new State(getRelativeStateOfCharge(), mode));
         }
         startTime = currentTime;
     }
 
     @Override
-    public void setControlParameters(BatteryControlParameters resourceControlParameters) {
-        mode = resourceControlParameters.getMode();
+    protected void handleControlParameters(BatteryControlParameters controlParameters) {
+        mode = controlParameters.getMode();
         run();
     }
 
