@@ -12,13 +12,11 @@ import javax.measure.Measure;
 import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
-import org.flexiblepower.observation.Observation;
-import org.flexiblepower.observation.ext.ObservationProviderRegistrationHelper;
+import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.pvpanel.configurable.simulation.PVSimulation.Config;
-import org.flexiblepower.ral.ResourceDriver;
-import org.flexiblepower.ral.drivers.uncontrolled.UncontrolledControlParameters;
-import org.flexiblepower.ral.drivers.uncontrolled.UncontrolledDriver;
-import org.flexiblepower.ral.drivers.uncontrolled.UncontrolledState;
+import org.flexiblepower.ral.ResourceControlParameters;
+import org.flexiblepower.ral.drivers.uncontrolled.PowerState;
+import org.flexiblepower.ral.drivers.uncontrolled.UncontrollableDriver;
 import org.flexiblepower.ral.ext.AbstractResourceDriver;
 import org.flexiblepower.time.TimeService;
 import org.flexiblepower.ui.Widget;
@@ -33,15 +31,36 @@ import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
-@Component(designateFactory = Config.class, provide = ResourceDriver.class)
-public class PVSimulation extends AbstractResourceDriver<UncontrolledState, UncontrolledControlParameters> implements
-                                                                                                          UncontrolledDriver<UncontrolledState>,
-                                                                                                          Runnable {
+@Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
+public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceControlParameters> implements
+UncontrollableDriver,
+Runnable {
+    public final static class PowerStateImpl implements PowerState {
+        private final Measurable<Power> demand;
+        private final Date currentTime;
+
+        private PowerStateImpl(Measurable<Power> demand, Date currentTime) {
+            this.demand = demand;
+            this.currentTime = currentTime;
+        }
+
+        @Override
+        public boolean isConnected() {
+            return true;
+        }
+
+        @Override
+        public Measurable<Power> getCurrentUsage() {
+            return demand;
+        }
+
+        public Date getTime() {
+            return currentTime;
+        }
+    }
+
     @Meta.OCD
     interface Config {
-        @Meta.AD(deflt = "pvpanel", description = "Resource identifier")
-        String resourceId();
-
         @Meta.AD(deflt = "5", description = "Frequency in which updates will be send out in seconds")
         int updateFrequency();
 
@@ -75,10 +94,6 @@ public class PVSimulation extends AbstractResourceDriver<UncontrolledState, Unco
             cloudy = config.powerWhenCloudy();
             sunny = config.powerWhenSunny();
 
-            observationProviderRegistration = new ObservationProviderRegistrationHelper(this).observationType(UncontrolledState.class)
-                                                                                             .observationOf(config.resourceId())
-                                                                                             .observedBy(getClass().getName())
-                                                                                             .register();
             scheduledFuture = schedulerService.scheduleAtFixedRate(this, 0, config.updateFrequency(), TimeUnit.SECONDS);
             widget = new PVWidget(this);
             widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
@@ -138,13 +153,12 @@ public class PVSimulation extends AbstractResourceDriver<UncontrolledState, Unco
     public synchronized void run() {
         try {
             demand = (int) -weather.getProduction(0, cloudy, sunny);
-            final Date currentDate = timeService.getTime();
 
             if (demand < 0.1 && demand > -0.1 && config.powerWhenStandBy() > 0) {
                 demand = config.powerWhenStandBy();
             }
 
-            publish(new Observation<UncontrolledState>(currentDate, getCurrentState()));
+            publishState(getCurrentState());
         } catch (Exception e) {
             logger.error("Error while running PVSimulation", e);
         }
@@ -160,8 +174,9 @@ public class PVSimulation extends AbstractResourceDriver<UncontrolledState, Unco
     }
 
     @Override
-    public void setControlParameters(UncontrolledControlParameters resourceControlParameters) {
-        // Nothing to control!
+    protected void handleControlParameters(ResourceControlParameters controlParameters) {
+        // Will never be called!
+        throw new AssertionError();
     }
 
     double roundTwoDecimals(double d) {
@@ -169,26 +184,7 @@ public class PVSimulation extends AbstractResourceDriver<UncontrolledState, Unco
         return Double.valueOf(twoDForm.format(d));
     }
 
-    protected UncontrolledState getCurrentState() {
-        final Measurable<Power> demand = Measure.valueOf(this.demand, SI.WATT);
-        final Date currentTime = timeService.getTime();
-
-        return new UncontrolledState() {
-
-            @Override
-            public boolean isConnected() {
-                return true;
-            }
-
-            @Override
-            public Measurable<Power> getDemand() {
-                return demand;
-            }
-
-            @Override
-            public Date getTime() {
-                return currentTime;
-            }
-        };
+    protected PowerStateImpl getCurrentState() {
+        return new PowerStateImpl(Measure.valueOf(demand, SI.WATT), timeService.getTime());
     }
 }

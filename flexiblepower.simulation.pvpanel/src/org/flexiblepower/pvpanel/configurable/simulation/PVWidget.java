@@ -6,7 +6,7 @@ import java.util.Locale;
 
 import javax.measure.unit.SI;
 
-import org.flexiblepower.ral.drivers.uncontrolled.UncontrolledState;
+import org.flexiblepower.pvpanel.configurable.simulation.PVSimulation.PowerStateImpl;
 import org.flexiblepower.ui.Widget;
 
 public class PVWidget implements Widget {
@@ -43,9 +43,9 @@ public class PVWidget implements Widget {
     }
 
     public Update update() {
-        UncontrolledState state = simulation.getCurrentState();
+        PowerStateImpl state = simulation.getCurrentState();
         return new Update(FORMATTER.format(state.getTime()),
-                          Integer.toString((int) -state.getDemand().doubleValue(SI.WATT)),
+                          Integer.toString((int) -state.getCurrentUsage().doubleValue(SI.WATT)),
                           simulation.getWeather().toString());
     }
 
