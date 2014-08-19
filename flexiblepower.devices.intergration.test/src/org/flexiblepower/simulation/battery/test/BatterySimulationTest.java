@@ -8,58 +8,23 @@ import java.util.Hashtable;
 import javax.measure.unit.NonSI;
 import javax.measure.unit.SI;
 
-import junit.framework.TestCase;
-
-import org.flexiblepower.messaging.ConnectionManager;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.ral.drivers.battery.BatteryState;
-import org.flexiblepower.simulation.Simulation;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.FrameworkUtil;
+import org.flexiblepower.simulation.test.SimulationTest;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.cm.Configuration;
-import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.util.tracker.ServiceTracker;
 
-public class BatterySimulationTest extends TestCase {
-    private BundleContext bundleContext;
-
-    private ServiceTracker<ConfigurationAdmin, ConfigurationAdmin> configAdminTracker;
-    private ConfigurationAdmin configAdmin;
-
-    private ServiceTracker<ConnectionManager, ConnectionManager> connectionManagerTracker;
-    private ConnectionManager connectionManager;
-
-    private ServiceTracker<Simulation, Simulation> simulationTracker;
-    private Simulation simulation;
-
+public class BatterySimulationTest extends SimulationTest {
     private ServiceTracker<Endpoint, Endpoint> batterySimulationTracker;
 
     @Override
     protected void setUp() throws Exception {
-        bundleContext = FrameworkUtil.getBundle(getClass()).getBundleContext();
-
-        configAdminTracker = new ServiceTracker<ConfigurationAdmin, ConfigurationAdmin>(bundleContext,
-                ConfigurationAdmin.class,
-                null);
-        configAdminTracker.open();
-        configAdmin = configAdminTracker.waitForService(1000);
-
-        connectionManagerTracker = new ServiceTracker<ConnectionManager, ConnectionManager>(bundleContext,
-                ConnectionManager.class,
-                null);
-        connectionManagerTracker.open();
-        connectionManager = connectionManagerTracker.waitForService(1000);
-
-        simulationTracker = new ServiceTracker<Simulation, Simulation>(bundleContext,
-                Simulation.class,
-                null);
-        simulationTracker.open();
-        simulation = simulationTracker.waitForService(1000);
+        super.setUp();
 
         batterySimulationTracker = new ServiceTracker<Endpoint, Endpoint>(bundleContext,
-                bundleContext.createFilter("(test=batterysim)"),
-                null);
+                                                                          bundleContext.createFilter("(test=batterysim)"),
+                                                                          null);
         batterySimulationTracker.open();
     }
 
@@ -67,9 +32,7 @@ public class BatterySimulationTest extends TestCase {
     protected void tearDown() throws Exception {
         destroy();
         batterySimulationTracker.close();
-        simulationTracker.close();
-        connectionManagerTracker.close();
-        configAdminTracker.close();
+        super.tearDown();
     }
 
     private volatile Configuration config;
