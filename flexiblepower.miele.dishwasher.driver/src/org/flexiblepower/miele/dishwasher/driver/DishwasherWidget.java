@@ -1,4 +1,4 @@
-package org.flexiblepower.miele.dishwasher.manager;
+package org.flexiblepower.miele.dishwasher.driver;
 
 import java.io.IOException;
 import java.util.Date;
@@ -6,6 +6,7 @@ import java.util.Locale;
 
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherControlParameters;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherState;
+import org.flexiblepower.time.TimeService;
 import org.flexiblepower.ui.Widget;
 
 public class DishwasherWidget implements Widget {
@@ -32,19 +33,22 @@ public class DishwasherWidget implements Widget {
         }
     }
 
-    private final MieleDishwasherManager dishwasher;
+    private final DishwasherDriver dishwasher;
+    private final TimeService timeService;
 
-    public DishwasherWidget(MieleDishwasherManager dishwasher) {
+    public DishwasherWidget(DishwasherDriver dishwasher, TimeService timeService) {
         this.dishwasher = dishwasher;
+        this.timeService = timeService;
 
     }
 
-    public MieleDishwasherManager getDishwasher() {
+    public DishwasherDriver getDishwasher() {
         return dishwasher;
     }
 
+    private DishwasherState state;
+
     public Update update(Locale locale) {
-        DishwasherState state = null;
         state = dishwasher.getCurrentState();
         if (state != null) {
             return new Update(state.getProgram(), state.getStartTime());
@@ -54,10 +58,15 @@ public class DishwasherWidget implements Widget {
     }
 
     public Update startProgram(Locale locale) throws IOException {
-        dishwasher.getDriver().setControlParameters(new DishwasherControlParameters() {
+        dishwasher.handleControlParameters(new DishwasherControlParameters() {
             @Override
-            public boolean getStartProgram() {
-                return true;
+            public String getProgram() {
+                return dishwasher.getCurrentState().getProgram();
+            }
+
+            @Override
+            public Date getStartTime() {
+                return timeService.getTime();
             }
         });
         return update(locale);
