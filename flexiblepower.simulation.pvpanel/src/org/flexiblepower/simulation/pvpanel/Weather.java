@@ -1,4 +1,4 @@
-package org.flexiblepower.pvpanel.simulation;
+package org.flexiblepower.simulation.pvpanel;
 
 public enum Weather {
 

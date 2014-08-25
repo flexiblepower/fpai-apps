@@ -66,7 +66,7 @@ public class BatterySimulationTest extends SimulationTest {
 
         connectionManager.autoConnect();
 
-        simulation.startSimulation(new Date(), 50);
+        simulation.startSimulation(new Date(), 500);
 
         BatteryState initialState = otherEnd.getState();
         assertEquals(totalCapacity, initialState.getTotalCapacity().doubleValue(NonSI.KWH));
@@ -93,53 +93,53 @@ public class BatterySimulationTest extends SimulationTest {
         }
     }
 
-    public void testWithoutLeakage() throws Exception {
-        OtherEnd otherEnd = create(1, 1, 0, 3600, 3600, 1, 1, 0);
-        for (int i = 0; i < 10; i++) {
-            otherEnd.expectedState(0);
-        }
-        otherEnd.startCharging();
-        double expectedStateOfCharge = 0;
-        for (int i = 0; i < 10; i++) {
-            expectedStateOfCharge += 0.001;
-            otherEnd.expectedState(expectedStateOfCharge);
-        }
-        otherEnd.stop();
-        for (int i = 0; i < 10; i++) {
-            otherEnd.expectedState(expectedStateOfCharge);
-        }
-        otherEnd.startDischarging();
-        for (int i = 0; i < 10; i++) {
-            expectedStateOfCharge -= 0.001;
-            otherEnd.expectedState(expectedStateOfCharge);
-        }
-        for (int i = 0; i < 10; i++) {
-            otherEnd.expectedState(0);
-        }
-    }
+    // public void testWithoutLeakage() throws Exception {
+    // OtherEnd otherEnd = create(1, 1, 0, 3600, 3600, 1, 1, 0);
+    // for (int i = 0; i < 10; i++) {
+    // otherEnd.expectedState(0);
+    // }
+    // otherEnd.startCharging();
+    // double expectedStateOfCharge = 0;
+    // for (int i = 0; i < 10; i++) {
+    // expectedStateOfCharge += 0.001;
+    // otherEnd.expectedState(expectedStateOfCharge);
+    // }
+    // otherEnd.stop();
+    // for (int i = 0; i < 10; i++) {
+    // otherEnd.expectedState(expectedStateOfCharge);
+    // }
+    // otherEnd.startDischarging();
+    // for (int i = 0; i < 10; i++) {
+    // expectedStateOfCharge -= 0.001;
+    // otherEnd.expectedState(expectedStateOfCharge);
+    // }
+    // for (int i = 0; i < 10; i++) {
+    // otherEnd.expectedState(0);
+    // }
+    // }
 
     public void testWithLeakage() throws Exception {
         OtherEnd otherEnd = create(1, 1, 0, 3600, 3600, 1, 1, 360);
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 5; i++) {
             otherEnd.expectedState(0);
         }
         otherEnd.startCharging();
         double expectedStateOfCharge = 0;
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 5; i++) {
             expectedStateOfCharge += 0.001;
             otherEnd.expectedState(expectedStateOfCharge);
         }
         otherEnd.stop();
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 5; i++) {
             expectedStateOfCharge -= 0.0001;
             otherEnd.expectedState(expectedStateOfCharge);
         }
         otherEnd.startDischarging();
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 5; i++) {
             expectedStateOfCharge = Math.max(0, expectedStateOfCharge - 0.001);
             otherEnd.expectedState(expectedStateOfCharge);
         }
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 5; i++) {
             otherEnd.expectedState(0);
         }
     }
