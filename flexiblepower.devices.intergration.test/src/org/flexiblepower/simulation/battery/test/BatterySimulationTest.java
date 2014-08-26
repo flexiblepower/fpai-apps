@@ -130,16 +130,16 @@ public class BatterySimulationTest extends SimulationTest {
             otherEnd.expectedState(expectedStateOfCharge);
         }
         otherEnd.stop();
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 10; i++) {
             expectedStateOfCharge -= 0.0001;
             otherEnd.expectedState(expectedStateOfCharge);
         }
         otherEnd.startDischarging();
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 10; i++) {
             expectedStateOfCharge = Math.max(0, expectedStateOfCharge - 0.001);
             otherEnd.expectedState(expectedStateOfCharge);
         }
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 10; i++) {
             otherEnd.expectedState(0);
         }
     }

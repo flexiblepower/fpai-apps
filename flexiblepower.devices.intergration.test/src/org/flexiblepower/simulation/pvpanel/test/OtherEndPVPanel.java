@@ -12,12 +12,11 @@ import org.flexiblepower.messaging.Connection;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.messaging.MessageHandler;
 import org.flexiblepower.messaging.Port;
-import org.flexiblepower.ral.ResourceControlParameters;
 import org.flexiblepower.ral.drivers.uncontrolled.PowerState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Port(name = "driver", accepts = PowerState.class, sends = ResourceControlParameters.class)
+@Port(name = "driver", accepts = PowerState.class)
 public class OtherEndPVPanel implements Endpoint {
     private static final Logger log = LoggerFactory.getLogger(OtherEndPVPanel.class);
     private volatile Connection connection;

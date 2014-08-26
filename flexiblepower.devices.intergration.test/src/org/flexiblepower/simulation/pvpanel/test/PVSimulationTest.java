@@ -137,41 +137,41 @@ public class PVSimulationTest extends TestCase {
         }
     }
 
-    // public void testCloudyWeather() throws Exception {
-    // OtherEnd otherEnd = create(1, 0.0, 200.0, 1500.0);
-    // pvSimulation.setWeather(Weather.clouds);
-    // for (int i = 0; i < 1; i++) {
-    // otherEnd.expectedState(200.0, 400.0);
-    // }
-    // }
-    //
-    // public void testSunnyWeather() throws Exception {
-    // OtherEnd otherEnd = create(1, 0.0, 200.0, 1500.0);
-    // pvSimulation.setWeather(Weather.sun);
-    // for (int i = 0; i < 1; i++) {
-    // otherEnd.expectedState(1500.0, 1650.0);
-    // }
-    // }
+    public void testCloudyWeather() throws Exception {
+        OtherEndPVPanel otherEnd = create(1, 0.0, 200.0, 1500.0);
+        pvSimulation.setWeather(Weather.clouds);
+        for (int i = 0; i < 1; i++) {
+            otherEnd.expectedState(-400.0, -200.0);
+        }
+    }
 
-    // public void testRandomFactor() throws Exception {
-    // OtherEnd otherEnd = create(1, 0.0, 200.0, 1500.0);
-    //
-    // pvSimulation.setWeather(Weather.clouds);
-    // for (int i = 0; i < 1; i++) {
-    // otherEnd.expectedDifferentState();
-    // }
-    //
-    // pvSimulation.setWeather(Weather.moon);
-    // otherEnd.expectedState(0, 0);
-    // for (int i = 0; i < 1; i++) {
-    // otherEnd.expectSameState();
-    // }
-    //
-    // pvSimulation.setWeather(Weather.sun);
-    // for (int i = 0; i < 1; i++) {
-    // otherEnd.expectedDifferentState();
-    // }
-    //
-    // }
+    public void testSunnyWeather() throws Exception {
+        OtherEndPVPanel otherEnd = create(1, 0.0, 200.0, 1500.0);
+        pvSimulation.setWeather(Weather.sun);
+        for (int i = 0; i < 1; i++) {
+            otherEnd.expectedState(-1650.0, -1500.0);
+        }
+    }
+
+    public void testRandomFactor() throws Exception {
+        OtherEndPVPanel otherEnd = create(1, 0.0, 200.0, 1500.0);
+
+        pvSimulation.setWeather(Weather.clouds);
+        for (int i = 0; i < 1; i++) {
+            otherEnd.expectedDifferentState();
+        }
+
+        pvSimulation.setWeather(Weather.moon);
+        otherEnd.expectedState(0, 0);
+        for (int i = 0; i < 1; i++) {
+            otherEnd.expectSameState();
+        }
+
+        pvSimulation.setWeather(Weather.sun);
+        for (int i = 0; i < 1; i++) {
+            otherEnd.expectedDifferentState();
+        }
+
+    }
 
 }
