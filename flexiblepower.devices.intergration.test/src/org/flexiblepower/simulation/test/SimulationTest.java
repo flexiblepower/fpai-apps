@@ -28,22 +28,25 @@ public abstract class SimulationTest extends TestCase {
         bundleContext = FrameworkUtil.getBundle(getClass()).getBundleContext();
 
         configAdminTracker = new ServiceTracker<ConfigurationAdmin, ConfigurationAdmin>(bundleContext,
-                ConfigurationAdmin.class,
-                null);
+                                                                                        ConfigurationAdmin.class,
+                                                                                        null);
         configAdminTracker.open();
-        configAdmin = configAdminTracker.waitForService(1000);
+        configAdmin = configAdminTracker.waitForService(10000);
+        assertNotNull(configAdmin);
 
         connectionManagerTracker = new ServiceTracker<ConnectionManager, ConnectionManager>(bundleContext,
-                ConnectionManager.class,
-                null);
+                                                                                            ConnectionManager.class,
+                                                                                            null);
         connectionManagerTracker.open();
-        connectionManager = connectionManagerTracker.waitForService(1000);
+        connectionManager = connectionManagerTracker.waitForService(10000);
+        assertNotNull(connectionManager);
 
         simulationTracker = new ServiceTracker<Simulation, Simulation>(bundleContext,
-                Simulation.class,
-                null);
+                                                                       Simulation.class,
+                                                                       null);
         simulationTracker.open();
-        simulation = simulationTracker.waitForService(1000);
+        simulation = simulationTracker.waitForService(10000);
+        assertNotNull(simulation);
     }
 
     @Override

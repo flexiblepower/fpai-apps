@@ -1,5 +1,0 @@
--buildpath: ${default-buildpath}
-
-Bundle-Version: 1.0.0.${qualifier}
-Private-Package: org.flexiblepower.pvpanel.simulation
-Service-Component: org.flexiblepower.pvpanel.simulation.*
