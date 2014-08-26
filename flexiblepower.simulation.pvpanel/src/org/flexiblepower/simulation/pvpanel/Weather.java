@@ -1,5 +1,6 @@
 package org.flexiblepower.simulation.pvpanel;
 
+
 public enum Weather {
 
     moon {
@@ -11,13 +12,15 @@ public enum Weather {
     clouds {
         @Override
         double getProduction(double randomFactor, double cloudy, double sunny) {
-            return cloudy + cloudy * randomFactor;
+            double result = cloudy + cloudy * randomFactor;
+            return result;
         }
     },
     sun {
         @Override
         double getProduction(double randomFactor, double cloudy, double sunny) {
-            return sunny + (sunny / 10) * randomFactor;
+            double result = sunny + (sunny / 10.0) * randomFactor;
+            return result;
         }
     };
 

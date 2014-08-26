@@ -3,7 +3,5 @@
 	<classpathentry kind="src" output="bin" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="aQute.bnd.classpath.container"/>
-	<classpathentry kind="src" path="/flexiblepower.pvpanel.simulation"/>
-	<classpathentry kind="src" path="/flexiblepower.simulation.pvpanel"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

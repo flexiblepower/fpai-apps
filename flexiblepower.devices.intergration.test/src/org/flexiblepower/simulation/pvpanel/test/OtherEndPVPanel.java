@@ -1,5 +1,7 @@
 package org.flexiblepower.simulation.pvpanel.test;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -56,26 +58,39 @@ public class OtherEndPVPanel implements Endpoint {
                   minExpectedProduction,
                   maxExpectedProduction,
                   production);
-        Assert.assertTrue(minExpectedProduction <= production);
-        Assert.assertTrue(maxExpectedProduction >= production);
-
-        lastProduction = production;
-    }
-
-    private double lastProduction = -1;
-
-    public void expectedDifferentState() throws InterruptedException {
-        double production = getState().getCurrentUsage().doubleValue(SI.WATT);
-        Assert.assertFalse(production != lastProduction); // maybe to tight? it is possible that the production is equal
-                                                          // over 2 measurements...
-        lastProduction = production;
+        Assert.assertTrue("Production (" + production
+                          + ") lower than minium production ("
+                          + minExpectedProduction
+                          + ")", minExpectedProduction <= production);
+        Assert.assertTrue("Production (" + production
+                          + ") higher dan maximum production ("
+                          + maxExpectedProduction
+                          + ")", maxExpectedProduction >= production);
 
     }
 
-    public void expectSameState() throws InterruptedException {
-        double production = getState().getCurrentUsage().doubleValue(SI.WATT);
-        Assert.assertEquals(lastProduction, production);
-        lastProduction = production;
+    public void
+            expectedRandomValues(double minExpectedProduction, double maxExpectedProduction) throws InterruptedException {
+        Set<Double> productions = new HashSet<Double>();
+        int numberOfTests = 10;
+        for (int i = 0; i < numberOfTests; i++) {
+            double production = getState().getCurrentUsage().doubleValue(SI.WATT);
+            log.info("production received: {}", production);
+
+            Assert.assertTrue("Production (" + production
+                              + ") lower than minium production ("
+                              + minExpectedProduction
+                              + ")", minExpectedProduction <= production);
+            Assert.assertTrue("Production (" + production
+                              + ") higher dan maximum production ("
+                              + maxExpectedProduction
+                              + ")", maxExpectedProduction >= production);
+            productions.add(production);
+
+        }
+        // we assert that at leest 90% of all production numbers are different.. (because there is a random factor in
+        // use)
+        Assert.assertTrue(productions.size() >= 0.9 * numberOfTests);
     }
 
 }

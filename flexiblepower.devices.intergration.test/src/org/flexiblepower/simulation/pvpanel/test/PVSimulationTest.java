@@ -5,65 +5,26 @@ import java.util.Date;
 import java.util.Dictionary;
 import java.util.Hashtable;
 
-import junit.framework.TestCase;
-
-import org.flexiblepower.messaging.ConnectionManager;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.ral.drivers.uncontrolled.PowerState;
-import org.flexiblepower.simulation.Simulation;
 import org.flexiblepower.simulation.pvpanel.PVSimulation;
 import org.flexiblepower.simulation.pvpanel.Weather;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.FrameworkUtil;
+import org.flexiblepower.simulation.test.SimulationTest;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.cm.Configuration;
-import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.util.tracker.ServiceTracker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class PVSimulationTest extends TestCase {
-    private BundleContext bundleContext;
-    private static final Logger log = LoggerFactory.getLogger(PVSimulationTest.class);
-
-    private ServiceTracker<ConfigurationAdmin, ConfigurationAdmin> configAdminTracker;
-    private ConfigurationAdmin configAdmin;
-
-    private ServiceTracker<ConnectionManager, ConnectionManager> connectionManagerTracker;
-    private ConnectionManager connectionManager;
-
-    private ServiceTracker<Simulation, Simulation> simulationTracker;
-    private Simulation simulation;
-
+public class PVSimulationTest extends SimulationTest {
     private ServiceTracker<Endpoint, Endpoint> pvpanelSimulationTracker;
 
     @Override
     protected void setUp() throws Exception {
-        bundleContext = FrameworkUtil.getBundle(getClass()).getBundleContext();
-
-        configAdminTracker = new ServiceTracker<ConfigurationAdmin, ConfigurationAdmin>(bundleContext,
-                                                                                        ConfigurationAdmin.class,
-                                                                                        null);
-        configAdminTracker.open();
-        configAdmin = configAdminTracker.waitForService(1000);
-
-        connectionManagerTracker = new ServiceTracker<ConnectionManager, ConnectionManager>(bundleContext,
-                                                                                            ConnectionManager.class,
-                                                                                            null);
-        connectionManagerTracker.open();
-        connectionManager = connectionManagerTracker.waitForService(1000);
-
-        simulationTracker = new ServiceTracker<Simulation, Simulation>(bundleContext,
-                                                                       Simulation.class,
-                                                                       null);
-        simulationTracker.open();
-        simulation = simulationTracker.waitForService(1000);
+        super.setUp();
 
         pvpanelSimulationTracker = new ServiceTracker<Endpoint, Endpoint>(bundleContext,
                                                                           bundleContext.createFilter("(test=pvsim)"),
                                                                           null);
         pvpanelSimulationTracker.open();
-
     }
 
     private volatile Configuration config;
@@ -89,16 +50,12 @@ public class PVSimulationTest extends TestCase {
 
         assertNotNull(pvSimulation);
 
-        log.info("registering otherEnd");
-
         OtherEndPVPanel otherEnd = new OtherEndPVPanel();
         otherEndRegistration = bundleContext.registerService(Endpoint.class, otherEnd, null);
 
-        log.info("Autoconnect starting");
         connectionManager.autoConnect();
-        log.info("Autoconnect finished");
 
-        simulation.startSimulation(new Date(), 5);
+        simulation.startSimulation(new Date(), 50);
 
         PowerState initialState = otherEnd.getState();
         // assertEquals(selfDischargePower, initialState.getSelfDischargeSpeed().doubleValue(SI.WATT), 0.01);
@@ -111,9 +68,7 @@ public class PVSimulationTest extends TestCase {
     protected void tearDown() throws Exception {
         destroy();
         pvpanelSimulationTracker.close();
-        simulationTracker.close();
-        connectionManagerTracker.close();
-        configAdminTracker.close();
+        super.tearDown();
     }
 
     private void destroy() throws IOException {
@@ -132,7 +87,7 @@ public class PVSimulationTest extends TestCase {
     public void testMoonWeather() throws Exception {
         OtherEndPVPanel otherEnd = create(1, 0.0, 200.0, 1500.0);
         pvSimulation.setWeather(Weather.moon);
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 100; i++) {
             otherEnd.expectedState(0.0, 0.0);
         }
     }
@@ -140,7 +95,7 @@ public class PVSimulationTest extends TestCase {
     public void testCloudyWeather() throws Exception {
         OtherEndPVPanel otherEnd = create(1, 0.0, 200.0, 1500.0);
         pvSimulation.setWeather(Weather.clouds);
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 100; i++) {
             otherEnd.expectedState(-400.0, -200.0);
         }
     }
@@ -148,29 +103,18 @@ public class PVSimulationTest extends TestCase {
     public void testSunnyWeather() throws Exception {
         OtherEndPVPanel otherEnd = create(1, 0.0, 200.0, 1500.0);
         pvSimulation.setWeather(Weather.sun);
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 100; i++) {
             otherEnd.expectedState(-1650.0, -1500.0);
         }
     }
 
     public void testRandomFactor() throws Exception {
         OtherEndPVPanel otherEnd = create(1, 0.0, 200.0, 1500.0);
-
         pvSimulation.setWeather(Weather.clouds);
-        for (int i = 0; i < 1; i++) {
-            otherEnd.expectedDifferentState();
-        }
-
-        pvSimulation.setWeather(Weather.moon);
-        otherEnd.expectedState(0, 0);
-        for (int i = 0; i < 1; i++) {
-            otherEnd.expectSameState();
-        }
+        otherEnd.expectedRandomValues(-400.0, -200.0);
 
         pvSimulation.setWeather(Weather.sun);
-        for (int i = 0; i < 1; i++) {
-            otherEnd.expectedDifferentState();
-        }
+        otherEnd.expectedRandomValues(-1650.0, -1500.0);
 
     }
 
