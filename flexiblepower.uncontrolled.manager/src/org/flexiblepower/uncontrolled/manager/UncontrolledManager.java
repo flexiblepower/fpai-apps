@@ -40,7 +40,7 @@ import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
-@Component(designateFactory = Config.class, provide = ResourceManager.class)
+@Component(designateFactory = Config.class, provide = ResourceManager.class, immediate = true)
 @Ports({ @Port(name = "controller",
                sends = { UncontrolledRegistration.class,
                         UncontrolledUpdate.class,
