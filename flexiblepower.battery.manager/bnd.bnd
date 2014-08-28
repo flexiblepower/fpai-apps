@@ -1,4 +1,6 @@
--buildpath: ${default-buildpath}
+-buildpath:  \
+	${default-buildpath},\
+	flexiblepower.api.efi
 
 Bundle-Version: 1.0.0.${qualifier}
 Private-Package: org.flexiblepower.battery.manager
