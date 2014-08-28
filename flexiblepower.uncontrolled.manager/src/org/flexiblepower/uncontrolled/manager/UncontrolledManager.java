@@ -11,9 +11,16 @@ import javax.measure.quantity.Duration;
 import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
+import org.flexiblepower.efi.uncontrolled.UncontrolledAllocation;
 import org.flexiblepower.efi.uncontrolled.UncontrolledMeasurement;
 import org.flexiblepower.efi.uncontrolled.UncontrolledRegistration;
 import org.flexiblepower.efi.uncontrolled.UncontrolledUpdate;
+import org.flexiblepower.messaging.Cardinality;
+import org.flexiblepower.messaging.Port;
+import org.flexiblepower.messaging.Ports;
+import org.flexiblepower.rai.comm.AllocationRevoke;
+import org.flexiblepower.rai.comm.AllocationStatusUpdate;
+import org.flexiblepower.rai.comm.ControlSpaceRevoke;
 import org.flexiblepower.rai.comm.ResourceMessage;
 import org.flexiblepower.rai.values.Commodity.Measurements;
 import org.flexiblepower.ral.ResourceControlParameters;
@@ -34,6 +41,14 @@ import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = ResourceManager.class)
+@Ports({ @Port(name = "controller",
+               sends = { UncontrolledRegistration.class,
+                        UncontrolledUpdate.class,
+                        AllocationStatusUpdate.class,
+                        ControlSpaceRevoke.class },
+               accepts = { UncontrolledAllocation.class, AllocationRevoke.class },
+               cardinality = Cardinality.SINGLE)
+        , @Port(name = "driver", accepts = PowerState.class) })
 public class UncontrolledManager extends
                                 AbstractResourceManager<PowerState, ResourceControlParameters> {
 
@@ -99,11 +114,11 @@ public class UncontrolledManager extends
         changedState = timeService.getTime();
         allocationDelay = Measure.valueOf(5, SI.SECOND);
         UncontrolledRegistration reg = new UncontrolledRegistration(null, changedState, allocationDelay, null);
-        UncontrolledUpdate update = createControlSpace(state);
+        UncontrolledUpdate update = createUncontrolledUpdate(state);
         return Arrays.asList(reg, update);
     }
 
-    private UncontrolledUpdate createControlSpace(PowerState state) {
+    private UncontrolledUpdate createUncontrolledUpdate(PowerState state) {
         Measurable<Power> currentUsage = state.getCurrentUsage();
         Measurements measurements = new Measurements(currentUsage, null);
         UncontrolledUpdate update = new UncontrolledMeasurement(null,
@@ -116,7 +131,7 @@ public class UncontrolledManager extends
 
     @Override
     protected List<? extends ResourceMessage> updatedState(PowerState state) {
-        return Arrays.asList(createControlSpace(state));
+        return Arrays.asList(createUncontrolledUpdate(state));
 
     }
 
