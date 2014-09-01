@@ -33,16 +33,16 @@ public class DishwasherWidget implements Widget {
         }
     }
 
-    private final DishwasherDriver dishwasher;
+    private final DishwasherSimulation dishwasher;
     private final TimeService timeService;
 
-    public DishwasherWidget(DishwasherDriver dishwasher, TimeService timeService) {
+    public DishwasherWidget(DishwasherSimulation dishwasher, TimeService timeService) {
         this.dishwasher = dishwasher;
         this.timeService = timeService;
 
     }
 
-    public DishwasherDriver getDishwasher() {
+    public DishwasherSimulation getDishwasher() {
         return dishwasher;
     }
 

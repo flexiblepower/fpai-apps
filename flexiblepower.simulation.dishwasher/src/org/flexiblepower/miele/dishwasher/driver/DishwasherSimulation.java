@@ -35,9 +35,9 @@ import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Deactivate;
 import aQute.bnd.annotation.component.Reference;
 
-public class DishwasherDriver extends MieleResourceDriver<DishwasherState, DishwasherControlParameters> implements
+public class DishwasherSimulation extends MieleResourceDriver<DishwasherState, DishwasherControlParameters> implements
                                                                                                        org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver {
-    private static final Logger log = LoggerFactory.getLogger(DishwasherDriver.State.class);
+    private static final Logger log = LoggerFactory.getLogger(DishwasherSimulation.State.class);
 
     static final class State implements DishwasherState {
         private final boolean isConnected;
@@ -84,7 +84,7 @@ public class DishwasherDriver extends MieleResourceDriver<DishwasherState, Dishw
         }
     }
 
-    public DishwasherDriver(ActionPerformer actionPerformer, TimeService timeService) {
+    public DishwasherSimulation(ActionPerformer actionPerformer, TimeService timeService) {
         super(actionPerformer, timeService);
     }
 

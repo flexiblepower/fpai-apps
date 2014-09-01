@@ -11,7 +11,7 @@ import aQute.bnd.annotation.component.Reference;
 
 @Component(provide = MieleResourceDriverFactory.class)
 public class DishwasherDriverFactory extends
-                                    MieleResourceDriverFactory<DishwasherState, DishwasherControlParameters, DishwasherDriver> {
+                                    MieleResourceDriverFactory<DishwasherState, DishwasherControlParameters, DishwasherSimulation> {
 
     public DishwasherDriverFactory() {
         super(DishwasherState.class);
@@ -30,7 +30,7 @@ public class DishwasherDriverFactory extends
     }
 
     @Override
-    public DishwasherDriver create(ActionPerformer actionPerformer) {
-        return new DishwasherDriver(actionPerformer, timeService);
+    public DishwasherSimulation create(ActionPerformer actionPerformer) {
+        return new DishwasherSimulation(actionPerformer, timeService);
     }
 }
