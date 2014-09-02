@@ -1,7 +1,6 @@
 package org.flexiblepower.miele.dishwasher.manager;
 
 import static javax.measure.unit.NonSI.HOUR;
-import static javax.measure.unit.NonSI.KWH;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,8 +39,8 @@ import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = ResourceManager.class)
 public class MieleDishwasherManager extends
-                                   AbstractResourceManager<DishwasherState, DishwasherControlParameters> implements
-                                                                                                        TimeShifterResourceManager {
+AbstractResourceManager<DishwasherState, DishwasherControlParameters> implements
+TimeShifterResourceManager {
     private static final Logger log = LoggerFactory.getLogger(MieleDishwasherManager.class);
 
     private final class DishwasherControlParametersImpl implements DishwasherControlParameters {
@@ -112,7 +111,7 @@ public class MieleDishwasherManager extends
         if (message instanceof TimeShifterAllocation) {
             currentAllocation = (TimeShifterAllocation) message;
             if (currentUpdate != null && currentAllocation.getControlSpaceUpdateId()
-                                                          .equals(currentUpdate.getResourceMessageId())) {
+                    .equals(currentUpdate.getResourceMessageId())) {
                 List<SequentialProfileAllocation> sequentialProfileAllocations = currentAllocation.getSequentialProfileAllocation();
                 if (!sequentialProfileAllocations.isEmpty()) {
                     SequentialProfileAllocation sequentialProfileAllocation = sequentialProfileAllocations.get(0);
@@ -146,7 +145,7 @@ public class MieleDishwasherManager extends
         startTime = info.getStartTime();
 
         // Create energy Profile
-        UncertainMeasure<Energy> energy = new UncertainMeasure<Energy>(1, KWH);
+        UncertainMeasure<Power> energy = new UncertainMeasure<Power>(1000, SI.WATT);
         UncertainMeasure<Duration> duration = new UncertainMeasure<Duration>(1, HOUR);
 
         // Set Energy Profile
@@ -154,7 +153,7 @@ public class MieleDishwasherManager extends
         } else if (program == "Sensor Wash") {
             duration = new UncertainMeasure<Duration>(2, HOUR);
         } else {
-            energy = new UncertainMeasure<Energy>(2, KWH);
+            energy = new UncertainMeasure<Power>(330, SI.WATT);
             duration = new UncertainMeasure<Duration>(2, HOUR);
         }
 
@@ -162,8 +161,8 @@ public class MieleDishwasherManager extends
         Date startBefore = new Date(startTime.getTime());
 
         CommodityForecast<Energy, Power> forecast = CommodityForecast.create(Commodity.ELECTRICITY)
-                                                                     .add(duration, energy)
-                                                                     .build();
+                .add(duration, energy)
+                .build();
         return new TimeShifterUpdate(null,
                                      changedState,
                                      changedState,

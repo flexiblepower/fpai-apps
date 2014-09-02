@@ -1,4 +1,4 @@
-package org.flexiblepower.miele.dishwasher.driver;
+package org.flexiblepower.simulation.dishwasher;
 
 import org.flexiblepower.protocol.mielegateway.api.ActionPerformer;
 import org.flexiblepower.protocol.mielegateway.api.MieleResourceDriverFactory;

@@ -234,11 +234,11 @@ Runnable {
     @Override
     public synchronized void run() {
         Date currentTime = timeService.getTime();
-        double duration = (currentTime.getTime() - startTime.getTime()) / 1000.0; // in seconds
+        double timeSinceUpdate = (currentTime.getTime() - startTime.getTime()) / 1000.0; // in seconds
         double amountOfCharge = 0; // in joules
 
-        logger.debug("Battery simulation step. Mode={} Timestep={}s", mode, duration);
-        if (duration > 0) {
+        logger.debug("Battery simulation step. Mode={} Timestep={}s", mode, timeSinceUpdate);
+        if (timeSinceUpdate > 0) {
             switch (mode) {
             case IDLE:
                 // TODO doesn't the self discharge always apply?
@@ -254,7 +254,7 @@ Runnable {
                 throw new AssertionError();
             }
 
-            double stateOfChargeInJoules = stateOfCharge.doubleValue(JOULE) + (amountOfCharge * duration);
+            double stateOfChargeInJoules = stateOfCharge.doubleValue(JOULE) + (amountOfCharge * timeSinceUpdate);
             if (stateOfChargeInJoules < 0) {
                 stateOfChargeInJoules = 0;
             } else {

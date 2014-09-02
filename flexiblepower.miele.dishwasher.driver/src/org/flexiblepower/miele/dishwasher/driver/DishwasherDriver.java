@@ -36,7 +36,7 @@ import aQute.bnd.annotation.component.Deactivate;
 import aQute.bnd.annotation.component.Reference;
 
 public class DishwasherDriver extends MieleResourceDriver<DishwasherState, DishwasherControlParameters> implements
-                                                                                                       org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver {
+org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver {
     private static final Logger log = LoggerFactory.getLogger(DishwasherDriver.State.class);
 
     static final class State implements DishwasherState {
@@ -79,8 +79,8 @@ public class DishwasherDriver extends MieleResourceDriver<DishwasherState, Dishw
         @Override
         public CommodityProfile<Energy, Power> getEnergyProfile() {
             return CommodityProfile.create(Commodity.ELECTRICITY)
-                    .add(Measure.valueOf(1, HOUR), Measure.valueOf(1, KWH))
-                    .build();
+                                   .add(Measure.valueOf(1, HOUR), Measure.valueOf(1, KWH))
+                                   .build();
         }
     }
 
@@ -150,7 +150,7 @@ public class DishwasherDriver extends MieleResourceDriver<DishwasherState, Dishw
                 public void run() {
                     ActionResult result = performAction("Start");
                     if (!result.isOk()) {
-                        log.warn("Coul not start the dishwasher: {}", result.getMessage());
+                        log.warn("Could not start the dishwasher: {}", result.getMessage());
                     }
                 }
             }, diff.longValue(SI.SECOND), TimeUnit.SECONDS);

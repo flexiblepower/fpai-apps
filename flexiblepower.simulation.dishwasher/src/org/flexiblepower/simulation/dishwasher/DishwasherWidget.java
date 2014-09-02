@@ -1,4 +1,4 @@
-package org.flexiblepower.miele.dishwasher.driver;
+package org.flexiblepower.simulation.dishwasher;
 
 import java.io.IOException;
 import java.util.Date;

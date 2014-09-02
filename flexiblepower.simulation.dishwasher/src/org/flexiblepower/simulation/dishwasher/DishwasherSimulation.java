@@ -1,7 +1,6 @@
-package org.flexiblepower.miele.dishwasher.driver;
+package org.flexiblepower.simulation.dishwasher;
 
 import static javax.measure.unit.NonSI.HOUR;
-import static javax.measure.unit.NonSI.KWH;
 
 import java.util.Date;
 import java.util.Map;
@@ -16,13 +15,14 @@ import javax.measure.quantity.Energy;
 import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
+import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.protocol.mielegateway.api.ActionPerformer;
-import org.flexiblepower.protocol.mielegateway.api.ActionResult;
 import org.flexiblepower.protocol.mielegateway.api.MieleResourceDriver;
 import org.flexiblepower.rai.values.Commodity;
 import org.flexiblepower.rai.values.CommodityProfile;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherControlParameters;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherState;
+import org.flexiblepower.simulation.dishwasher.DishwasherSimulation.Config;
 import org.flexiblepower.time.TimeService;
 import org.flexiblepower.time.TimeUtil;
 import org.flexiblepower.ui.Widget;
@@ -32,27 +32,47 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import aQute.bnd.annotation.component.Activate;
+import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Deactivate;
 import aQute.bnd.annotation.component.Reference;
+import aQute.bnd.annotation.metatype.Configurable;
+import aQute.bnd.annotation.metatype.Meta;
 
+@Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 public class DishwasherSimulation extends MieleResourceDriver<DishwasherState, DishwasherControlParameters> implements
-                                                                                                       org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver {
+org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver
+{
     private static final Logger log = LoggerFactory.getLogger(DishwasherSimulation.State.class);
+
+    interface Config {
+        @Meta.AD(deflt = "true", description = "Device is connected to the driver")
+        boolean isConnected();
+
+        @Meta.AD(deflt = "0", description = "Latest starttime of dishwasher (as given on device)")
+        Date latestStartTime();
+
+        @Meta.AD(deflt = "No program selected", description = "Device is connected to the driver")
+        String program();
+
+    }
 
     static final class State implements DishwasherState {
         private final boolean isConnected;
         private final Date startTime;
+        private final Date latestStartTime;
         private final String program;
 
-        State(Date startTime, String program) {
+        State(Date startTime, Date latestStartTime, String program) {
             isConnected = true;
             this.startTime = startTime;
+            this.latestStartTime = latestStartTime;
             this.program = program;
         }
 
         State() {
             isConnected = false;
             startTime = null;
+            latestStartTime = null;
             program = "No program selected";
         }
 
@@ -67,21 +87,22 @@ public class DishwasherSimulation extends MieleResourceDriver<DishwasherState, D
         }
 
         @Override
+        public Date getLatestStartTime() {
+            return latestStartTime;
+        }
+
+        @Override
         public String getProgram() {
             return program;
         }
 
         @Override
-        public Date getLatestStartTime() {
-            return startTime;
-        }
-
-        @Override
         public CommodityProfile<Energy, Power> getEnergyProfile() {
             return CommodityProfile.create(Commodity.ELECTRICITY)
-                    .add(Measure.valueOf(1, HOUR), Measure.valueOf(1, KWH))
+                    .add(Measure.valueOf(1, HOUR), Measure.valueOf(1000, SI.WATT))
                     .build();
         }
+
     }
 
     public DishwasherSimulation(ActionPerformer actionPerformer, TimeService timeService) {
@@ -97,9 +118,29 @@ public class DishwasherSimulation extends MieleResourceDriver<DishwasherState, D
 
     private DishwasherWidget widget;
     private ServiceRegistration<Widget> widgetRegistration;
+    private Config configuration;
 
     @Activate
-    public void activate(BundleContext context) {
+    public void activate(BundleContext context, Map<String, Object> properties) {
+        configuration = Configurable.createConfigurable(Config.class, properties);
+
+        Measurable<Duration> diff = TimeUtil.difference(timeService.getTime(),
+                                                        configuration.latestStartTime());
+
+        if (runFuture != null && !runFuture.isDone()) {
+            runFuture.cancel(false);
+        }
+
+        runFuture = scheduler.schedule(new Runnable() {
+            @Override
+            public void run() {
+                log.debug("Started by device");
+                Date currentTime = timeService.getTime();
+                currentState = new State(currentTime, currentState.getLatestStartTime(), currentState.getProgram());
+                publishState(currentState);
+            }
+        }, diff.longValue(SI.SECOND), TimeUnit.SECONDS);
+
         widget = new DishwasherWidget(this, timeService);
         widgetRegistration = context.registerService(Widget.class, widget, null);
     }
@@ -125,7 +166,8 @@ public class DishwasherSimulation extends MieleResourceDriver<DishwasherState, D
         // Integer remainingTime = parseTime(information.get("Remaining Time"));
         // Integer duration = parseTime(information.get("Duration"));
 
-        currentState = new State(startTime, currentProgram);
+        // TODO: or should I parse the latest start time?? -- Jan
+        currentState = new State(startTime, currentState.getLatestStartTime(), currentProgram);
         publishState(currentState);
     }
 
@@ -148,12 +190,32 @@ public class DishwasherSimulation extends MieleResourceDriver<DishwasherState, D
             runFuture = scheduler.schedule(new Runnable() {
                 @Override
                 public void run() {
-                    ActionResult result = performAction("Start");
-                    if (!result.isOk()) {
-                        log.warn("Coul not start the dishwasher: {}", result.getMessage());
-                    }
+                    log.debug("Started by manager");
+                    Date currentTime = timeService.getTime();
+                    currentState = new State(currentTime, currentState.getLatestStartTime(), currentState.getProgram());
+                    publishState(currentState);
                 }
-            }, diff.longValue(SI.SECOND), TimeUnit.SECONDS);
+            },
+            diff.longValue(SI.SECOND),
+            TimeUnit.SECONDS);
         }
     }
+
+    // @Override
+    // public synchronized void run() {
+    // Date currentTime = timeService.getTime();
+    // double timeSinceUpdate = (currentTime.getTime() - currentState.getStartTime().getTime()) / 1000.0; // in seconds
+    // logger.debug("Dishwasher simulation step. Program={} Timestep={}s", currentState.getProgram(), timeSinceUpdate);
+    // if (currentState.getStartTime() != null) {
+    // // Machine has not started yet
+    // if (currentTime.after(configuration.latestStartTime())) {
+    // // you have to start now!
+    // log.debug("Starting dishwasher, as it is after latest start time");
+    // currentState = new State(currentTime, currentState.getProgram());
+    // publishState(currentState);
+    // } else {
+    // log.debug("Not starting yet, it is before latest start time");
+    // }
+    // }
+    // }
 }
