@@ -1,7 +1,8 @@
 package org.flexiblepower.uncontrolled.manager;
 
-import java.sql.Timestamp;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import javax.measure.Measurable;
@@ -11,16 +12,20 @@ import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
 import org.flexiblepower.efi.uncontrolled.UncontrolledAllocation;
+import org.flexiblepower.efi.uncontrolled.UncontrolledMeasurement;
+import org.flexiblepower.efi.uncontrolled.UncontrolledRegistration;
 import org.flexiblepower.efi.uncontrolled.UncontrolledUpdate;
-import org.flexiblepower.efi.util.CommodityProfile;
-import org.flexiblepower.observation.Observation;
-import org.flexiblepower.observation.ObservationProvider;
-import org.flexiblepower.rai.comm.Allocation;
-import org.flexiblepower.rai.values.Commodity;
+import org.flexiblepower.messaging.Cardinality;
+import org.flexiblepower.messaging.Port;
+import org.flexiblepower.messaging.Ports;
+import org.flexiblepower.rai.comm.AllocationRevoke;
+import org.flexiblepower.rai.comm.AllocationStatusUpdate;
+import org.flexiblepower.rai.comm.ControlSpaceRevoke;
+import org.flexiblepower.rai.comm.ResourceMessage;
+import org.flexiblepower.rai.values.Commodity.Measurements;
+import org.flexiblepower.ral.ResourceControlParameters;
 import org.flexiblepower.ral.ResourceManager;
-import org.flexiblepower.ral.drivers.uncontrolled.UncontrolledControlParameters;
-import org.flexiblepower.ral.drivers.uncontrolled.UncontrolledDriver;
-import org.flexiblepower.ral.drivers.uncontrolled.UncontrolledState;
+import org.flexiblepower.ral.drivers.uncontrolled.PowerState;
 import org.flexiblepower.ral.ext.AbstractResourceManager;
 import org.flexiblepower.time.TimeService;
 import org.flexiblepower.ui.Widget;
@@ -35,9 +40,17 @@ import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
-@Component(designateFactory = Config.class, provide = ResourceManager.class)
+@Component(designateFactory = Config.class, provide = ResourceManager.class, immediate = true)
+@Ports({ @Port(name = "controller",
+               sends = { UncontrolledRegistration.class,
+                        UncontrolledUpdate.class,
+                        AllocationStatusUpdate.class,
+                        ControlSpaceRevoke.class },
+               accepts = { UncontrolledAllocation.class, AllocationRevoke.class },
+               cardinality = Cardinality.SINGLE)
+        , @Port(name = "driver", accepts = PowerState.class) })
 public class UncontrolledManager extends
-                                AbstractResourceManager<Allocation, UncontrolledState, UncontrolledControlParameters> {
+                                AbstractResourceManager<PowerState, ResourceControlParameters> {
 
     @Meta.OCD
     interface Config {
@@ -54,13 +67,16 @@ public class UncontrolledManager extends
     private Config config;
 
     public UncontrolledManager() {
-        super(UncontrolledDriver.class, UncontrolledControlSpace.class);
+        super();
     }
 
     private TimeService timeService;
     private UncontrolledManagerWidget widget;
     private ServiceRegistration<Widget> widgetRegistration;
     private Measurable<Power> lastDemand;
+    private PowerState currentState;
+    private Date changedState;
+    private Measure<Integer, Duration> allocationDelay;
 
     @Reference
     public void setTimeService(TimeService timeService) {
@@ -84,25 +100,6 @@ public class UncontrolledManager extends
         }
     }
 
-    @Override
-    public void handleAllocation(UncontrolledAllocation allocation) {
-        // Unconstrained Allocations have a maximum power production or consumption for a
-        // given duration.
-        Date startTime = allocation.getStartTime();
-
-        UncontrolledAllocation.Element element = allocation.getElement();
-
-    }
-
-    @Override
-    public void consume(ObservationProvider<? extends UncontrolledState> source,
-                        Observation<? extends UncontrolledState> observation) {
-        UncontrolledState uncontrolledState = observation.getValue();
-        lastDemand = uncontrolledState.getDemand();
-        logger.debug("Received demand from " + source + " of " + uncontrolledState.getDemand());
-        publish(constructControlSpace(observation.getValue()));
-    }
-
     public Measurable<Power> getLastDemand() {
         return lastDemand;
     }
@@ -111,21 +108,36 @@ public class UncontrolledManager extends
         return config.resourceId();
     }
 
-    private UncontrolledUpdate constructControlSpace(UncontrolledState uncontrolledState) {
-        // Measure<Double, Energy> energy = Measure.valueOf(uncontrolledState.getDemand().doubleValue(SI.WATT) *
-        // config.expirationTime(),
-        // SI.JOULE);
-        // EnergyProfile energyProfile = EnergyProfile.create()
-        // .add(Measure.valueOf(config.expirationTime(), SI.SECOND), energy)
-        // .build();
-        // Date now = timeService.getTime();
-
-        Timestamp startTime = new Timestamp(0);
-        Timestamp endTime = new Timestamp(0);
-        final Measurable<Duration> allocationDelay = Measure.valueOf(60, SI.SECOND);
-
-        Map<Commodity, CommodityProfile> profiles = null;
-
-        return new UncontrolledUpdate(config.resourceId(), startTime, endTime, allocationDelay, profiles);
+    @Override
+    protected List<? extends ResourceMessage> startRegistration(PowerState state) {
+        currentState = state;
+        changedState = timeService.getTime();
+        allocationDelay = Measure.valueOf(5, SI.SECOND);
+        UncontrolledRegistration reg = new UncontrolledRegistration(null, changedState, allocationDelay, null);
+        UncontrolledUpdate update = createUncontrolledUpdate(state);
+        return Arrays.asList(reg, update);
     }
+
+    private UncontrolledUpdate createUncontrolledUpdate(PowerState state) {
+        Measurable<Power> currentUsage = state.getCurrentUsage();
+        Measurements measurements = new Measurements(currentUsage, null);
+        UncontrolledUpdate update = new UncontrolledMeasurement(null,
+                                                                changedState,
+                                                                timeService.getTime(),
+                                                                allocationDelay,
+                                                                measurements);
+        return update;
+    }
+
+    @Override
+    protected List<? extends ResourceMessage> updatedState(PowerState state) {
+        return Arrays.asList(createUncontrolledUpdate(state));
+
+    }
+
+    @Override
+    protected ResourceControlParameters receivedAllocation(ResourceMessage message) {
+        throw new AssertionError();
+    }
+
 }
