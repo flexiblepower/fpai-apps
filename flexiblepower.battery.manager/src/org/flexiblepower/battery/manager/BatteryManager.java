@@ -51,11 +51,12 @@ import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = ResourceManager.class)
 public class BatteryManager extends
-                           AbstractResourceManager<BatteryState, BatteryControlParameters> implements
-                                                                                          BufferResourceManager {
+AbstractResourceManager<BatteryState, BatteryControlParameters> implements
+BufferResourceManager {
     private static final Logger log = LoggerFactory.getLogger(BatteryManager.class);
     @SuppressWarnings("unchecked")
     private static final Unit<Energy> WH = (Unit<Energy>) SI.WATT.times(NonSI.HOUR); // Define WattHour (Wh)
+    private static final int BATTERY_ACTUATOR_ID = 1;
 
     @Meta.OCD
     interface Config {
@@ -71,8 +72,7 @@ public class BatteryManager extends
         changedStateTimestamp = timeService.getTime();
 
         // Buffer registration
-        // VRAAG: is er altijd maar 1 batteryActuator? Hoe doen we anders de actuatorId?
-        batteryActuator = makeBatteryActuator(1);
+        batteryActuator = makeBatteryActuator(BATTERY_ACTUATOR_ID);
         ActuatorCapabilities actuatorCapability = new ActuatorCapabilities(batteryActuator.getId(),
                                                                            "Battery",
                                                                            Commodity.Set.onlyElectricity);
@@ -87,9 +87,9 @@ public class BatteryManager extends
 
         // Buffer system description
         double lowerBound = 0; // 0 Wh
-        double upperBound = 6000; // 6 Wh
-        double fillingSpeed = 0.0001;
-        LeakageFunction bufferLeakage = LeakageFunction.create().add(lowerBound, upperBound, fillingSpeed).build();
+        double upperBound = 6000; // 6 KWh
+        double leakageSpeed = 0.0001; // 0.0001W/s
+        LeakageFunction bufferLeakage = LeakageFunction.create().add(lowerBound, upperBound, leakageSpeed).build();
         BufferSystemDescription sysDescr = new BufferSystemDescription(null,
                                                                        changedStateTimestamp,
                                                                        changedStateTimestamp,
@@ -138,6 +138,9 @@ public class BatteryManager extends
         if (message instanceof BufferAllocation) {
             BufferAllocation bufferAllocation = (BufferAllocation) message;
 
+            // waarom krijgen we ook de ControlSpaceUpdate mee?
+            // hoe komen we aan de actuatorAllocations, daar is geen method voor.
+            // hoe schedulen we een timer, als er getimde allocations zijn?
             BatteryControlParameters batteryControlParameters = new BatteryControlParameters() {
                 @Override
                 public BatteryMode getMode() {
@@ -148,6 +151,7 @@ public class BatteryManager extends
 
             return batteryControlParameters;
         } else {
+            log.warn("Unexpected resource (" + message.toString() + ") message received");
             return null;
         }
     }

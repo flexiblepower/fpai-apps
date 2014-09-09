@@ -17,8 +17,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Port(name = "driver", accepts = BatteryState.class, sends = BatteryControlParameters.class)
-public class OtherEnd implements Endpoint {
-    private static final Logger log = LoggerFactory.getLogger(OtherEnd.class);
+public class OtherEndBattery implements Endpoint {
+    private static final Logger log = LoggerFactory.getLogger(OtherEndBattery.class);
 
     private final class BatteryControlParametersImpl implements BatteryControlParameters {
         private final BatteryMode mode;
@@ -51,7 +51,7 @@ public class OtherEnd implements Endpoint {
 
             @Override
             public void disconnected() {
-                OtherEnd.this.connection = null;
+                OtherEndBattery.this.connection = null;
             }
         };
     }
@@ -82,7 +82,7 @@ public class OtherEnd implements Endpoint {
         messages.clear();
     }
 
-    public void stop() {
+    public void switchToIdle() {
         connection.sendMessage(new BatteryControlParametersImpl(BatteryMode.IDLE));
         messages.clear();
     }
