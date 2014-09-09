@@ -76,6 +76,18 @@ public class DishwasherWidget implements Widget {
             public boolean getStartProgram() {
                 return true;
             }
+
+            @Override
+            public Date getStartTime() {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+            @Override
+            public String getProgram() {
+                // TODO Auto-generated method stub
+                return null;
+            }
         });
         return update(locale);
     }
