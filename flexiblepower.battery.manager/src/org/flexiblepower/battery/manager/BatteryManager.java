@@ -17,6 +17,7 @@ import javax.measure.quantity.Money;
 import javax.measure.quantity.Power;
 import javax.measure.unit.NonSI;
 import javax.measure.unit.SI;
+import javax.measure.unit.Unit;
 
 import org.flexiblepower.battery.manager.BatteryManager.Config;
 import org.flexiblepower.efi.BufferResourceManager;
@@ -53,6 +54,8 @@ public class BatteryManager extends
                            AbstractResourceManager<BatteryState, BatteryControlParameters> implements
                                                                                           BufferResourceManager {
     private static final Logger log = LoggerFactory.getLogger(BatteryManager.class);
+    @SuppressWarnings("unchecked")
+    private static final Unit<Energy> WH = (Unit<Energy>) SI.WATT.times(NonSI.HOUR); // Define WattHour (Wh)
 
     @Meta.OCD
     interface Config {
@@ -79,13 +82,13 @@ public class BatteryManager extends
                                                         changedStateTimestamp,
                                                         toSeconds(0),
                                                         "Battery level",
-                                                        NonSI.KWH,
+                                                        WH, // WH
                                                         actuatorCapabilities);
 
         // Buffer system description
-        double lowerBound = 0; // 0 Kwh
-        double upperBound = 6; // 6 Kwh
-        double fillingSpeed = 0.0000001;
+        double lowerBound = 0; // 0 Wh
+        double upperBound = 6000; // 6 Wh
+        double fillingSpeed = 0.0001;
         LeakageFunction bufferLeakage = LeakageFunction.create().add(lowerBound, upperBound, fillingSpeed).build();
         BufferSystemDescription sysDescr = new BufferSystemDescription(null,
                                                                        changedStateTimestamp,
@@ -231,9 +234,9 @@ public class BatteryManager extends
         List<RunningModeRangeElement> rows = new ArrayList<RunningModeRangeElement>();
 
         Measurements commodityConsumptionRow0 = new Measurements(toWatt(1460), null);
-        rows.add(new RunningModeRangeElement(0, 5, 0.0003968, commodityConsumptionRow0, toEurocent(0)));
+        rows.add(new RunningModeRangeElement(0, 5000, 0.3968, commodityConsumptionRow0, toEurocent(0)));
         Measurements commodityConsumptionRow1 = new Measurements(toWatt(1050), null);
-        rows.add(new RunningModeRangeElement(5, 6, 0.0002778, commodityConsumptionRow1, toEurocent(0)));
+        rows.add(new RunningModeRangeElement(5000, 6000, 0.2778, commodityConsumptionRow1, toEurocent(0)));
 
         return (RunningModeRangeElement[]) rows.toArray();
     }
@@ -247,9 +250,9 @@ public class BatteryManager extends
         List<RunningModeRangeElement> rows = new ArrayList<RunningModeRangeElement>();
 
         Measurements commodityConsumptionRow0 = new Measurements(toWatt(0), null);
-        rows.add(new RunningModeRangeElement(0, 5, 0, commodityConsumptionRow0, toEurocent(0)));
+        rows.add(new RunningModeRangeElement(0, 5000, 0, commodityConsumptionRow0, toEurocent(0)));
         Measurements commodityConsumptionRow1 = new Measurements(toWatt(0), null);
-        rows.add(new RunningModeRangeElement(5, 6, 0, commodityConsumptionRow1, toEurocent(0)));
+        rows.add(new RunningModeRangeElement(5000, 6000, 0, commodityConsumptionRow1, toEurocent(0)));
 
         return (RunningModeRangeElement[]) rows.toArray();
     }
@@ -263,9 +266,9 @@ public class BatteryManager extends
         List<RunningModeRangeElement> rows = new ArrayList<RunningModeRangeElement>();
 
         Measurements commodityConsumptionRow0 = new Measurements(toWatt(-1400), null);
-        rows.add(new RunningModeRangeElement(0, 5, -0.0003968, commodityConsumptionRow0, toEurocent(0)));
+        rows.add(new RunningModeRangeElement(0, 5000, -0.3968, commodityConsumptionRow0, toEurocent(0)));
         Measurements commodityConsumptionRow1 = new Measurements(toWatt(-1400), null);
-        rows.add(new RunningModeRangeElement(5, 6, -0.0003968, commodityConsumptionRow1, toEurocent(0)));
+        rows.add(new RunningModeRangeElement(5000, 6000, -0.3968, commodityConsumptionRow1, toEurocent(0)));
 
         return (RunningModeRangeElement[]) rows.toArray();
     }
@@ -292,8 +295,8 @@ public class BatteryManager extends
     private Measure<Double, Energy> getCurrentFillLevel(BatteryState batteryState) {
         double stateOfCharge = batteryState.getStateOfCharge();
         Measurable<Energy> totalCapacity = batteryState.getTotalCapacity();
-        return Measure.valueOf(stateOfCharge * totalCapacity.doubleValue(NonSI.KWH),
-                               NonSI.KWH);
+        return Measure.valueOf(stateOfCharge * totalCapacity.doubleValue(WH),
+                               WH);
     }
 
     private TimeService timeService;
@@ -304,10 +307,6 @@ public class BatteryManager extends
     }
 
     // ---------------- helper conversion methodes ------------------
-
-    private Measure<Double, Energy> toKWH(double kwh) {
-        return Measure.valueOf(kwh, NonSI.KWH);
-    }
 
     private Measure<Integer, Power> toWatt(int watt) {
         return Measure.valueOf(watt, SI.WATT);
