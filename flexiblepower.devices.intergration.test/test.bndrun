@@ -21,6 +21,8 @@
 	junit.osgi;version=latest,\
 	flexiblepower.simulation.battery;version=latest,\
 	flexiblepower.simulation.pvpanel;version=latest,\
+	flexiblepower.simulation.dishwasher;version=latest,\
+	flexiblepower.miele.dishwasher.manager;version=latest,\
 	flexiblepower.uncontrolled.manager;version=latest,\
 	flexiblepower.devices.intergration.test;version=latest
 
