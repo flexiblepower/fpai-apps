@@ -1,4 +1,4 @@
--runfw: org.eclipse.osgi
+-runfw: org.apache.felix.framework;version='[4.4.0,4.4.0]'
 -runee: JavaSE-1.6
 -runvm: -Dlogback.configurationFile=../cnf/logback.xml
 
@@ -9,50 +9,47 @@
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.webconsole.plugins.ds)',\
 	osgi.identity;filter:='(osgi.identity=org.slf4j.osgi-over-slf4j)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.runtime)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.battery.manager)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.battery.simulation)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.pvpanel.simulation)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.uncontrolled.manager)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.ui)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.ui.resourceinfo)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.miele.dishwasher.driver)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.miele.dishwasher.manager)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.miele.protocol)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.miele.refrigerator.driver)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.miele.refrigerator.manager)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.ip.onlinecheck)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.felix.webconsole.plugins)'
+	osgi.identity;filter:='(osgi.identity=flexiblepower.felix.webconsole.plugins)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.dishwasher)',\
+	osgi.identity;filter:='(osgi.identity=org.apache.felix.http.jetty)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.pvpanel)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.uncontrolled.manager)',\
+	osgi.identity;filter:='(osgi.identity=org.slf4j.osgi-over-slf4j)'
 -runbundles:  \
-	biz.aQute.bnd.annotation;version='[1.52.3,1.52.4)',\
-	ch.qos.logback.classic;version='[1.0.13,1.0.14)',\
-	ch.qos.logback.core;version='[1.0.13,1.0.14)',\
+	biz.aQute.bnd.annotation;version='[2.4.0,2.4.1)',\
+	ch.qos.logback.classic;version='[1.1.2,1.1.3)',\
+	ch.qos.logback.core;version='[1.1.2,1.1.3)',\
 	com.google.gson;version='[2.2.4,2.2.5)',\
-	com.google.gwt.servlet;version='[2.5.0,2.5.1)',\
-	flexiblepower.api;version='[1.1.0,1.1.1)',\
-	flexiblepower.api.ext;version='[1.1.0,1.1.1)',\
-	flexiblepower.battery.manager;version=latest,\
-	flexiblepower.battery.simulation;version=latest,\
-	flexiblepower.felix.webconsole.plugins;version='[1.0.0,1.0.1)',\
+	flexiblepower.api;version='[2.0.0,2.0.1)',\
+	flexiblepower.api.efi;version='[1.0.0,1.0.1)',\
+	flexiblepower.api.ext;version='[2.0.0,2.0.1)',\
+	flexiblepower.felix.webconsole.plugins;version='[1.1.0,1.1.1)',\
 	flexiblepower.ip.onlinecheck;version=latest,\
-	flexiblepower.miele.dishwasher.driver;version=latest,\
 	flexiblepower.miele.dishwasher.manager;version=latest,\
 	flexiblepower.miele.protocol;version=latest,\
-	flexiblepower.miele.refrigerator.driver;version=latest,\
-	flexiblepower.miele.refrigerator.manager;version=latest,\
-	flexiblepower.pvpanel.simulation;version=latest,\
-	flexiblepower.runtime;version='[1.0.1,1.0.2)',\
+	flexiblepower.runtime;version='[2.0.0,2.0.1)',\
+	flexiblepower.simulation.dishwasher;version=latest,\
+	flexiblepower.simulation.pvpanel;version=latest,\
 	flexiblepower.ui;version='[1.0.0,1.0.1)',\
-	flexiblepower.ui.resourceinfo;version='[1.0.0,1.0.1)',\
+	flexiblepower.ui.resourceinfo;version='[1.1.0,1.1.1)',\
 	flexiblepower.uncontrolled.manager;version=latest,\
-	org.apache.commons.fileupload;version='[1.2.2,1.2.3)',\
 	org.apache.commons.io;version='[2.4.0,2.4.1)',\
-	org.apache.felix.configadmin;version='[1.6.0,1.6.1)',\
-	org.apache.felix.http.jetty;version='[2.2.0,2.2.1)',\
-	org.apache.felix.http.whiteboard;version='[2.2.0,2.2.1)',\
-	org.apache.felix.metatype;version='[1.0.6,1.0.7)',\
-	org.apache.felix.scr;version='[1.6.2,1.6.3)',\
-	org.apache.felix.webconsole;version='[4.2.0,4.2.1)',\
+	org.apache.felix.configadmin;version='[1.8.0,1.8.1)',\
+	org.apache.felix.eventadmin;version='[1.3.2,1.3.3)',\
+	org.apache.felix.http.api;version='[2.3.0,2.3.1)',\
+	org.apache.felix.http.jetty;version='[2.3.0,2.3.1)',\
+	org.apache.felix.http.servlet-api;version='[1.0.0,1.0.1)',\
+	org.apache.felix.http.whiteboard;version='[2.3.0,2.3.1)',\
+	org.apache.felix.metatype;version='[1.0.10,1.0.11)',\
+	org.apache.felix.scr;version='[1.8.2,1.8.3)',\
+	org.apache.felix.webconsole;version='[4.2.2,4.2.3)',\
 	org.apache.felix.webconsole.plugins.ds;version='[1.0.0,1.0.1)',\
-	org.slf4j.osgi-over-slf4j;version='[1.7.5,1.7.6)',\
+	org.slf4j.osgi-over-slf4j;version='[1.7.7,1.7.8)',\
 	osgi.cmpn;version='[4.3.1,4.3.2)',\
-	slf4j.api;version='[1.7.5,1.7.6)'
+	slf4j.api;version='[1.7.7,1.7.8)'
+-resolve: auto

@@ -103,8 +103,8 @@ org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver
         @Override
         public CommodityProfile<Energy, Power> getEnergyProfile() {
             return CommodityProfile.create(Commodity.ELECTRICITY)
-                                   .add(Measure.valueOf(1, HOUR), Measure.valueOf(1000, SI.WATT))
-                                   .build();
+                    .add(Measure.valueOf(1, HOUR), Measure.valueOf(1000, SI.WATT))
+                    .build();
         }
 
     }
@@ -267,8 +267,8 @@ org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver
                     publishState(currentState);
                 }
             },
-                                           diff.longValue(SI.SECOND),
-                                           TimeUnit.SECONDS);
+            diff.longValue(SI.SECOND),
+            TimeUnit.SECONDS);
         }
     }
 

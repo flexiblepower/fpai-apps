@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import javax.measure.Measure;
 import javax.measure.quantity.Duration;
@@ -19,25 +20,43 @@ import org.flexiblepower.efi.timeshifter.TimeShifterAllocation;
 import org.flexiblepower.efi.timeshifter.TimeShifterAllocation.SequentialProfileAllocation;
 import org.flexiblepower.efi.timeshifter.TimeShifterRegistration;
 import org.flexiblepower.efi.timeshifter.TimeShifterUpdate;
+import org.flexiblepower.messaging.Endpoint;
+import org.flexiblepower.messaging.Port;
+import org.flexiblepower.messaging.Ports;
 import org.flexiblepower.miele.dishwasher.manager.MieleDishwasherManager.Config;
 import org.flexiblepower.rai.comm.AllocationRevoke;
+import org.flexiblepower.rai.comm.AllocationStatusUpdate;
+import org.flexiblepower.rai.comm.ControlSpaceRevoke;
 import org.flexiblepower.rai.comm.ResourceMessage;
 import org.flexiblepower.rai.values.Commodity;
 import org.flexiblepower.rai.values.CommodityForecast;
 import org.flexiblepower.rai.values.UncertainMeasure;
-import org.flexiblepower.ral.ResourceManager;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherControlParameters;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherState;
 import org.flexiblepower.ral.ext.AbstractResourceManager;
 import org.flexiblepower.time.TimeService;
+import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Meta;
 
-@Component(designateFactory = Config.class, provide = ResourceManager.class)
+@Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
+@Ports({
+        @Port(name = "driver", sends = DishwasherControlParameters.class, accepts = DishwasherState.class),
+        @Port(name = "controller",
+    sends = { TimeShifterRegistration.class,
+              TimeShifterUpdate.class,
+              AllocationStatusUpdate.class,
+              ControlSpaceRevoke.class },
+              accepts = { TimeShifterAllocation.class,
+                         AllocationRevoke.class }
+        )
+
+})
 public class MieleDishwasherManager extends
 AbstractResourceManager<DishwasherState, DishwasherControlParameters> implements
 TimeShifterResourceManager {
@@ -65,6 +84,8 @@ TimeShifterResourceManager {
 
     @Meta.OCD
     interface Config {
+        @Meta.AD
+        String resourceId();
     }
 
     private TimeService timeService;
@@ -176,4 +197,10 @@ TimeShifterResourceManager {
     protected DishwasherState getCurrentState() {
         return currentState;
     }
+
+    @Activate
+    public void activate(BundleContext bundleContext, Map<String, Object> properties) {
+        log.debug("Activated");
+    }
+
 }

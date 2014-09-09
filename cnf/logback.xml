@@ -8,7 +8,11 @@
     <logger name="org.flexiblepower" level="DEBUG" />
     <logger name="org.flexiblepower.battery" level="ERROR" />
     <logger name="net.powermatcher" level="ERROR" />
-    <root level="INFO">
+    <logger name="org.flexiblepower.miele.dishwasher.manager" level="DEBUG" />
+    <logger name="org.eclipse.jetty" level="ERROR" />
+    
+    
+    <root level="DEBUG">
         <appender-ref ref="STDOUT" />
     </root>
     
