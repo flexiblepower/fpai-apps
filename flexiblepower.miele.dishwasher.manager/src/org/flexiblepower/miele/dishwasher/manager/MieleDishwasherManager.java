@@ -35,13 +35,16 @@ import org.flexiblepower.ral.drivers.dishwasher.DishwasherControlParameters;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherState;
 import org.flexiblepower.ral.ext.AbstractResourceManager;
 import org.flexiblepower.time.TimeService;
+import org.flexiblepower.ui.Widget;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Reference;
+import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
@@ -84,8 +87,8 @@ TimeShifterResourceManager {
 
     @Meta.OCD
     interface Config {
-        @Meta.AD
-        String resourceId();
+        @Meta.AD(deflt = "true", description = "Whether to show the widget")
+        boolean showWidget();
     }
 
     private TimeService timeService;
@@ -100,6 +103,9 @@ TimeShifterResourceManager {
     private TimeShifterUpdate currentUpdate;
     private TimeShifterAllocation currentAllocation;
     private Measure<Integer, Duration> allocationDelay;
+    private ServiceRegistration widgetRegistration;
+    private MieleDishwasherWidget widget;
+    private Config configuration;
 
     @Override
     protected List<? extends ResourceMessage> startRegistration(DishwasherState state) {
@@ -200,6 +206,13 @@ TimeShifterResourceManager {
 
     @Activate
     public void activate(BundleContext bundleContext, Map<String, Object> properties) {
+
+        configuration = Configurable.createConfigurable(Config.class, properties);
+        if (configuration.showWidget()) {
+            log.debug("Adding Miele dishwasher widget");
+            widget = new MieleDishwasherWidget(this);
+            widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
+        }
         log.debug("Activated");
     }
 
