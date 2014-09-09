@@ -21,12 +21,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Port(name = "timeshifter",
-sends = { TimeShifterAllocation.class,
-          AllocationRevoke.class },
-          accepts = { TimeShifterRegistration.class,
-                      TimeShifterUpdate.class,
-                      AllocationStatusUpdate.class,
-                      ControlSpaceRevoke.class })
+      sends = { TimeShifterAllocation.class,
+               AllocationRevoke.class },
+      accepts = { TimeShifterRegistration.class,
+                 TimeShifterUpdate.class,
+                 AllocationStatusUpdate.class,
+                 ControlSpaceRevoke.class })
 public class OtherEndEnergyApp implements Endpoint {
     private static final Logger log = LoggerFactory.getLogger(OtherEndEnergyApp.class);
     private volatile Connection connection;
@@ -79,13 +79,13 @@ public class OtherEndEnergyApp implements Endpoint {
         };
     }
 
-    public TimeShifterRegistration getUncontrolledRegistration() throws InterruptedException {
+    public TimeShifterRegistration getTimeshifterRegistration() throws InterruptedException {
         TimeShifterRegistration state = timeShifterRegistrations.poll(5, TimeUnit.SECONDS);
         Assert.assertNotNull(state);
         return state;
     }
 
-    public TimeShifterUpdate getUncontrolledUpdate() throws InterruptedException {
+    public TimeShifterUpdate getTimeshifterUpdate() throws InterruptedException {
         TimeShifterUpdate state = timeShifterUpdates.poll(5, TimeUnit.SECONDS);
         Assert.assertNotNull(state);
         return state;

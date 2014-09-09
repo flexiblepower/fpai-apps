@@ -4,9 +4,19 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.List;
 
+import javax.measure.Measurable;
+import javax.measure.Measure;
+import javax.measure.quantity.Duration;
+import javax.measure.unit.SI;
+
+import org.flexiblepower.efi.timeshifter.SequentialProfile;
+import org.flexiblepower.efi.timeshifter.TimeShifterRegistration;
+import org.flexiblepower.efi.timeshifter.TimeShifterUpdate;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.miele.dishwasher.manager.MieleDishwasherManager;
+import org.flexiblepower.rai.values.CommodityForecast.Map;
 import org.flexiblepower.simulation.dishwasher.DishwasherSimulation;
 import org.flexiblepower.simulation.test.SimulationTest;
 import org.osgi.framework.ServiceRegistration;
@@ -22,13 +32,13 @@ public class DishwasherSimulationTest extends SimulationTest {
         super.setUp();
 
         dishwasherSimulationTracker = new ServiceTracker<Endpoint, Endpoint>(bundleContext,
-                bundleContext.createFilter("(testa=dishwashersim)"),
-                null);
+                                                                             bundleContext.createFilter("(testa=dishwashersim)"),
+                                                                             null);
         dishwasherSimulationTracker.open();
 
         dishwasherManagerTracker = new ServiceTracker<Endpoint, Endpoint>(bundleContext,
-                bundleContext.createFilter("(testb=dishwasherman)"),
-                null);
+                                                                          bundleContext.createFilter("(testb=dishwasherman)"),
+                                                                          null);
         dishwasherManagerTracker.open();
 
     }
@@ -98,11 +108,43 @@ public class DishwasherSimulationTest extends SimulationTest {
             simConfig.delete();
             simConfig = null;
         }
+        if (managerConfig != null) {
+            managerConfig.delete();
+            managerConfig = null;
+        }
     }
 
     public void testAutoconnect() throws Exception {
-        OtherEndEnergyApp otherEnd = create(1, true, "2014-09-10 15:30", "2014-09-11 15:30", "Aan", true);
+        OtherEndEnergyApp otherEnd = create(1, true, "", "2014-09-11 15:30", "Aan", true);
         assertNotNull(otherEnd.getConnection());
+    }
+
+    public void testRegistration() throws Exception {
+        OtherEndEnergyApp otherEnd = create(1, true, "", "2014-09-11 15:30", "Aan", true);
+        TimeShifterRegistration timeshifterRegistration = otherEnd.getTimeshifterRegistration();
+        Measurable<Duration> allocationDelay = timeshifterRegistration.getAllocationDelay();
+        assertEquals(allocationDelay, Measure.valueOf(5, SI.SECOND));
+        assertNotNull(timeshifterRegistration);
+    }
+
+    public void testUpdate() throws Exception {
+        OtherEndEnergyApp otherEnd = create(1, true, "", "2014-09-11 15:30", "Aan", true);
+        TimeShifterUpdate timeshifterUpdate = otherEnd.getTimeshifterUpdate();
+        assertNotNull(timeshifterUpdate);
+        Date validFrom = timeshifterUpdate.getValidFrom();
+        List<SequentialProfile> timeShifterProfiles = timeshifterUpdate.getTimeShifterProfiles();
+        assertNotNull(timeShifterProfiles);
+    }
+
+    public void testPrograms() throws Exception {
+        OtherEndEnergyApp otherEnd = create(1, true, "", "2014-09-11 15:30", "Energy App", true);
+        TimeShifterUpdate timeshifterUpdate = otherEnd.getTimeshifterUpdate();
+        assertNotNull(timeshifterUpdate);
+        Date validFrom = timeshifterUpdate.getValidFrom();
+        List<SequentialProfile> timeShifterProfiles = timeshifterUpdate.getTimeShifterProfiles();
+        Map commodityProfiles = timeShifterProfiles.get(0).getCommodityProfiles();
+        assertNotNull(commodityProfiles);
+
     }
 
 }
