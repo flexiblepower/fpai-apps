@@ -23,8 +23,8 @@ public class BatterySimulationTest extends SimulationTest {
         super.setUp();
 
         batterySimulationTracker = new ServiceTracker<Endpoint, Endpoint>(bundleContext,
-                                                                          bundleContext.createFilter("(test=batterysim)"),
-                                                                          null);
+                bundleContext.createFilter("(test=batterysim)"),
+                null);
         batterySimulationTracker.open();
     }
 
