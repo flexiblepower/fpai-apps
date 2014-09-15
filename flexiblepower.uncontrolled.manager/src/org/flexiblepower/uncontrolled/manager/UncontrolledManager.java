@@ -11,11 +11,13 @@ import javax.measure.quantity.Duration;
 import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
+import org.flexiblepower.efi.UncontrolledResourceManager;
 import org.flexiblepower.efi.uncontrolled.UncontrolledAllocation;
 import org.flexiblepower.efi.uncontrolled.UncontrolledMeasurement;
 import org.flexiblepower.efi.uncontrolled.UncontrolledRegistration;
 import org.flexiblepower.efi.uncontrolled.UncontrolledUpdate;
 import org.flexiblepower.messaging.Cardinality;
+import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.messaging.Port;
 import org.flexiblepower.messaging.Ports;
 import org.flexiblepower.rai.comm.AllocationRevoke;
@@ -24,7 +26,6 @@ import org.flexiblepower.rai.comm.ControlSpaceRevoke;
 import org.flexiblepower.rai.comm.ResourceMessage;
 import org.flexiblepower.rai.values.Commodity.Measurements;
 import org.flexiblepower.ral.ResourceControlParameters;
-import org.flexiblepower.ral.ResourceManager;
 import org.flexiblepower.ral.drivers.uncontrolled.PowerState;
 import org.flexiblepower.ral.ext.AbstractResourceManager;
 import org.flexiblepower.time.TimeService;
@@ -32,6 +33,8 @@ import org.flexiblepower.ui.Widget;
 import org.flexiblepower.uncontrolled.manager.UncontrolledManager.Config;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
@@ -40,7 +43,7 @@ import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
-@Component(designateFactory = Config.class, provide = ResourceManager.class, immediate = true)
+@Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 @Ports({ @Port(name = "controller",
                sends = { UncontrolledRegistration.class,
                         UncontrolledUpdate.class,
@@ -50,7 +53,10 @@ import aQute.bnd.annotation.metatype.Meta;
                cardinality = Cardinality.SINGLE)
         , @Port(name = "driver", accepts = PowerState.class) })
 public class UncontrolledManager extends
-                                AbstractResourceManager<PowerState, ResourceControlParameters> {
+                                AbstractResourceManager<PowerState, ResourceControlParameters> implements
+                                                                                              UncontrolledResourceManager {
+
+    private static final Logger log = LoggerFactory.getLogger(UncontrolledManager.class);
 
     @Meta.OCD
     interface Config {
@@ -68,6 +74,7 @@ public class UncontrolledManager extends
 
     public UncontrolledManager() {
         super();
+        log.debug("Initialized!");
     }
 
     private TimeService timeService;

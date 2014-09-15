@@ -32,13 +32,13 @@ public class DishwasherSimulationTest extends SimulationTest {
         super.setUp();
 
         dishwasherSimulationTracker = new ServiceTracker<Endpoint, Endpoint>(bundleContext,
-                bundleContext.createFilter("(testa=dishwashersim)"),
-                null);
+                                                                             bundleContext.createFilter("(testa=dishwashersim)"),
+                                                                             null);
         dishwasherSimulationTracker.open();
 
         dishwasherManagerTracker = new ServiceTracker<Endpoint, Endpoint>(bundleContext,
-                bundleContext.createFilter("(testb=dishwasherman)"),
-                null);
+                                                                          bundleContext.createFilter("(testb=dishwasherman)"),
+                                                                          null);
         dishwasherManagerTracker.open();
 
     }
