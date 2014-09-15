@@ -32,13 +32,13 @@ public class DishwasherSimulationTest extends SimulationTest {
         super.setUp();
 
         dishwasherSimulationTracker = new ServiceTracker<Endpoint, Endpoint>(bundleContext,
-                                                                             bundleContext.createFilter("(testa=dishwashersim)"),
-                                                                             null);
+                bundleContext.createFilter("(testa=dishwashersim)"),
+                null);
         dishwasherSimulationTracker.open();
 
         dishwasherManagerTracker = new ServiceTracker<Endpoint, Endpoint>(bundleContext,
-                                                                          bundleContext.createFilter("(testb=dishwasherman)"),
-                                                                          null);
+                bundleContext.createFilter("(testb=dishwasherman)"),
+                null);
         dishwasherManagerTracker.open();
 
     }
@@ -81,7 +81,7 @@ public class DishwasherSimulationTest extends SimulationTest {
 
         connectionManager.autoConnect();
 
-        simulation.startSimulation(new Date(), 5);
+        simulation.startSimulation(new Date(), 1);
 
         // PowerState initialState = otherEnd.getState();
         // assertEquals(selfDischargePower, initialState.getSelfDischargeSpeed().doubleValue(SI.WATT), 0.01);
@@ -137,14 +137,25 @@ public class DishwasherSimulationTest extends SimulationTest {
     }
 
     public void testPrograms() throws Exception {
-        OtherEndEnergyApp otherEnd = create(1, true, "", "2014-09-11 15:30", "Energy App", true);
+        OtherEndEnergyApp otherEnd = create(1, true, "", "2014-09-11 15:30", "Energy Save", true);
         TimeShifterUpdate timeshifterUpdate = otherEnd.getTimeshifterUpdate();
         assertNotNull(timeshifterUpdate);
         Date validFrom = timeshifterUpdate.getValidFrom();
         List<SequentialProfile> timeShifterProfiles = timeshifterUpdate.getTimeShifterProfiles();
         Map commodityProfiles = timeShifterProfiles.get(0).getCommodityProfiles();
         assertNotNull(commodityProfiles);
+        /* not testing further now, as the commodityProfiles will change with the new EFI */
+        // TODO: write more tests
+    }
 
+    public void testStart() throws Exception {
+        OtherEndEnergyApp otherEnd = create(1, true, "", "2013-01-01 12:00", "Aan", true); // in the past!
+        TimeShifterRegistration timeshifterRegistration = otherEnd.getTimeshifterRegistration();
+        Measurable<Duration> allocationDelay = timeshifterRegistration.getAllocationDelay();
+        assertEquals(allocationDelay, Measure.valueOf(5, SI.SECOND));
+        assertNotNull(timeshifterRegistration);
+        // TODO: test whether commodity profiles are changed
+        assertNotNull(dishwasherSimulation.getCurrentState().getStartTime()); // Started!
     }
 
 }

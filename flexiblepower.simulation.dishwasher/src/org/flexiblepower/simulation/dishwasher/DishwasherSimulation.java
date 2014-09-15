@@ -57,10 +57,9 @@ org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver
 
         @Meta.AD(deflt = "No program selected", description = "Device is connected to the driver")
         String program();
-
     }
 
-    static final class State implements DishwasherState {
+    public static final class State implements DishwasherState {
         private final boolean isConnected;
         private final Date startTime;
         private final Date latestStartTime;
@@ -235,7 +234,7 @@ org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver
     // publishState(currentState);
     // }
 
-    State getCurrentState() {
+    public State getCurrentState() {
         return currentState;
     }
 
