@@ -8,8 +8,12 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.util.tracker.ServiceTracker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class SimulationTest extends TestCase {
+    private static final Logger log = LoggerFactory.getLogger(SimulationTest.class);
+
     protected BundleContext bundleContext;
 
     private ServiceTracker<ConfigurationAdmin, ConfigurationAdmin> configAdminTracker;
@@ -51,6 +55,7 @@ public abstract class SimulationTest extends TestCase {
 
     @Override
     protected void tearDown() throws Exception {
+        log.debug("Tearing down");
         simulationTracker.close();
         connectionManagerTracker.close();
         configAdminTracker.close();
