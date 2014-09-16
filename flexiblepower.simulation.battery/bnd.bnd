@@ -1,7 +1,7 @@
 -buildpath: ${default-buildpath}
 
-Private-Package: org.flexiblepower.simulation.battery
-Service-Component: org.flexiblepower.simulation.battery.*
+
+Service-Component: org.flexiblepower.simulation.battery
 Bundle-Version: 1.0.0
 Import-Package: \
 	org.flexiblepower*,\

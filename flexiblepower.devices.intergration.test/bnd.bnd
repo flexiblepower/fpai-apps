@@ -5,8 +5,10 @@
 	org.apache.felix.scr,\
 	flexiblepower.api.efi,\
 	flexiblepower.simulation.pvpanel;version=project,\
+	flexiblepower.simulation.battery;version=project,\
 	flexiblepower.simulation.dishwasher;version=project,\
 	flexiblepower.uncontrolled.manager;version=latest,\
+	flexiblepower.battery.manager;version=latest,\
 	flexiblepower.miele.dishwasher.manager;version=project
 
 Bundle-Version: 1.0.0.${qualifier}

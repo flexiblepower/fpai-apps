@@ -41,7 +41,7 @@ public class BatterySimulationTest extends SimulationTest {
     private final double TEN_WATT = 10;
     private final double ONE_WATT = 1;
 
-    private OtherEndBattery create(long updateInterval,
+    private OtherEndBatteryManager create(long updateInterval,
                                    double totalCapacity,
                                    double initialStateOfCharge,
                                    double chargePower,
@@ -65,7 +65,7 @@ public class BatterySimulationTest extends SimulationTest {
         // wait until batterySimulation service is running
         assertNotNull(batterySimulationTracker.waitForService(1000));
 
-        OtherEndBattery otherEndBattery = new OtherEndBattery();
+        OtherEndBatteryManager otherEndBattery = new OtherEndBatteryManager();
         otherEndRegistration = bundleContext.registerService(Endpoint.class, otherEndBattery, null);
 
         // connect BatterySimulation with OtherEndBattery
@@ -106,7 +106,7 @@ public class BatterySimulationTest extends SimulationTest {
         final double EMPTY = 0;
         double total_Capacity = ONE_KWH;
 
-        OtherEndBattery otherEndBattery = create(deltaT, ONE_KWH, EMPTY, TEN_WATT, TEN_WATT, 0.9, 0.9, 0);
+        OtherEndBatteryManager otherEndBattery = create(deltaT, ONE_KWH, EMPTY, TEN_WATT, TEN_WATT, 0.9, 0.9, 0);
         double expectedStateOfCharge = 0;
         otherEndBattery.expectedState(expectedStateOfCharge);
 
@@ -146,7 +146,7 @@ public class BatterySimulationTest extends SimulationTest {
         final double EMPTY = 0;
         double total_Capacity = ONE_KWH;
         double leakage = ONE_WATT;
-        OtherEndBattery otherEndBattery = create(deltaT,
+        OtherEndBatteryManager otherEndBattery = create(deltaT,
                                                  total_Capacity,
                                                  EMPTY,
                                                  TEN_WATT * deltaT,
