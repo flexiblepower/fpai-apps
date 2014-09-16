@@ -107,7 +107,10 @@ public class UncontrolledManager extends
         currentState = state;
         changedState = timeService.getTime();
         allocationDelay = Measure.valueOf(5, SI.SECOND);
-        UncontrolledRegistration reg = new UncontrolledRegistration(null, changedState, allocationDelay, null);
+        UncontrolledRegistration reg = new UncontrolledRegistration(getResourceId(),
+                                                                    changedState,
+                                                                    allocationDelay,
+                                                                    null);
         UncontrolledUpdate update = createUncontrolledUpdate(state);
         return Arrays.asList(reg, update);
     }
@@ -115,7 +118,7 @@ public class UncontrolledManager extends
     private UncontrolledUpdate createUncontrolledUpdate(PowerState state) {
         Measurable<Power> currentUsage = state.getCurrentUsage();
         CommodityMeasurables measurables = CommodityMeasurables.electricity(currentUsage);
-        UncontrolledUpdate update = new UncontrolledMeasurement(null,
+        UncontrolledUpdate update = new UncontrolledMeasurement(getResourceId(),
                                                                 changedState,
                                                                 timeService.getTime(),
                                                                 measurables);

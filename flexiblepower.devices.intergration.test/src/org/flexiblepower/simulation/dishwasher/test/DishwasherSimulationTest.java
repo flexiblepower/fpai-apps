@@ -76,6 +76,7 @@ public class DishwasherSimulationTest extends SimulationTest {
         managerConfig = configAdmin.createFactoryConfiguration("org.flexiblepower.miele.dishwasher.manager.MieleDishwasherManager",
                                                                null);
         Dictionary<String, Object> managerProperties = new Hashtable<String, Object>();
+        managerProperties.put("resourceId", "MieleDishWasherManager");
         managerProperties.put("showWidget", showWidget);
         managerProperties.put("testb", "dishwasherman");
         managerConfig.update(managerProperties);
@@ -87,7 +88,7 @@ public class DishwasherSimulationTest extends SimulationTest {
         Dictionary<String, Object> energyappProperties = new Hashtable<String, Object>();
         energyappProperties.put("testc", "otherendenergyapp");
         energyappConfig.update(energyappProperties);
-        energyapp = (OtherEndEnergyApp) otherEndEnergyAppTracker.waitForService(10000);
+        energyapp = (OtherEndEnergyApp) otherEndEnergyAppTracker.waitForService(1000);
         assertNotNull(energyapp);
         // otherEndRegistration = bundleContext.registerService(Endpoint.class, energyapp, null);
 
