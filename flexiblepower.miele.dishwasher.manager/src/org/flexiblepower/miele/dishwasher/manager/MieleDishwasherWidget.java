@@ -1,15 +1,13 @@
-package org.flexiblepower.simulation.dishwasher.manager;
+package org.flexiblepower.miele.dishwasher.manager;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import org.flexiblepower.ral.drivers.dishwasher.DishwasherControlParameters;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherState;
 import org.flexiblepower.ui.Widget;
 
-public class DishwasherWidget implements Widget {
+public class MieleDishwasherWidget implements Widget {
 
     public static class Update {
         private final String program;
@@ -45,14 +43,13 @@ public class DishwasherWidget implements Widget {
         }
     }
 
-    private final TimeShifterSimulationManager dishwasher;
+    private final MieleDishwasherManager dishwasher;
 
-    public DishwasherWidget(TimeShifterSimulationManager dishwasher) {
+    public MieleDishwasherWidget(MieleDishwasherManager dishwasher) {
         this.dishwasher = dishwasher;
-
     }
 
-    public TimeShifterSimulationManager getDishwasher() {
+    public MieleDishwasherManager getDishwasher() {
         return dishwasher;
     }
 
@@ -66,34 +63,8 @@ public class DishwasherWidget implements Widget {
         }
     }
 
-    public void startSimulation() {
-        dishwasher.startSimulation();
-    }
-
-    public Update startProgram(Locale locale) throws IOException {
-        dishwasher.getDriver().setControlParameters(new DishwasherControlParameters() {
-            @Override
-            public boolean getStartProgram() {
-                return true;
-            }
-
-            @Override
-            public Date getStartTime() {
-                // TODO Auto-generated method stub
-                return null;
-            }
-
-            @Override
-            public String getProgram() {
-                // TODO Auto-generated method stub
-                return null;
-            }
-        });
-        return update(locale);
-    }
-
     @Override
     public String getTitle(Locale locale) {
-        return "Time Shifter Simulation";
+        return "Dishwasher manager";
     }
 }

@@ -1,74 +1,94 @@
 package org.flexiblepower.miele.dishwasher.manager;
 
 import static javax.measure.unit.NonSI.HOUR;
-import static javax.measure.unit.NonSI.KWH;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
-import javax.measure.Measurable;
 import javax.measure.Measure;
 import javax.measure.quantity.Duration;
 import javax.measure.quantity.Energy;
+import javax.measure.quantity.Power;
+import javax.measure.unit.SI;
 
+import org.flexiblepower.efi.TimeShifterResourceManager;
+import org.flexiblepower.efi.timeshifter.SequentialProfile;
+import org.flexiblepower.efi.timeshifter.TimeShifterAllocation;
+import org.flexiblepower.efi.timeshifter.TimeShifterAllocation.SequentialProfileAllocation;
+import org.flexiblepower.efi.timeshifter.TimeShifterRegistration;
+import org.flexiblepower.efi.timeshifter.TimeShifterUpdate;
+import org.flexiblepower.messaging.Endpoint;
+import org.flexiblepower.messaging.Port;
+import org.flexiblepower.messaging.Ports;
 import org.flexiblepower.miele.dishwasher.manager.MieleDishwasherManager.Config;
-import org.flexiblepower.observation.Observation;
-import org.flexiblepower.observation.ObservationProvider;
-import org.flexiblepower.rai.Allocation;
-import org.flexiblepower.rai.TimeShifterControlSpace;
-import org.flexiblepower.rai.values.EnergyProfile;
-import org.flexiblepower.ral.ResourceManager;
+import org.flexiblepower.rai.comm.AllocationRevoke;
+import org.flexiblepower.rai.comm.AllocationStatusUpdate;
+import org.flexiblepower.rai.comm.ControlSpaceRevoke;
+import org.flexiblepower.rai.comm.ResourceMessage;
+import org.flexiblepower.rai.values.Commodity;
+import org.flexiblepower.rai.values.CommodityForecast;
+import org.flexiblepower.rai.values.UncertainMeasure;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherControlParameters;
-import org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherState;
 import org.flexiblepower.ral.ext.AbstractResourceManager;
 import org.flexiblepower.time.TimeService;
 import org.flexiblepower.ui.Widget;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
-import aQute.bnd.annotation.component.Deactivate;
 import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
-@Component(designateFactory = Config.class, provide = ResourceManager.class)
+@Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
+@Ports({
+        @Port(name = "driver", sends = DishwasherControlParameters.class, accepts = DishwasherState.class),
+        @Port(name = "controller",
+    sends = { TimeShifterRegistration.class,
+              TimeShifterUpdate.class,
+              AllocationStatusUpdate.class,
+              ControlSpaceRevoke.class },
+              accepts = { TimeShifterAllocation.class,
+                         AllocationRevoke.class }
+        )
+
+})
 public class MieleDishwasherManager extends
-                                   AbstractResourceManager<TimeShifterControlSpace, DishwasherState, DishwasherControlParameters> {
-    @Meta.OCD
-    interface Config {
-        @Meta.AD(deflt = "dishwasher")
-        String resourceId();
-    }
+AbstractResourceManager<DishwasherState, DishwasherControlParameters> implements
+TimeShifterResourceManager {
+    private static final Logger log = LoggerFactory.getLogger(MieleDishwasherManager.class);
 
-    public MieleDishwasherManager() {
-        super(DishwasherDriver.class, TimeShifterControlSpace.class);
-        widget = new DishwasherWidget(this);
-    }
+    private final class DishwasherControlParametersImpl implements DishwasherControlParameters {
+        private final Date startTime;
+        private final String program;
 
-    private Config config;
-    private DishwasherWidget widget;
-    private ServiceRegistration<Widget> widgetRegistration;
+        private DishwasherControlParametersImpl(Date startTime, String program) {
+            this.startTime = startTime;
+            this.program = program;
+        }
 
-    @Activate
-    public void activate(Map<String, Object> properties, BundleContext bundleContext) {
-        try {
-            config = Configurable.createConfigurable(Config.class, properties);
-            widget = new DishwasherWidget(this);
-            widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
-        } catch (RuntimeException ex) {
-            logger.error("Error during activation of the MieleDishwasherManager", ex);
-            deactivate();
-            throw ex;
+        @Override
+        public Date getStartTime() {
+            return startTime;
+        }
+
+        @Override
+        public String getProgram() {
+            return program;
         }
     }
 
-    @Deactivate
-    public void deactivate() {
-        widgetRegistration.unregister();
-        widget = null;
+    @Meta.OCD
+    interface Config {
+        @Meta.AD(deflt = "true", description = "Whether to show the widget")
+        boolean showWidget();
     }
 
     private TimeService timeService;
@@ -78,30 +98,67 @@ public class MieleDishwasherManager extends
         this.timeService = timeService;
     }
 
-    private volatile DishwasherState currentState;
-    private volatile Date changedState;
+    private DishwasherState currentState;
+    private Date changedState;
+    private TimeShifterUpdate currentUpdate;
+    private TimeShifterAllocation currentAllocation;
+    private Measure<Integer, Duration> allocationDelay;
+    private ServiceRegistration widgetRegistration;
+    private MieleDishwasherWidget widget;
+    private Config configuration;
 
     @Override
-    public void consume(ObservationProvider<? extends DishwasherState> source,
-                        Observation<? extends DishwasherState> observation) {
-        DishwasherState state = observation.getValue();
-        if (state.getStartTime() == null) {
-            // nothing selected
-            // TODO: send empty control space?
-            currentState = null;
-            changedState = timeService.getTime();
-        } else if (currentState == null || !state.getStartTime().equals(currentState.getStartTime())) {
+    protected List<? extends ResourceMessage> startRegistration(DishwasherState state) {
+        currentState = state;
+        changedState = timeService.getTime();
+        allocationDelay = Measure.valueOf(5, SI.SECOND);
+
+        TimeShifterRegistration reg = new TimeShifterRegistration(null,
+                                                                  changedState,
+                                                                  allocationDelay,
+                                                                  Commodity.Set.onlyElectricity);
+        TimeShifterUpdate update = createControlSpace(state);
+        return Arrays.asList(reg, update);
+    }
+
+    @Override
+    protected List<? extends ResourceMessage> updatedState(DishwasherState state) {
+        if (state.equals(currentState)) {
+            return Collections.emptyList();
+        } else {
             currentState = state;
             changedState = timeService.getTime();
-
-            publish(createControlSpace(state));
-        } else {
-            // TODO: can this be skipped?
-            publish(createControlSpace(state));
+            TimeShifterUpdate update = createControlSpace(state);
+            return Arrays.asList(update);
         }
     }
 
-    private TimeShifterControlSpace createControlSpace(DishwasherState info) {
+    @Override
+    protected DishwasherControlParameters receivedAllocation(ResourceMessage message) {
+        if (message instanceof TimeShifterAllocation) {
+            currentAllocation = (TimeShifterAllocation) message;
+            if (currentUpdate != null && currentAllocation.getControlSpaceUpdateId()
+                    .equals(currentUpdate.getResourceMessageId())) {
+                List<SequentialProfileAllocation> sequentialProfileAllocations = currentAllocation.getSequentialProfileAllocation();
+                if (!sequentialProfileAllocations.isEmpty()) {
+                    SequentialProfileAllocation sequentialProfileAllocation = sequentialProfileAllocations.get(0);
+                    return new DishwasherControlParametersImpl(sequentialProfileAllocation.getStartTime(),
+                                                               currentState.getProgram());
+                }
+            } else {
+                currentAllocation = null;
+            }
+        } else if (message instanceof AllocationRevoke) {
+            if (currentAllocation != null) {
+                return new DishwasherControlParametersImpl(null, null);
+            }
+        } else {
+            log.warn("Unknown message type received: {}", message.getClass());
+        }
+        return null;
+    }
+
+    private TimeShifterUpdate createControlSpace(DishwasherState info) {
         // Get values from driver
         String program = "";
         Date startTime = timeService.getTime();
@@ -115,56 +172,48 @@ public class MieleDishwasherManager extends
         startTime = info.getStartTime();
 
         // Create energy Profile
-        Measurable<Energy> energy = Measure.valueOf(1, KWH);
-        Measurable<Duration> duration = Measure.valueOf(1, HOUR);
+        UncertainMeasure<Power> energy = new UncertainMeasure<Power>(1000, SI.WATT);
+        UncertainMeasure<Duration> duration = new UncertainMeasure<Duration>(1, HOUR);
 
         // Set Energy Profile
         if (program == "Energy Save") {
-            energy = Measure.valueOf(1, KWH);
-            duration = Measure.valueOf(1, HOUR);
         } else if (program == "Sensor Wash") {
-            energy = Measure.valueOf(1, KWH);
-            duration = Measure.valueOf(2, HOUR);
+            duration = new UncertainMeasure<Duration>(2, HOUR);
         } else {
-            energy = Measure.valueOf(2, KWH);
-            duration = Measure.valueOf(2, HOUR);
+            energy = new UncertainMeasure<Power>(330, SI.WATT);
+            duration = new UncertainMeasure<Duration>(2, HOUR);
         }
-
-        EnergyProfile energyProfile = EnergyProfile.create().add(duration, energy).build();
 
         // Set Start and Stop Time
-        Date startAfter = changedState;
         Date startBefore = new Date(startTime.getTime());
 
-        // Set Experation Time of Control Space
-        Date validFrom = startAfter;
-        Date validThru = startBefore;
-        Date expirationTime = startBefore;
-
-        return new TimeShifterControlSpace(config.resourceId(),
-                                           validFrom,
-                                           validThru,
-                                           expirationTime,
-                                           energyProfile,
-                                           startBefore,
-                                           startAfter);
-    }
-
-    @Override
-    public void handleAllocation(Allocation allocation) {
-        logger.debug("Allocation is received" + allocation.toString());
-
-        if (allocation.getEnergyProfile().getTotalEnergy().compareTo(Measure.<Energy> zero()) > 0) {
-            getDriver().setControlParameters(new DishwasherControlParameters() {
-                @Override
-                public boolean getStartProgram() {
-                    return true;
-                }
-            });
-        }
+        CommodityForecast<Energy, Power> forecast = CommodityForecast.create(Commodity.ELECTRICITY)
+                .add(duration, energy)
+                .build();
+        return new TimeShifterUpdate(null,
+                                     changedState,
+                                     changedState,
+                                     allocationDelay,
+                                     startBefore,
+                                     Arrays.asList(new SequentialProfile(0,
+                                                                         duration,
+                                                                         new CommodityForecast.Map(forecast, null))));
     }
 
     protected DishwasherState getCurrentState() {
         return currentState;
     }
+
+    @Activate
+    public void activate(BundleContext bundleContext, Map<String, Object> properties) {
+
+        configuration = Configurable.createConfigurable(Config.class, properties);
+        if (configuration.showWidget()) {
+            log.debug("Adding Miele dishwasher widget");
+            widget = new MieleDishwasherWidget(this);
+            widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
+        }
+        log.debug("Activated");
+    }
+
 }

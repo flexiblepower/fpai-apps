@@ -193,7 +193,7 @@ public class BatterySimulationTest extends SimulationTest {
     /**
      * Calculate the relative increment of the SoC for a given amount of charge or discharge in WattSecond and a self
      * discharge in WattSecond.
-     * 
+     *
      * @param energy
      *            The amount of energy that is put in, or taken out in case the energy is negative, of the battery in
      *            WattSecond.

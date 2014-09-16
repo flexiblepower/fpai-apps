@@ -32,7 +32,7 @@ public class PVSimulationTest extends SimulationTest {
 
     private PVSimulation pvSimulation = null;
 
-    private OtherEndPVPanel create(int updateFrequency,
+    private OtherEndPVPanelManager create(int updateFrequency,
                                    double powerWhenStandBy,
                                    double powerWhenCloudy,
                                    double powerWhenSunny) throws Exception {
@@ -50,12 +50,12 @@ public class PVSimulationTest extends SimulationTest {
 
         assertNotNull(pvSimulation);
 
-        OtherEndPVPanel otherEnd = new OtherEndPVPanel();
+        OtherEndPVPanelManager otherEnd = new OtherEndPVPanelManager();
         otherEndRegistration = bundleContext.registerService(Endpoint.class, otherEnd, null);
 
         connectionManager.autoConnect();
 
-        simulation.startSimulation(new Date(), 50);
+        simulation.startSimulation(new Date(), 5);
 
         PowerState initialState = otherEnd.getState();
         // assertEquals(selfDischargePower, initialState.getSelfDischargeSpeed().doubleValue(SI.WATT), 0.01);
@@ -85,7 +85,7 @@ public class PVSimulationTest extends SimulationTest {
     }
 
     public void testMoonWeather() throws Exception {
-        OtherEndPVPanel otherEnd = create(1, 0.0, 200.0, 1500.0);
+        OtherEndPVPanelManager otherEnd = create(1, 0.0, 200.0, 1500.0);
         pvSimulation.setWeather(Weather.moon);
         for (int i = 0; i < 100; i++) {
             otherEnd.expectedState(0.0, 0.0);
@@ -93,7 +93,7 @@ public class PVSimulationTest extends SimulationTest {
     }
 
     public void testCloudyWeather() throws Exception {
-        OtherEndPVPanel otherEnd = create(1, 0.0, 200.0, 1500.0);
+        OtherEndPVPanelManager otherEnd = create(1, 0.0, 200.0, 1500.0);
         pvSimulation.setWeather(Weather.clouds);
         for (int i = 0; i < 100; i++) {
             otherEnd.expectedState(-400.0, -200.0);
@@ -101,7 +101,7 @@ public class PVSimulationTest extends SimulationTest {
     }
 
     public void testSunnyWeather() throws Exception {
-        OtherEndPVPanel otherEnd = create(1, 0.0, 200.0, 1500.0);
+        OtherEndPVPanelManager otherEnd = create(1, 0.0, 200.0, 1500.0);
         pvSimulation.setWeather(Weather.sun);
         for (int i = 0; i < 100; i++) {
             otherEnd.expectedState(-1650.0, -1500.0);
@@ -109,7 +109,7 @@ public class PVSimulationTest extends SimulationTest {
     }
 
     public void testRandomFactor() throws Exception {
-        OtherEndPVPanel otherEnd = create(1, 0.0, 200.0, 1500.0);
+        OtherEndPVPanelManager otherEnd = create(1, 0.0, 200.0, 1500.0);
         pvSimulation.setWeather(Weather.clouds);
         otherEnd.expectedRandomValues(-400.0, -200.0);
 

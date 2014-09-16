@@ -1,0 +1,6 @@
+-buildpath: ${default-buildpath}, flexiblepower.miele.protocol;version=project
+
+Bundle-Version: 2.0.0.${qualifier}
+Service-Component: org.flexiblepower.simulation.dishwasher.*
+Export-Package:  \
+	org.flexiblepower.simulation.dishwasher

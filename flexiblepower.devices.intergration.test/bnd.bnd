@@ -3,7 +3,11 @@
 	flexiblepower.api.ext,\
 	junit.osgi,\
 	org.apache.felix.scr,\
-	flexiblepower.simulation.pvpanel;version=project
+	flexiblepower.api.efi,\
+	flexiblepower.simulation.pvpanel;version=project,\
+	flexiblepower.simulation.dishwasher;version=project,\
+	flexiblepower.uncontrolled.manager;version=latest,\
+	flexiblepower.miele.dishwasher.manager;version=project
 
 Bundle-Version: 1.0.0.${qualifier}
 Private-Package: *test

@@ -5,22 +5,38 @@ import static javax.measure.unit.NonSI.KWH;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
+import javax.measure.Measurable;
 import javax.measure.Measure;
+import javax.measure.quantity.Duration;
+import javax.measure.quantity.Energy;
+import javax.measure.quantity.Power;
+import javax.measure.unit.SI;
 
-import org.flexiblepower.observation.Observation;
 import org.flexiblepower.protocol.mielegateway.api.ActionPerformer;
 import org.flexiblepower.protocol.mielegateway.api.ActionResult;
 import org.flexiblepower.protocol.mielegateway.api.MieleResourceDriver;
-import org.flexiblepower.rai.values.EnergyProfile;
+import org.flexiblepower.rai.values.Commodity;
+import org.flexiblepower.rai.values.CommodityProfile;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherControlParameters;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherState;
 import org.flexiblepower.time.TimeService;
+import org.flexiblepower.time.TimeUtil;
+import org.flexiblepower.ui.Widget;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import aQute.bnd.annotation.component.Activate;
+import aQute.bnd.annotation.component.Deactivate;
+import aQute.bnd.annotation.component.Reference;
+
 public class DishwasherDriver extends MieleResourceDriver<DishwasherState, DishwasherControlParameters> implements
-                                                                                                       org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver {
+org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver {
     private static final Logger log = LoggerFactory.getLogger(DishwasherDriver.State.class);
 
     static final class State implements DishwasherState {
@@ -56,41 +72,88 @@ public class DishwasherDriver extends MieleResourceDriver<DishwasherState, Dishw
         }
 
         @Override
-        public EnergyProfile getEnergyProfile() {
-            return EnergyProfile.create().add(Measure.valueOf(1, HOUR), Measure.valueOf(1, KWH)).build();
+        public Date getLatestStartTime() {
+            return startTime;
         }
 
+        @Override
+        public CommodityProfile<Energy, Power> getEnergyProfile() {
+            return CommodityProfile.create(Commodity.ELECTRICITY)
+                                   .add(Measure.valueOf(1, HOUR), Measure.valueOf(1, KWH))
+                                   .build();
+        }
     }
 
     public DishwasherDriver(ActionPerformer actionPerformer, TimeService timeService) {
         super(actionPerformer, timeService);
     }
 
+    private ScheduledExecutorService scheduler;
+
+    @Reference
+    public void setScheduledExecutorService(ScheduledExecutorService scheduler) {
+        this.scheduler = scheduler;
+    }
+
+    private DishwasherWidget widget;
+    private ServiceRegistration<Widget> widgetRegistration;
+
+    @Activate
+    public void activate(BundleContext context) {
+        widget = new DishwasherWidget(this, timeService);
+        widgetRegistration = context.registerService(Widget.class, widget, null);
+    }
+
+    @Deactivate
+    public void deactivate() {
+        widgetRegistration.unregister();
+    }
+
+    private volatile State currentState;
+
     @Override
     public void updateState(Map<String, String> information) {
         // TODO: There is much more information, what to do with it?
-        String state = information.get("State");
+        // String state = information.get("State");
         String startTimeString = information.get("Start Time");
         Date startTime = parseDate(startTimeString);
 
-        Integer smartStart = parseTime(information.get("Smart Start"));
+        // Integer smartStart = parseTime(information.get("Smart Start"));
 
-        String program = information.get("Program");
-        String phase = information.get("Phase");
-        Integer remainingTime = parseTime(information.get("Remaining Time"));
-        Integer duration = parseTime(information.get("Duration"));
+        String currentProgram = information.get("Program");
+        // String phase = information.get("Phase");
+        // Integer remainingTime = parseTime(information.get("Remaining Time"));
+        // Integer duration = parseTime(information.get("Duration"));
 
-        State dishwasherState = new State(startTime, program);
-        publish(new Observation<DishwasherState>(timeService.getTime(), dishwasherState));
+        currentState = new State(startTime, currentProgram);
+        publishState(currentState);
     }
 
+    State getCurrentState() {
+        return currentState;
+    }
+
+    private volatile Future<?> runFuture;
+
     @Override
-    public void setControlParameters(DishwasherControlParameters resourceControlParameters) {
-        if (resourceControlParameters.getStartProgram()) {
-            ActionResult result = performAction("Start");
-            if (!result.isOk()) {
-                log.warn("Coul not start the dishwasher: {}", result.getMessage());
+    public void handleControlParameters(DishwasherControlParameters resourceControlParameters) {
+        if (resourceControlParameters.getProgram().equals(currentState.getProgram())) {
+            Measurable<Duration> diff = TimeUtil.difference(timeService.getTime(),
+                                                            resourceControlParameters.getStartTime());
+
+            if (runFuture != null && !runFuture.isDone()) {
+                runFuture.cancel(false);
             }
+
+            runFuture = scheduler.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    ActionResult result = performAction("Start");
+                    if (!result.isOk()) {
+                        log.warn("Could not start the dishwasher: {}", result.getMessage());
+                    }
+                }
+            }, diff.longValue(SI.SECOND), TimeUnit.SECONDS);
         }
     }
 }
