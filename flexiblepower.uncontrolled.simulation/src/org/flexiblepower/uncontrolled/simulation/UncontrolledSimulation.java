@@ -12,12 +12,11 @@ import javax.measure.Measure;
 import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
-import org.flexiblepower.observation.Observation;
 import org.flexiblepower.observation.ext.ObservationProviderRegistrationHelper;
+import org.flexiblepower.ral.ResourceControlParameters;
 import org.flexiblepower.ral.ResourceDriver;
-import org.flexiblepower.ral.drivers.uncontrolled.UncontrolledControlParameters;
-import org.flexiblepower.ral.drivers.uncontrolled.UncontrolledDriver;
-import org.flexiblepower.ral.drivers.uncontrolled.UncontrolledState;
+import org.flexiblepower.ral.drivers.uncontrolled.PowerState;
+import org.flexiblepower.ral.drivers.uncontrolled.UncontrollableDriver;
 import org.flexiblepower.ral.ext.AbstractResourceDriver;
 import org.flexiblepower.time.TimeService;
 import org.flexiblepower.ui.Widget;
@@ -34,9 +33,9 @@ import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = ResourceDriver.class)
-public class UncontrolledSimulation extends AbstractResourceDriver<UncontrolledState, UncontrolledControlParameters> implements
-                                                                                                                    UncontrolledDriver<UncontrolledState>,
-                                                                                                                    Runnable {
+public class UncontrolledSimulation extends AbstractResourceDriver<PowerState, ResourceControlParameters> implements
+                                                                                                         UncontrollableDriver,
+                                                                                                         Runnable {
     @Meta.OCD
     interface Config {
         @Meta.AD(deflt = "pvpanel", description = "Resource identifier")
@@ -75,7 +74,7 @@ public class UncontrolledSimulation extends AbstractResourceDriver<UncontrolledS
             cloudy = config.powerWhenCloudy();
             sunny = config.powerWhenSunny();
 
-            observationProviderRegistration = new ObservationProviderRegistrationHelper(this).observationType(UncontrolledState.class)
+            observationProviderRegistration = new ObservationProviderRegistrationHelper(this).observationType(PowerState.class)
                                                                                              .observationOf(config.resourceId())
                                                                                              .observedBy(getClass().getName())
                                                                                              .register();
@@ -144,7 +143,7 @@ public class UncontrolledSimulation extends AbstractResourceDriver<UncontrolledS
                 demand = config.powerWhenStandBy();
             }
 
-            publish(new Observation<UncontrolledState>(currentDate, getCurrentState()));
+            publishState(getCurrentState());
         } catch (Exception e) {
             logger.error("Error while uncontrolled simulation", e);
         }
@@ -160,7 +159,7 @@ public class UncontrolledSimulation extends AbstractResourceDriver<UncontrolledS
     }
 
     @Override
-    public void setControlParameters(UncontrolledControlParameters resourceControlParameters) {
+    public void handleControlParameters(ResourceControlParameters resourceControlParameters) {
         // Nothing to control!
     }
 
@@ -169,26 +168,10 @@ public class UncontrolledSimulation extends AbstractResourceDriver<UncontrolledS
         return Double.valueOf(twoDForm.format(d));
     }
 
-    protected UncontrolledState getCurrentState() {
+    protected PowerStateImpl getCurrentState() {
         final Measurable<Power> demand = Measure.valueOf(this.demand, SI.WATT);
         final Date currentTime = timeService.getTime();
 
-        return new UncontrolledState() {
-
-            @Override
-            public boolean isConnected() {
-                return true;
-            }
-
-            @Override
-            public Measurable<Power> getDemand() {
-                return demand;
-            }
-
-            @Override
-            public Date getTime() {
-                return currentTime;
-            }
-        };
+        return new PowerStateImpl(demand, currentTime);
     }
 }

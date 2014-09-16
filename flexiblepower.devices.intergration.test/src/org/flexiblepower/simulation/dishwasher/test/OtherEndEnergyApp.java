@@ -13,13 +13,18 @@ import org.flexiblepower.messaging.Connection;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.messaging.MessageHandler;
 import org.flexiblepower.messaging.Port;
-import org.flexiblepower.rai.comm.AllocationRevoke;
-import org.flexiblepower.rai.comm.AllocationStatusUpdate;
-import org.flexiblepower.rai.comm.ControlSpaceRevoke;
-import org.flexiblepower.rai.comm.ResourceMessage;
+import org.flexiblepower.rai.AllocationRevoke;
+import org.flexiblepower.rai.AllocationStatusUpdate;
+import org.flexiblepower.rai.ControlSpaceRevoke;
+import org.flexiblepower.rai.ResourceMessage;
+import org.flexiblepower.simulation.dishwasher.test.OtherEndEnergyApp.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import aQute.bnd.annotation.component.Component;
+import aQute.bnd.annotation.metatype.Meta;
+
+@Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 @Port(name = "timeshifter",
       sends = { TimeShifterAllocation.class,
                AllocationRevoke.class },
@@ -28,6 +33,11 @@ import org.slf4j.LoggerFactory;
                  AllocationStatusUpdate.class,
                  ControlSpaceRevoke.class })
 public class OtherEndEnergyApp implements Endpoint {
+    @Meta.OCD
+    interface Config {
+
+    }
+
     private static final Logger log = LoggerFactory.getLogger(OtherEndEnergyApp.class);
     private volatile Connection connection;
 

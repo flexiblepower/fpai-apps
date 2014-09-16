@@ -133,8 +133,6 @@ public class PVIntegrationTest extends SimulationTest {
 
         assertNotNull(uncontrolledUpdate.getValidFrom());
         assertNotNull(uncontrolledUpdate.getTimestamp());
-        assertEquals(5, uncontrolledUpdate.getAllocationDelay().longValue(SI.SECOND));
-
     }
 
     // public void testMeasurement() throws Exception{

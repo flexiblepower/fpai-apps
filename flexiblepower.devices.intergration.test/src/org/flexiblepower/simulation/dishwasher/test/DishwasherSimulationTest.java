@@ -16,7 +16,6 @@ import org.flexiblepower.efi.timeshifter.TimeShifterRegistration;
 import org.flexiblepower.efi.timeshifter.TimeShifterUpdate;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.miele.dishwasher.manager.MieleDishwasherManager;
-import org.flexiblepower.rai.values.CommodityForecast.Map;
 import org.flexiblepower.simulation.dishwasher.DishwasherSimulation;
 import org.flexiblepower.simulation.test.SimulationTest;
 import org.osgi.framework.ServiceRegistration;
@@ -26,6 +25,7 @@ import org.osgi.util.tracker.ServiceTracker;
 public class DishwasherSimulationTest extends SimulationTest {
     private ServiceTracker<Endpoint, Endpoint> dishwasherSimulationTracker;
     private ServiceTracker<Endpoint, Endpoint> dishwasherManagerTracker;
+    private ServiceTracker<Endpoint, Endpoint> otherEndEnergyAppTracker;
 
     @Override
     protected void setUp() throws Exception {
@@ -41,13 +41,19 @@ public class DishwasherSimulationTest extends SimulationTest {
                                                                           null);
         dishwasherManagerTracker.open();
 
+        otherEndEnergyAppTracker = new ServiceTracker<Endpoint, Endpoint>(bundleContext,
+                                                                          bundleContext.createFilter("(testc=otherendenergyapp)"),
+                                                                          null);
+        otherEndEnergyAppTracker.open();
     }
 
     private volatile Configuration simConfig;
     private volatile ServiceRegistration<Endpoint> otherEndRegistration;
     private volatile DishwasherSimulation dishwasherSimulation;
-    private Configuration managerConfig;
-    private MieleDishwasherManager dishwasherManager;
+    private volatile Configuration managerConfig;
+    private volatile MieleDishwasherManager dishwasherManager;
+    private volatile Configuration energyappConfig;
+    private volatile OtherEndEnergyApp energyapp;
 
     private OtherEndEnergyApp create(int updateFrequency,
                                      boolean isConnected,
@@ -76,8 +82,16 @@ public class DishwasherSimulationTest extends SimulationTest {
         dishwasherManager = (MieleDishwasherManager) dishwasherManagerTracker.waitForService(1000);
         assertNotNull(dishwasherManager);
 
-        OtherEndEnergyApp otherEnd = new OtherEndEnergyApp();
-        otherEndRegistration = bundleContext.registerService(Endpoint.class, otherEnd, null);
+        energyappConfig = configAdmin.createFactoryConfiguration("org.flexiblepower.simulation.dishwasher.test.OtherEndEnergyApp",
+                                                                 null);
+        Dictionary<String, Object> energyappProperties = new Hashtable<String, Object>();
+        energyappProperties.put("testc", "otherendenergyapp");
+        energyappConfig.update(energyappProperties);
+        energyapp = (OtherEndEnergyApp) otherEndEnergyAppTracker.waitForService(10000);
+        assertNotNull(energyapp);
+        // otherEndRegistration = bundleContext.registerService(Endpoint.class, energyapp, null);
+
+        // OtherEndEnergyApp otherEnd = new OtherEndEnergyApp();
 
         connectionManager.autoConnect();
 
@@ -87,7 +101,7 @@ public class DishwasherSimulationTest extends SimulationTest {
         // assertEquals(selfDischargePower, initialState.getSelfDischargeSpeed().doubleValue(SI.WATT), 0.01);
         // TODO add assertions.... (What can we assert here?)
 
-        return otherEnd;
+        return energyapp;
     }
 
     @Override
@@ -142,8 +156,8 @@ public class DishwasherSimulationTest extends SimulationTest {
         assertNotNull(timeshifterUpdate);
         Date validFrom = timeshifterUpdate.getValidFrom();
         List<SequentialProfile> timeShifterProfiles = timeshifterUpdate.getTimeShifterProfiles();
-        Map commodityProfiles = timeShifterProfiles.get(0).getCommodityProfiles();
-        assertNotNull(commodityProfiles);
+        // Map commodityProfiles = timeShifterProfiles.get(0).getCommodityProfiles();
+        // assertNotNull(commodityProfiles);
         /* not testing further now, as the commodityProfiles will change with the new EFI */
         // TODO: write more tests
     }

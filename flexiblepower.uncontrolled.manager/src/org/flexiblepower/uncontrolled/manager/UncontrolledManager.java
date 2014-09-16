@@ -12,19 +12,13 @@ import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
 import org.flexiblepower.efi.UncontrolledResourceManager;
-import org.flexiblepower.efi.uncontrolled.UncontrolledAllocation;
 import org.flexiblepower.efi.uncontrolled.UncontrolledMeasurement;
 import org.flexiblepower.efi.uncontrolled.UncontrolledRegistration;
 import org.flexiblepower.efi.uncontrolled.UncontrolledUpdate;
-import org.flexiblepower.messaging.Cardinality;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.messaging.Port;
-import org.flexiblepower.messaging.Ports;
-import org.flexiblepower.rai.comm.AllocationRevoke;
-import org.flexiblepower.rai.comm.AllocationStatusUpdate;
-import org.flexiblepower.rai.comm.ControlSpaceRevoke;
-import org.flexiblepower.rai.comm.ResourceMessage;
-import org.flexiblepower.rai.values.Commodity.Measurements;
+import org.flexiblepower.rai.ResourceMessage;
+import org.flexiblepower.rai.values.CommodityMeasurables;
 import org.flexiblepower.ral.ResourceControlParameters;
 import org.flexiblepower.ral.drivers.uncontrolled.PowerState;
 import org.flexiblepower.ral.ext.AbstractResourceManager;
@@ -44,14 +38,7 @@ import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
-@Ports({ @Port(name = "controller",
-               sends = { UncontrolledRegistration.class,
-                        UncontrolledUpdate.class,
-                        AllocationStatusUpdate.class,
-                        ControlSpaceRevoke.class },
-               accepts = { UncontrolledAllocation.class, AllocationRevoke.class },
-               cardinality = Cardinality.SINGLE)
-        , @Port(name = "driver", accepts = PowerState.class) })
+@Port(name = "driver", accepts = PowerState.class)
 public class UncontrolledManager extends
                                 AbstractResourceManager<PowerState, ResourceControlParameters> implements
                                                                                               UncontrolledResourceManager {
@@ -127,12 +114,11 @@ public class UncontrolledManager extends
 
     private UncontrolledUpdate createUncontrolledUpdate(PowerState state) {
         Measurable<Power> currentUsage = state.getCurrentUsage();
-        Measurements measurements = new Measurements(currentUsage, null);
+        CommodityMeasurables measurables = CommodityMeasurables.electricity(currentUsage);
         UncontrolledUpdate update = new UncontrolledMeasurement(null,
                                                                 changedState,
                                                                 timeService.getTime(),
-                                                                allocationDelay,
-                                                                measurements);
+                                                                measurables);
         return update;
     }
 
