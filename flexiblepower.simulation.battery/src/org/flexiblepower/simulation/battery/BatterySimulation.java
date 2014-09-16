@@ -39,8 +39,8 @@ import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 public class BatterySimulation extends AbstractResourceDriver<BatteryState, BatteryControlParameters> implements
-BatteryDriver,
-Runnable {
+                                                                                                     BatteryDriver,
+                                                                                                     Runnable {
     interface Config {
         @Meta.AD(deflt = "5", description = "Interval between state updates [s]")
         long updateInterval();
@@ -155,7 +155,7 @@ Runnable {
     private BatteryWidget widget;
 
     @Activate
-    public void activate(BundleContext context, Map<String, Object> properties) {
+    public void activate(BundleContext context, Map<String, Object> properties) throws Exception {
         try {
             configuration = Configurable.createConfigurable(Config.class, properties);
 
@@ -176,7 +176,7 @@ Runnable {
 
             widget = new BatteryWidget(this);
             widgetRegistration = context.registerService(Widget.class, widget, null);
-        } catch (RuntimeException ex) {
+        } catch (Exception ex) {
             logger.error("Error during initialization of the battery simulation: " + ex.getMessage(), ex);
             deactivate();
             throw ex;

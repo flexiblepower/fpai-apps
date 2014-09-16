@@ -79,7 +79,7 @@ public class PVIntegrationTest extends SimulationTest {
                                                                null);
         Dictionary<String, Object> managerProperties = new Hashtable<String, Object>();
         managerProperties.put("showWidget", "true");
-        managerProperties.put("resourceID", "uncontrolled");
+        managerProperties.put("resourceId", "uncontrolled");
         managerProperties.put("expirationTime", "30");
         managerProperties.put("testb", "pvsim");
         managerConfig.update(managerProperties);

@@ -23,8 +23,8 @@ public class BatterySimulationTest extends SimulationTest {
         super.setUp();
 
         batterySimulationTracker = new ServiceTracker<Endpoint, Endpoint>(bundleContext,
-                bundleContext.createFilter("(test=batterysim)"),
-                null);
+                                                                          bundleContext.createFilter("(test=batterysim)"),
+                                                                          null);
         batterySimulationTracker.open();
     }
 
@@ -66,7 +66,7 @@ public class BatterySimulationTest extends SimulationTest {
 
         connectionManager.autoConnect();
 
-        simulation.startSimulation(new Date(), 5);
+        simulation.startSimulation(new Date(), 100);
 
         BatteryState initialState = otherEnd.getState();
         assertEquals(totalCapacity, initialState.getTotalCapacity().doubleValue(NonSI.KWH));
