@@ -33,8 +33,8 @@ import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceControlParameters> implements
-UncontrollableDriver,
-Runnable {
+                                                                                               UncontrollableDriver,
+                                                                                               Runnable {
     public final static class PowerStateImpl implements PowerState {
         private final Measurable<Power> demand;
         private final Date currentTime;
@@ -79,6 +79,7 @@ Runnable {
     private double cloudy = 200;
     private double sunny = 1500;
     private Weather weather = Weather.moon;
+    private int updateFrequency = 0;
 
     private PVWidget widget;
     private ScheduledFuture<?> scheduledFuture;
@@ -90,7 +91,7 @@ Runnable {
     public void activate(BundleContext bundleContext, Map<String, Object> properties) {
         try {
             config = Configurable.createConfigurable(Config.class, properties);
-
+            updateFrequency = config.updateFrequency();
             cloudy = config.powerWhenCloudy();
             sunny = config.powerWhenSunny();
 
