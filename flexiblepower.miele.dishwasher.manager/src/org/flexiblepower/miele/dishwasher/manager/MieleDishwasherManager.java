@@ -10,26 +10,22 @@ import java.util.Map;
 
 import javax.measure.Measure;
 import javax.measure.quantity.Duration;
-import javax.measure.quantity.Energy;
 import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
 import org.flexiblepower.efi.TimeShifterResourceManager;
 import org.flexiblepower.efi.timeshifter.SequentialProfile;
+import org.flexiblepower.efi.timeshifter.SequentialProfileAllocation;
 import org.flexiblepower.efi.timeshifter.TimeShifterAllocation;
-import org.flexiblepower.efi.timeshifter.TimeShifterAllocation.SequentialProfileAllocation;
 import org.flexiblepower.efi.timeshifter.TimeShifterRegistration;
 import org.flexiblepower.efi.timeshifter.TimeShifterUpdate;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.messaging.Port;
-import org.flexiblepower.messaging.Ports;
 import org.flexiblepower.miele.dishwasher.manager.MieleDishwasherManager.Config;
-import org.flexiblepower.rai.comm.AllocationRevoke;
-import org.flexiblepower.rai.comm.AllocationStatusUpdate;
-import org.flexiblepower.rai.comm.ControlSpaceRevoke;
-import org.flexiblepower.rai.comm.ResourceMessage;
-import org.flexiblepower.rai.values.Commodity;
+import org.flexiblepower.rai.AllocationRevoke;
+import org.flexiblepower.rai.ResourceMessage;
 import org.flexiblepower.rai.values.CommodityForecast;
+import org.flexiblepower.rai.values.CommoditySet;
 import org.flexiblepower.rai.values.UncertainMeasure;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherControlParameters;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherState;
@@ -43,26 +39,16 @@ import org.slf4j.LoggerFactory;
 
 import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
+import aQute.bnd.annotation.component.Deactivate;
 import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
-@Ports({
-        @Port(name = "driver", sends = DishwasherControlParameters.class, accepts = DishwasherState.class),
-        @Port(name = "controller",
-    sends = { TimeShifterRegistration.class,
-              TimeShifterUpdate.class,
-              AllocationStatusUpdate.class,
-              ControlSpaceRevoke.class },
-              accepts = { TimeShifterAllocation.class,
-                         AllocationRevoke.class }
-        )
-
-})
+@Port(name = "driver", sends = DishwasherControlParameters.class, accepts = DishwasherState.class)
 public class MieleDishwasherManager extends
-AbstractResourceManager<DishwasherState, DishwasherControlParameters> implements
-TimeShifterResourceManager {
+                                   AbstractResourceManager<DishwasherState, DishwasherControlParameters> implements
+                                                                                                        TimeShifterResourceManager {
     private static final Logger log = LoggerFactory.getLogger(MieleDishwasherManager.class);
 
     private final class DishwasherControlParametersImpl implements DishwasherControlParameters {
@@ -116,7 +102,7 @@ TimeShifterResourceManager {
         TimeShifterRegistration reg = new TimeShifterRegistration(null,
                                                                   changedState,
                                                                   allocationDelay,
-                                                                  Commodity.Set.onlyElectricity);
+                                                                  CommoditySet.onlyElectricity);
         TimeShifterUpdate update = createControlSpace(state);
         return Arrays.asList(reg, update);
     }
@@ -138,7 +124,7 @@ TimeShifterResourceManager {
         if (message instanceof TimeShifterAllocation) {
             currentAllocation = (TimeShifterAllocation) message;
             if (currentUpdate != null && currentAllocation.getControlSpaceUpdateId()
-                    .equals(currentUpdate.getResourceMessageId())) {
+                                                          .equals(currentUpdate.getResourceMessageId())) {
                 List<SequentialProfileAllocation> sequentialProfileAllocations = currentAllocation.getSequentialProfileAllocation();
                 if (!sequentialProfileAllocations.isEmpty()) {
                     SequentialProfileAllocation sequentialProfileAllocation = sequentialProfileAllocations.get(0);
@@ -187,17 +173,18 @@ TimeShifterResourceManager {
         // Set Start and Stop Time
         Date startBefore = new Date(startTime.getTime());
 
-        CommodityForecast<Energy, Power> forecast = CommodityForecast.create(Commodity.ELECTRICITY)
-                .add(duration, energy)
-                .build();
+        CommodityForecast forecast = CommodityForecast.create()
+                                                      .duration(duration)
+                                                      .electricity(energy)
+                                                      .next()
+                                                      .build();
         return new TimeShifterUpdate(null,
                                      changedState,
                                      changedState,
-                                     allocationDelay,
                                      startBefore,
-                                     Arrays.asList(new SequentialProfile(0,
-                                                                         duration,
-                                                                         new CommodityForecast.Map(forecast, null))));
+                                     new SequentialProfile(0,
+                                                           duration,
+                                                           forecast));
     }
 
     protected DishwasherState getCurrentState() {
@@ -214,6 +201,11 @@ TimeShifterResourceManager {
             widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
         }
         log.debug("Activated");
+    }
+
+    @Deactivate
+    public void deactivate() {
+        widgetRegistration.unregister();
     }
 
 }

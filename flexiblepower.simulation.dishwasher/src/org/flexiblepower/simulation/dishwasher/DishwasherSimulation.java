@@ -14,12 +14,9 @@ import java.util.concurrent.TimeUnit;
 import javax.measure.Measurable;
 import javax.measure.Measure;
 import javax.measure.quantity.Duration;
-import javax.measure.quantity.Energy;
-import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
 import org.flexiblepower.messaging.Endpoint;
-import org.flexiblepower.rai.values.Commodity;
 import org.flexiblepower.rai.values.CommodityProfile;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherControlParameters;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherState;
@@ -43,7 +40,7 @@ import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 public class DishwasherSimulation extends AbstractResourceDriver<DishwasherState, DishwasherControlParameters> implements
-org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver
+                                                                                                              org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver
 {
     private static final Logger log = LoggerFactory.getLogger(DishwasherSimulation.State.class);
 
@@ -100,10 +97,10 @@ org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver
         }
 
         @Override
-        public CommodityProfile<Energy, Power> getEnergyProfile() {
-            return CommodityProfile.create(Commodity.ELECTRICITY)
-                    .add(Measure.valueOf(1, HOUR), Measure.valueOf(1000, SI.WATT))
-                    .build();
+        public CommodityProfile getEnergyProfile() {
+            return CommodityProfile.create()
+                                   .duration(Measure.valueOf(1, HOUR))
+                                   .electricity(Measure.valueOf(1000, SI.WATT)).next().build();
         }
 
     }
@@ -172,8 +169,8 @@ org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver
                 publishState(currentState);
             }
         },
-        diff.longValue(SI.SECOND),
-        TimeUnit.SECONDS);
+                                       diff.longValue(SI.SECOND),
+                                       TimeUnit.SECONDS);
 
         widget = new DishwasherWidget(this, timeService);
         widgetRegistration = context.registerService(Widget.class, widget, null);
@@ -215,25 +212,6 @@ org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver
 
     private volatile State currentState;
 
-    // @Override
-    // public void updateState(Map<String, String> information) {
-    // // TODO: There is much more information, what to do with it?
-    // // String state = information.get("State");
-    // String startTimeString = information.get("Start Time");
-    // Date startTime = parseDate(startTimeString);
-    //
-    // // Integer smartStart = parseTime(information.get("Smart Start"));
-    //
-    // String currentProgram = information.get("Program");
-    // // String phase = information.get("Phase");
-    // // Integer remainingTime = parseTime(information.get("Remaining Time"));
-    // // Integer duration = parseTime(information.get("Duration"));
-    //
-    // // TODO: or should I parse the latest start time?? -- Jan
-    // currentState = new State(startTime, currentState.getLatestStartTime(), currentProgram);
-    // publishState(currentState);
-    // }
-
     public State getCurrentState() {
         return currentState;
     }
@@ -266,8 +244,8 @@ org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver
                     publishState(currentState);
                 }
             },
-            diff.longValue(SI.SECOND),
-            TimeUnit.SECONDS);
+                                           diff.longValue(SI.SECOND),
+                                           TimeUnit.SECONDS);
         }
     }
 
