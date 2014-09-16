@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class SimulationTest extends TestCase {
-    private static final Logger log = LoggerFactory.getLogger(SimulationTest.class);
+    public static final Logger log = LoggerFactory.getLogger(SimulationTest.class);
 
     protected BundleContext bundleContext;
 
@@ -32,22 +32,22 @@ public abstract class SimulationTest extends TestCase {
         bundleContext = FrameworkUtil.getBundle(getClass()).getBundleContext();
 
         configAdminTracker = new ServiceTracker<ConfigurationAdmin, ConfigurationAdmin>(bundleContext,
-                ConfigurationAdmin.class,
-                null);
+                                                                                        ConfigurationAdmin.class,
+                                                                                        null);
         configAdminTracker.open();
         configAdmin = configAdminTracker.waitForService(10000);
         assertNotNull(configAdmin);
 
         connectionManagerTracker = new ServiceTracker<ConnectionManager, ConnectionManager>(bundleContext,
-                ConnectionManager.class,
-                null);
+                                                                                            ConnectionManager.class,
+                                                                                            null);
         connectionManagerTracker.open();
         connectionManager = connectionManagerTracker.waitForService(10000);
         assertNotNull(connectionManager);
 
         simulationTracker = new ServiceTracker<Simulation, Simulation>(bundleContext,
-                Simulation.class,
-                null);
+                                                                       Simulation.class,
+                                                                       null);
         simulationTracker.open();
         simulation = simulationTracker.waitForService(10000);
         assertNotNull(simulation);

@@ -1,14 +1,17 @@
 package org.flexiblepower.simulation.dishwasher.test;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Locale;
 
 import javax.measure.Measurable;
 import javax.measure.Measure;
 import javax.measure.quantity.Duration;
+import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
 import org.flexiblepower.efi.timeshifter.SequentialProfile;
@@ -16,16 +19,30 @@ import org.flexiblepower.efi.timeshifter.TimeShifterRegistration;
 import org.flexiblepower.efi.timeshifter.TimeShifterUpdate;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.miele.dishwasher.manager.MieleDishwasherManager;
+import org.flexiblepower.rai.values.Commodity;
+import org.flexiblepower.rai.values.CommodityUncertainMeasurables;
+import org.flexiblepower.rai.values.UncertainMeasure;
 import org.flexiblepower.simulation.dishwasher.DishwasherSimulation;
 import org.flexiblepower.simulation.test.SimulationTest;
+import org.flexiblepower.time.TimeService;
+import org.flexiblepower.time.TimeUtil;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.cm.Configuration;
 import org.osgi.util.tracker.ServiceTracker;
+
+import aQute.bnd.annotation.component.Reference;
 
 public class DishwasherSimulationTest extends SimulationTest {
     private ServiceTracker<Endpoint, Endpoint> dishwasherSimulationTracker;
     private ServiceTracker<Endpoint, Endpoint> dishwasherManagerTracker;
     private ServiceTracker<Endpoint, Endpoint> otherEndEnergyAppTracker;
+
+    private TimeService timeService;
+
+    @Reference
+    public void setTimeService(TimeService timeService) {
+        this.timeService = timeService;
+    }
 
     @Override
     protected void setUp() throws Exception {
@@ -170,6 +187,32 @@ public class DishwasherSimulationTest extends SimulationTest {
         assertNotNull(timeshifterRegistration);
         // TODO: test whether commodity profiles are changed
         assertNotNull(dishwasherSimulation.getCurrentState().getStartTime()); // Started!
+    }
+
+    public void testUpdates() throws Exception {
+        Date latestStartTime = timeService.getTime();
+        TimeUtil.add(latestStartTime, Measure.valueOf(30, SI.SECOND));
+        String latestStartTimeString = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ENGLISH).format(latestStartTime);
+
+        OtherEndEnergyApp otherEnd = create(1, true, latestStartTimeString, latestStartTimeString, "Energy Save", true);
+
+        assertEquals(0, getConsumptionMeasure(otherEnd));
+        // TODO: test when the dishwasher starts...
+
+    }
+
+    private double getConsumptionMeasure(OtherEndEnergyApp otherEnd) throws InterruptedException {
+
+        TimeShifterUpdate update = otherEnd.getTimeshifterUpdate();
+        assertNotNull(update);
+        assertNotNull(update.getValidFrom());
+        assertNotNull(update.getTimestamp());
+
+        List<SequentialProfile> profiles = update.getTimeShifterProfiles();
+        SequentialProfile profile = profiles.get(0);
+        CommodityUncertainMeasurables commodityMeasurable = profile.getCommodityForecast().get(0).getValue();
+        UncertainMeasure<Power> measure = commodityMeasurable.get(Commodity.ELECTRICITY);
+        return measure.getMean().doubleValue(SI.WATT);
     }
 
 }
