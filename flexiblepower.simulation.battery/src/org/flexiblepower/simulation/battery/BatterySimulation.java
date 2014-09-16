@@ -1,7 +1,6 @@
 package org.flexiblepower.simulation.battery;
 
 import static javax.measure.unit.NonSI.KWH;
-import static javax.measure.unit.SI.JOULE;
 import static javax.measure.unit.SI.WATT;
 
 import java.util.Date;
@@ -41,9 +40,9 @@ import aQute.bnd.annotation.metatype.Meta;
 
 /**
  * TODO Uit BatteryState weghalen van de charge en discharge efficiency
- *
+ * 
  * @author waaijbdvd
- *
+ * 
  */
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 public class BatterySimulation extends AbstractResourceDriver<BatteryState, BatteryControlParameters> implements
@@ -76,10 +75,19 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
     }
 
     class State implements BatteryState {
-        private final double stateOfCharge;
+        private final double stateOfCharge; // State of Charge is always within [0, 1] range.
         private final BatteryMode mode;
 
         public State(double stateOfCharge, BatteryMode mode) {
+            // This is a quick fix. It would be better to throw an exception. This should be done later.
+            if (stateOfCharge < 0.0) {
+                stateOfCharge = 0.0;
+            }
+            else if (stateOfCharge > 1.0)
+            {
+                stateOfCharge = 1.0;
+            }
+
             this.stateOfCharge = stateOfCharge;
             this.mode = mode;
         }
@@ -146,7 +154,7 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
     }
 
     private static final Logger log = LoggerFactory.getLogger(BatterySimulation.class);
-    @SuppressWarnings("unchecked")
+    // @SuppressWarnings("unchecked")
     private Measurable<Power> dischargeSpeedInWatt; // Watt
     private Measurable<Power> chargeSpeedInWatt; // Watt
     private Measurable<Power> selfDischargeSpeedInWatt; // Watt
@@ -155,9 +163,9 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
     private Measurable<Duration> minTimeOff; // seconden
 
     private BatteryMode mode;
-    private Measurable<Energy> stateOfChargeInJoule; // Joule
     private Date lastUpdatedTime;
     private Config configuration;
+    private double stateOfCharge;
 
     private ScheduledExecutorService scheduler;
     private ServiceRegistration<Widget> widgetRegistration;
@@ -173,14 +181,12 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
             chargeSpeedInWatt = Measure.valueOf(configuration.chargePower(), WATT);
             dischargeSpeedInWatt = Measure.valueOf(configuration.dischargePower(), WATT);
             selfDischargeSpeedInWatt = Measure.valueOf(configuration.selfDischargePower(), WATT);
-            stateOfChargeInJoule = Measure.valueOf(totalCapacityInKWh.doubleValue(JOULE) * configuration.initialStateOfCharge(),
-                                                   JOULE);
+            stateOfCharge = configuration.initialStateOfCharge();
             minTimeOn = Measure.valueOf(0, SI.SECOND);
             minTimeOff = Measure.valueOf(0, SI.SECOND);
-
             mode = BatteryMode.IDLE;
 
-            publishState(new State(getRelativeStateOfCharge(), mode));
+            publishState(new State(stateOfCharge, mode));
 
             scheduledFuture = scheduler.scheduleAtFixedRate(this, 0, configuration.updateInterval(), TimeUnit.SECONDS);
 
@@ -214,8 +220,7 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
             chargeSpeedInWatt = Measure.valueOf(configuration.chargePower(), WATT);
             dischargeSpeedInWatt = Measure.valueOf(configuration.dischargePower(), WATT);
             selfDischargeSpeedInWatt = Measure.valueOf(configuration.selfDischargePower(), WATT);
-            stateOfChargeInJoule = Measure.valueOf(totalCapacityInKWh.doubleValue(JOULE) * configuration.initialStateOfCharge(),
-                                                   JOULE);
+            stateOfCharge = configuration.initialStateOfCharge();
             minTimeOn = Measure.valueOf(2, SI.SECOND);
             minTimeOff = Measure.valueOf(2, SI.SECOND);
             mode = BatteryMode.IDLE;
@@ -264,34 +269,33 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
                 throw new AssertionError();
             }
             // always also self discharge
-            amountOfChargeInWatt = amountOfChargeInWatt - selfDischargeSpeedInWatt.doubleValue(WATT);
+            double changeInWS = (amountOfChargeInWatt - selfDischargeSpeedInWatt.doubleValue(WATT)) * durationSinceLastUpdate;
+            double changeinKWH = changeInWS / 1000.0 / 3600.0;
 
-            double newStateOfChargeJoulesValue = stateOfChargeInJoule.doubleValue(JOULE) + (amountOfChargeInWatt * durationSinceLastUpdate);
-            // check id stateOfCharge is not outside limits of the battery
-            if (newStateOfChargeJoulesValue < 0) {
-                newStateOfChargeJoulesValue = 0;
+            double newStateOfCharge = stateOfCharge + (changeinKWH / totalCapacityInKWh.doubleValue(KWH));
+
+            // check if the stateOfCharge is not outside the limits of the battery
+            if (newStateOfCharge < 0.0) {
+                newStateOfCharge = 0.0;
                 // indicate that battery has stopped discharging
                 mode = BatteryMode.IDLE;
             } else {
-                double totalCapacityInJoules = totalCapacityInKWh.doubleValue(JOULE);
-                if (newStateOfChargeJoulesValue > totalCapacityInJoules) {
-                    newStateOfChargeJoulesValue = totalCapacityInJoules;
-                    // indicate that battery has stopped discharging
+                if (newStateOfCharge > 1.0) {
+                    newStateOfCharge = 1.0;
+                    // indicate that battery has stopped charging
                     mode = BatteryMode.IDLE;
                 }
             }
 
-            stateOfChargeInJoule = Measure.valueOf(newStateOfChargeJoulesValue, JOULE);
-            log.debug("durationSinceLastUpdate=" + durationSinceLastUpdate
-                      + " stateOfCharge(JOULE)=" + stateOfChargeInJoule.doubleValue(JOULE)
-                      + " amountOfCharge=" + amountOfChargeInWatt
-                      + " newStateOfChargeInJoulesValue="
-                      + newStateOfChargeJoulesValue
-                      + " stateOfChargeInJoule="
-                      + stateOfChargeInJoule);
+            log.debug("durationSinceLastUpdate =" + durationSinceLastUpdate
+                      + " old stateOfCharge =" + stateOfCharge
+                      + " amountOfCharge =" + amountOfChargeInWatt
+                      + " newStateOfChargeInJoulesValue ="
+                      + newStateOfCharge
+                      + " new stateOfCharge ="
+                      + newStateOfCharge);
 
-            // convert stateOfChargeInJoules into a relevative state of charge
-            State state = new State(getRelativeStateOfCharge(), mode);
+            State state = new State(newStateOfCharge, mode);
             logger.debug("Publishing state {}", state);
             publishState(state);
         }
@@ -300,13 +304,5 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
     @Override
     protected void handleControlParameters(BatteryControlParameters controlParameters) {
         mode = controlParameters.getMode();
-    }
-
-    private double getRelativeStateOfCharge() {
-        return stateOfChargeInJoule.doubleValue(JOULE) / totalCapacityInKWh.doubleValue(JOULE);
-    }
-
-    protected State getCurrentState() {
-        return new State(getRelativeStateOfCharge(), mode);
     }
 }
