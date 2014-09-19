@@ -146,11 +146,6 @@ public class DishwasherSimulationTest extends SimulationTest {
         }
     }
 
-    public void testAutoconnect() throws Exception {
-        OtherEndEnergyApp otherEnd = create(1, true, "", "2014-09-11 15:30", "Aan", true);
-        assertNotNull(otherEnd.getConnection());
-    }
-
     public void testRegistration() throws Exception {
         OtherEndEnergyApp otherEnd = create(1, true, "", "2014-09-11 15:30", "Aan", true);
         TimeShifterRegistration timeshifterRegistration = otherEnd.getTimeshifterRegistration();

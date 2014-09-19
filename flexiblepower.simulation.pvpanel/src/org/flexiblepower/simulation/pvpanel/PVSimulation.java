@@ -61,8 +61,8 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
 
     @Meta.OCD
     interface Config {
-        @Meta.AD(deflt = "5", description = "Frequency in which updates will be send out in seconds")
-        int updateFrequency();
+        @Meta.AD(deflt = "5", description = "Delay between updates will be send out in seconds")
+        int updateDelay();
 
         @Meta.AD(deflt = "0", description = "Generated Power when inverter is in stand by")
         double powerWhenStandBy();
@@ -79,7 +79,7 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
     private double cloudy = 200;
     private double sunny = 1500;
     private Weather weather = Weather.moon;
-    private int updateFrequency = 0;
+    private int updateDelay = 0;
 
     private PVWidget widget;
     private ScheduledFuture<?> scheduledFuture;
@@ -91,11 +91,11 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
     public void activate(BundleContext bundleContext, Map<String, Object> properties) {
         try {
             config = Configurable.createConfigurable(Config.class, properties);
-            updateFrequency = config.updateFrequency();
+            updateDelay = config.updateDelay();
             cloudy = config.powerWhenCloudy();
             sunny = config.powerWhenSunny();
 
-            scheduledFuture = schedulerService.scheduleAtFixedRate(this, 0, config.updateFrequency(), TimeUnit.SECONDS);
+            scheduledFuture = schedulerService.scheduleAtFixedRate(this, 0, updateDelay, TimeUnit.SECONDS);
             widget = new PVWidget(this);
             widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
         } catch (RuntimeException ex) {
@@ -153,7 +153,7 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
     @Override
     public synchronized void run() {
         try {
-            demand = -weather.getProduction(Math.random(), cloudy, sunny);
+            demand = -(updateDelay * weather.getProduction(Math.random(), cloudy, sunny));
             logger.info("new demand has been set to: {}", demand);
 
             if (demand < 0.1 && demand > -0.1 && config.powerWhenStandBy() > 0) {

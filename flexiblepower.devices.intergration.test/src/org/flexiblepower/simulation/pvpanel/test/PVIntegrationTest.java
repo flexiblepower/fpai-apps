@@ -57,14 +57,14 @@ public class PVIntegrationTest extends SimulationTest {
     private Configuration managerConfig;
     private UncontrolledManager uncontrolledManager;
 
-    private OtherEndPVPanelApp create(int updateFrequency,
+    private OtherEndPVPanelApp create(int updateDelay,
                                       double powerWhenStandBy,
                                       double powerWhenCloudy,
                                       double powerWhenSunny) throws Exception {
         simConfig = configAdmin.createFactoryConfiguration("org.flexiblepower.simulation.pvpanel.PVSimulation",
                                                            null);
         Dictionary<String, Object> properties = new Hashtable<String, Object>();
-        properties.put("updateFrequency", updateFrequency);
+        properties.put("updateDelay", updateDelay);
         properties.put("powerWhenStandBy", powerWhenStandBy);
         properties.put("powerWhenCloudy", powerWhenCloudy);
         properties.put("powerWhenSunny", powerWhenSunny);
