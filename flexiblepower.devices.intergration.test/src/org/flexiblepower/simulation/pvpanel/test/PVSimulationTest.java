@@ -33,9 +33,9 @@ public class PVSimulationTest extends SimulationTest {
     private PVSimulation pvSimulation = null;
 
     private OtherEndPVPanelManager create(int updateFrequency,
-                                   double powerWhenStandBy,
-                                   double powerWhenCloudy,
-                                   double powerWhenSunny) throws Exception {
+                                          double powerWhenStandBy,
+                                          double powerWhenCloudy,
+                                          double powerWhenSunny) throws Exception {
         config = configAdmin.createFactoryConfiguration("org.flexiblepower.simulation.pvpanel.PVSimulation",
                                                         null);
         Dictionary<String, Object> properties = new Hashtable<String, Object>();
@@ -85,7 +85,7 @@ public class PVSimulationTest extends SimulationTest {
     }
 
     public void testMoonWeather() throws Exception {
-        OtherEndPVPanelManager otherEnd = create(1, 0.0, 200.0, 1500.0);
+        OtherEndPVPanelManager otherEnd = create(10, 0.0, 200.0, 1500.0);
         pvSimulation.setWeather(Weather.moon);
         for (int i = 0; i < 100; i++) {
             otherEnd.expectedState(0.0, 0.0);

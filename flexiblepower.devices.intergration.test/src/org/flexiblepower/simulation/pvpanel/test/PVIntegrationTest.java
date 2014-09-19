@@ -91,7 +91,7 @@ public class PVIntegrationTest extends SimulationTest {
 
         connectionManager.autoConnect();
 
-        simulation.startSimulation(new Date(), 1);
+        simulation.startSimulation(new Date(), 5);
 
         // PowerState initialState = otherEnd.getState();
         // assertEquals(selfDischargePower, initialState.getSelfDischargeSpeed().doubleValue(SI.WATT), 0.01);
@@ -143,7 +143,7 @@ public class PVIntegrationTest extends SimulationTest {
         pvSimulation.setWeather(Weather.moon);
         for (int i = 0; i < 100; i++) {
             double energyUsage = getConsumptionMeasure(otherEnd);
-            assertEquals(0, energyUsage);
+            assertEquals(-0.0, energyUsage);
         }
     }
 

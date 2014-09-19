@@ -191,6 +191,7 @@ public class DishwasherSimulationTest extends SimulationTest {
     }
 
     public void testUpdates() throws Exception {
+
         Date latestStartTime = timeService.getTime();
         TimeUtil.add(latestStartTime, Measure.valueOf(30, SI.SECOND));
         String latestStartTimeString = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ENGLISH).format(latestStartTime);
