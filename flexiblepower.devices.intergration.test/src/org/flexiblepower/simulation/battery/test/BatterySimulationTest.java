@@ -42,13 +42,13 @@ public class BatterySimulationTest extends SimulationTest {
     private final double ONE_WATT = 1;
 
     private OtherEndBatteryManager create(long updateInterval,
-                                   double totalCapacity,
-                                   double initialStateOfCharge,
-                                   double chargePower,
-                                   double dischargePower,
-                                   double chargeEfficiency,
-                                   double dischargeEfficiency,
-                                   double selfDischargePower) throws Exception {
+                                          double totalCapacity,
+                                          double initialStateOfCharge,
+                                          double chargePower,
+                                          double dischargePower,
+                                          double chargeEfficiency,
+                                          double dischargeEfficiency,
+                                          double selfDischargePower) throws Exception {
         config = configAdmin.createFactoryConfiguration("org.flexiblepower.simulation.battery.BatterySimulation", null);
         Dictionary<String, Object> properties = new Hashtable<String, Object>();
         properties.put("updateInterval", updateInterval);
@@ -147,13 +147,13 @@ public class BatterySimulationTest extends SimulationTest {
         double total_Capacity = ONE_KWH;
         double leakage = ONE_WATT;
         OtherEndBatteryManager otherEndBattery = create(deltaT,
-                                                 total_Capacity,
-                                                 EMPTY,
-                                                 TEN_WATT * deltaT,
-                                                 TEN_WATT * deltaT,
-                                                 0.9,
-                                                 0.9,
-                                                 leakage);
+                                                        total_Capacity,
+                                                        EMPTY,
+                                                        TEN_WATT * deltaT,
+                                                        TEN_WATT * deltaT,
+                                                        0.9,
+                                                        0.9,
+                                                        leakage);
         double expectedStateOfCharge = 0;
         otherEndBattery.expectedState(expectedStateOfCharge);
 
@@ -193,7 +193,7 @@ public class BatterySimulationTest extends SimulationTest {
     /**
      * Calculate the relative increment of the SoC for a given amount of charge or discharge in WattSecond and a self
      * discharge in WattSecond.
-     *
+     * 
      * @param energy
      *            The amount of energy that is put in, or taken out in case the energy is negative, of the battery in
      *            WattSecond.

@@ -32,14 +32,14 @@ public class PVSimulationTest extends SimulationTest {
 
     private PVSimulation pvSimulation = null;
 
-    private OtherEndPVPanelManager create(int updateFrequency,
-                                   double powerWhenStandBy,
-                                   double powerWhenCloudy,
-                                   double powerWhenSunny) throws Exception {
+    private OtherEndPVPanelManager create(int updateDelay,
+                                          double powerWhenStandBy,
+                                          double powerWhenCloudy,
+                                          double powerWhenSunny) throws Exception {
         config = configAdmin.createFactoryConfiguration("org.flexiblepower.simulation.pvpanel.PVSimulation",
                                                         null);
         Dictionary<String, Object> properties = new Hashtable<String, Object>();
-        properties.put("updateFrequency", updateFrequency);
+        properties.put("updateDelay", updateDelay);
         properties.put("powerWhenStandBy", powerWhenStandBy);
         properties.put("powerWhenCloudy", powerWhenCloudy);
         properties.put("powerWhenSunny", powerWhenSunny);

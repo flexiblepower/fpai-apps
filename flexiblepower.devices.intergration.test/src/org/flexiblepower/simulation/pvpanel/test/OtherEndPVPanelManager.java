@@ -47,8 +47,8 @@ public class OtherEndPVPanelManager implements Endpoint {
     public PowerState getState() throws InterruptedException {
         log.info("messageQueue in PVpanelsim OtherEnd is {}", messages.size());
         PowerState state = messages.poll(5, TimeUnit.SECONDS);
-        log.info("Message received: {}", state.getCurrentUsage());
         Assert.assertNotNull(state);
+        log.info("Message received: {}", state.getCurrentUsage());
         return state;
     }
 

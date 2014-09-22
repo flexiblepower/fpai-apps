@@ -3,24 +3,35 @@ package org.flexiblepower.simulation.pvpanel.test;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Dictionary;
+import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Set;
 
 import javax.measure.Measurable;
 import javax.measure.Measure;
 import javax.measure.quantity.Duration;
 import javax.measure.unit.SI;
 
+import junit.framework.Assert;
+
+import org.flexiblepower.efi.uncontrolled.UncontrolledMeasurement;
 import org.flexiblepower.efi.uncontrolled.UncontrolledRegistration;
 import org.flexiblepower.efi.uncontrolled.UncontrolledUpdate;
 import org.flexiblepower.messaging.Endpoint;
+import org.flexiblepower.rai.values.Commodity;
+import org.flexiblepower.rai.values.CommodityMeasurables;
 import org.flexiblepower.simulation.pvpanel.PVSimulation;
+import org.flexiblepower.simulation.pvpanel.Weather;
 import org.flexiblepower.simulation.test.SimulationTest;
 import org.flexiblepower.uncontrolled.manager.UncontrolledManager;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.cm.Configuration;
 import org.osgi.util.tracker.ServiceTracker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PVIntegrationTest extends SimulationTest {
+    private static final Logger log = LoggerFactory.getLogger(PVIntegrationTest.class);
     private ServiceTracker<Endpoint, Endpoint> pvPanelTracker;
     private ServiceTracker<Endpoint, Endpoint> uncontrolledManagerTracker;
 
@@ -46,14 +57,14 @@ public class PVIntegrationTest extends SimulationTest {
     private Configuration managerConfig;
     private UncontrolledManager uncontrolledManager;
 
-    private OtherEndPVPanelApp create(int updateFrequency,
+    private OtherEndPVPanelApp create(int updateDelay,
                                       double powerWhenStandBy,
                                       double powerWhenCloudy,
                                       double powerWhenSunny) throws Exception {
         simConfig = configAdmin.createFactoryConfiguration("org.flexiblepower.simulation.pvpanel.PVSimulation",
                                                            null);
         Dictionary<String, Object> properties = new Hashtable<String, Object>();
-        properties.put("updateFrequency", updateFrequency);
+        properties.put("updateDelay", updateDelay);
         properties.put("powerWhenStandBy", powerWhenStandBy);
         properties.put("powerWhenCloudy", powerWhenCloudy);
         properties.put("powerWhenSunny", powerWhenSunny);
@@ -68,7 +79,7 @@ public class PVIntegrationTest extends SimulationTest {
                                                                null);
         Dictionary<String, Object> managerProperties = new Hashtable<String, Object>();
         managerProperties.put("showWidget", "true");
-        managerProperties.put("resourceID", "uncontrolled");
+        managerProperties.put("resourceId", "uncontrolled");
         managerProperties.put("expirationTime", "30");
         managerProperties.put("testb", "pvsim");
         managerConfig.update(managerProperties);
@@ -80,7 +91,7 @@ public class PVIntegrationTest extends SimulationTest {
 
         connectionManager.autoConnect();
 
-        simulation.startSimulation(new Date(), 1);
+        simulation.startSimulation(new Date(), 5);
 
         // PowerState initialState = otherEnd.getState();
         // assertEquals(selfDischargePower, initialState.getSelfDischargeSpeed().doubleValue(SI.WATT), 0.01);
@@ -126,42 +137,107 @@ public class PVIntegrationTest extends SimulationTest {
         assertNotNull(registration);
     }
 
-    public void testUpdate() throws Exception {
+    public void testMoonWeather() throws Exception {
         OtherEndPVPanelApp otherEnd = create(1, 0.0, 200.0, 1500.0);
-        UncontrolledUpdate uncontrolledUpdate = otherEnd.getUncontrolledUpdate();
-        assertNotNull(uncontrolledUpdate);
 
-        assertNotNull(uncontrolledUpdate.getValidFrom());
-        assertNotNull(uncontrolledUpdate.getTimestamp());
+        pvSimulation.setWeather(Weather.moon);
+        for (int i = 0; i < 100; i++) {
+            double energyUsage = getConsumptionMeasure(otherEnd);
+            assertEquals(-0.0, energyUsage);
+        }
     }
 
-    // public void testMeasurement() throws Exception{
-    // OtherEndPVPanelApp otherEnd = create(1,0.0,200,1500);
-    // AllocationStatusUpdate update = otherEnd.getAllocationStatusUpdate();
-    //
-    // }
-    //
+    public void testCloudyWeather() throws Exception {
+        OtherEndPVPanelApp otherEnd = create(1, 0.0, 200.0, 1500.0);
 
-    // public void testPrograms() throws Exception {
-    // OtherEndEnergyApp otherEnd = create(1, true, "", "2014-09-11 15:30", "Energy Save", true);
-    // TimeShifterUpdate timeshifterUpdate = otherEnd.getTimeshifterUpdate();
-    // assertNotNull(timeshifterUpdate);
-    // Date validFrom = timeshifterUpdate.getValidFrom();
-    // List<SequentialProfile> timeShifterProfiles = timeshifterUpdate.getTimeShifterProfiles();
-    // Map commodityProfiles = timeShifterProfiles.get(0).getCommodityProfiles();
-    // assertNotNull(commodityProfiles);
-    // /* not testing further now, as the commodityProfiles will change with the new EFI */
-    // // TODO: write more tests
-    // }
-    //
-    // public void testStart() throws Exception {
-    // OtherEndEnergyApp otherEnd = create(1, true, "", "2013-01-01 12:00", "Aan", true); // in the past!
-    // TimeShifterRegistration timeshifterRegistration = otherEnd.getTimeshifterRegistration();
-    // Measurable<Duration> allocationDelay = timeshifterRegistration.getAllocationDelay();
-    // assertEquals(allocationDelay, Measure.valueOf(5, SI.SECOND));
-    // assertNotNull(timeshifterRegistration);
-    // // TODO: test whether commodity profiles are changed
-    // assertNotNull(pvSimulation.getCurrentState().getStartTime()); // Started!
-    // }
+        pvSimulation.setWeather(Weather.clouds);
+        for (int i = 0; i < 100; i++) {
+            double production = getConsumptionMeasure(otherEnd);
+            double minExpectedProduction = -400;
+            double maxExpectedProduction = -200;
+            log.debug("Expecting min:{}, max: {}, current state {}",
+                      minExpectedProduction,
+                      maxExpectedProduction,
+                      production);
+            Assert.assertTrue("Production (" + production
+                              + ") lower than minium production ("
+                              + minExpectedProduction
+                              + ")", minExpectedProduction <= production);
+            Assert.assertTrue("Production (" + production
+                              + ") higher dan maximum production ("
+                              + maxExpectedProduction
+                              + ")", maxExpectedProduction >= production);
+        }
+    }
+
+    public void testSunnyWeather() throws Exception {
+        OtherEndPVPanelApp otherEnd = create(1, 0.0, 200.0, 1500.0);
+
+        pvSimulation.setWeather(Weather.sun);
+        for (int i = 0; i < 100; i++) {
+            double production = getConsumptionMeasure(otherEnd);
+            double minExpectedProduction = -1650;
+            double maxExpectedProduction = -1500;
+            log.debug("Expecting min:{}, max: {}, current state {}",
+                      minExpectedProduction,
+                      maxExpectedProduction,
+                      production);
+            Assert.assertTrue("Production (" + production
+                              + ") lower than minium production ("
+                              + minExpectedProduction
+                              + ")", minExpectedProduction <= production);
+            Assert.assertTrue("Production (" + production
+                              + ") higher dan maximum production ("
+                              + maxExpectedProduction
+                              + ")", maxExpectedProduction >= production);
+        }
+    }
+
+    public void testRandomFactor() throws Exception {
+        OtherEndPVPanelApp otherEnd = create(1, 0.0, 200.0, 1500.0);
+        pvSimulation.setWeather(Weather.clouds);
+        expectedRandomValues(otherEnd, -400.0, -200.0);
+
+        pvSimulation.setWeather(Weather.sun);
+        expectedRandomValues(otherEnd, -1650.0, -1500.0);
+
+    }
+
+    public void
+            expectedRandomValues(OtherEndPVPanelApp otherEnd, double minExpectedProduction, double maxExpectedProduction) throws InterruptedException {
+        Set<Double> productions = new HashSet<Double>();
+        int numberOfTests = 100;
+        for (int i = 0; i < numberOfTests; i++) {
+            double production = getConsumptionMeasure(otherEnd);
+            log.info("production received: {}", production);
+
+            Assert.assertTrue("Production (" + production
+                              + ") lower than minium production ("
+                              + minExpectedProduction
+                              + ")", minExpectedProduction <= production);
+            Assert.assertTrue("Production (" + production
+                              + ") higher dan maximum production ("
+                              + maxExpectedProduction
+                              + ")", maxExpectedProduction >= production);
+            productions.add(production);
+
+        }
+        // we assert that at leest 90% of all production numbers are different.. (because there is a random factor in
+        // use)
+        Assert.assertTrue(productions.size() >= 0.9 * numberOfTests);
+    }
+
+    private double getConsumptionMeasure(OtherEndPVPanelApp otherEnd) throws InterruptedException {
+
+        UncontrolledUpdate uncontrolledUpdate = otherEnd.getUncontrolledUpdate();
+        assertNotNull(uncontrolledUpdate);
+        assertNotNull(uncontrolledUpdate.getValidFrom());
+        assertNotNull(uncontrolledUpdate.getTimestamp());
+        assertTrue(UncontrolledMeasurement.class.isAssignableFrom(uncontrolledUpdate.getClass()));
+        UncontrolledMeasurement measurement = (UncontrolledMeasurement) uncontrolledUpdate;
+        CommodityMeasurables measure = measurement.getMeasurable();
+        return measure.get(Commodity.ELECTRICITY).doubleValue(SI.WATT);
+
+    }
 
 }

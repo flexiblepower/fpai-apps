@@ -73,6 +73,9 @@ public class MieleDishwasherManager extends
 
     @Meta.OCD
     interface Config {
+        @Meta.AD(deflt = "MieleDishwasherManager", description = "Unique resourceID")
+        String resourceId();
+
         @Meta.AD(deflt = "true", description = "Whether to show the widget")
         boolean showWidget();
     }
@@ -99,7 +102,7 @@ public class MieleDishwasherManager extends
         changedState = timeService.getTime();
         allocationDelay = Measure.valueOf(5, SI.SECOND);
 
-        TimeShifterRegistration reg = new TimeShifterRegistration(null,
+        TimeShifterRegistration reg = new TimeShifterRegistration(configuration.resourceId(),
                                                                   changedState,
                                                                   allocationDelay,
                                                                   CommoditySet.onlyElectricity);
@@ -178,7 +181,7 @@ public class MieleDishwasherManager extends
                                                       .electricity(energy)
                                                       .next()
                                                       .build();
-        return new TimeShifterUpdate(null,
+        return new TimeShifterUpdate(configuration.resourceId(),
                                      changedState,
                                      changedState,
                                      startBefore,

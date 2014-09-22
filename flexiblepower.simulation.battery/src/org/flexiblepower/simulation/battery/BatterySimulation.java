@@ -173,7 +173,7 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
     private BatteryWidget widget;
 
     @Activate
-    public void activate(BundleContext context, Map<String, Object> properties) {
+    public void activate(BundleContext context, Map<String, Object> properties) throws Exception {
         try {
             configuration = Configurable.createConfigurable(Config.class, properties);
 
@@ -192,7 +192,7 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
 
             widget = new BatteryWidget(this);
             widgetRegistration = context.registerService(Widget.class, widget, null);
-        } catch (RuntimeException ex) {
+        } catch (Exception ex) {
             logger.error("Error during initialization of the battery simulation: " + ex.getMessage(), ex);
             deactivate();
             throw ex;

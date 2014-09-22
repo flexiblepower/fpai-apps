@@ -29,4 +29,4 @@
 -runee: JavaSE-1.6
 -runfw: org.eclipse.osgi;version='[3.10.0.v20140606-1445,3.10.0.v20140606-1445]'
 -runtrace: true
--runvm: -ea
+-runvm: -ea -Dlogback.configurationFile=../cnf/logback.xml
