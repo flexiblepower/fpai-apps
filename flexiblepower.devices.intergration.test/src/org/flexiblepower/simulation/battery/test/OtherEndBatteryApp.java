@@ -14,20 +14,20 @@ import org.flexiblepower.messaging.Connection;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.messaging.MessageHandler;
 import org.flexiblepower.messaging.Port;
-import org.flexiblepower.rai.comm.AllocationRevoke;
-import org.flexiblepower.rai.comm.AllocationStatusUpdate;
-import org.flexiblepower.rai.comm.ControlSpaceRevoke;
-import org.flexiblepower.rai.comm.ResourceMessage;
+import org.flexiblepower.rai.AllocationRevoke;
+import org.flexiblepower.rai.AllocationStatusUpdate;
+import org.flexiblepower.rai.ControlSpaceRevoke;
+import org.flexiblepower.rai.ResourceMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Port(name = "Buffer",
-sends = { BufferAllocation.class, AllocationRevoke.class },
-accepts = { BufferRegistration.class,
-            BufferStateUpdate.class,
-            AllocationStatusUpdate.class,
-            ControlSpaceRevoke.class },
-            cardinality = Cardinality.SINGLE)
+      sends = { BufferAllocation.class, AllocationRevoke.class },
+      accepts = { BufferRegistration.class,
+                 BufferStateUpdate.class,
+                 AllocationStatusUpdate.class,
+                 ControlSpaceRevoke.class },
+      cardinality = Cardinality.SINGLE)
 public class OtherEndBatteryApp implements Endpoint {
     private static final Logger log = LoggerFactory.getLogger(OtherEndBatteryApp.class);
     private volatile Connection connection;

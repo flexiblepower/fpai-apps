@@ -22,20 +22,18 @@ import javax.measure.unit.Unit;
 import org.flexiblepower.battery.manager.BatteryManager.Config;
 import org.flexiblepower.efi.BufferResourceManager;
 import org.flexiblepower.efi.buffer.Actuator;
+import org.flexiblepower.efi.buffer.ActuatorUpdate;
 import org.flexiblepower.efi.buffer.BufferAllocation;
 import org.flexiblepower.efi.buffer.BufferRegistration;
-import org.flexiblepower.efi.buffer.BufferRegistration.ActuatorCapabilities;
 import org.flexiblepower.efi.buffer.BufferStateUpdate;
-import org.flexiblepower.efi.buffer.BufferStateUpdate.ActuatorUpdate;
 import org.flexiblepower.efi.buffer.BufferSystemDescription;
-import org.flexiblepower.efi.buffer.LeakageFunction;
-import org.flexiblepower.efi.buffer.RunningMode;
-import org.flexiblepower.efi.buffer.RunningMode.RunningModeRangeElement;
-import org.flexiblepower.efi.buffer.Transition;
+import org.flexiblepower.efi.buffer.LeakageRate;
+import org.flexiblepower.efi.util.FillLevelFunction;
+import org.flexiblepower.efi.util.RunningMode;
 import org.flexiblepower.efi.util.Timer;
-import org.flexiblepower.rai.comm.ResourceMessage;
-import org.flexiblepower.rai.values.Commodity;
-import org.flexiblepower.rai.values.Commodity.Measurements;
+import org.flexiblepower.efi.util.Transition;
+import org.flexiblepower.rai.ResourceMessage;
+import org.flexiblepower.rai.values.CommoditySet;
 import org.flexiblepower.ral.ResourceManager;
 import org.flexiblepower.ral.drivers.battery.BatteryControlParameters;
 import org.flexiblepower.ral.drivers.battery.BatteryMode;
@@ -50,9 +48,9 @@ import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = ResourceManager.class)
-public class BatteryManager extends
-AbstractResourceManager<BatteryState, BatteryControlParameters> implements
-BufferResourceManager {
+public class BatteryManager extends AbstractResourceManager<BatteryState, BatteryControlParameters>
+                                                                                                   implements
+                                                                                                   BufferResourceManager {
     private static final Logger log = LoggerFactory.getLogger(BatteryManager.class);
     @SuppressWarnings("unchecked")
     private static final Unit<Energy> WH = (Unit<Energy>) SI.WATT.times(NonSI.HOUR); // Define WattHour (Wh)
@@ -73,11 +71,12 @@ BufferResourceManager {
 
         // Buffer registration
         batteryActuator = makeBatteryActuator(BATTERY_ACTUATOR_ID);
-        ActuatorCapabilities actuatorCapability = new ActuatorCapabilities(batteryActuator.getId(),
-                                                                           "Battery",
-                                                                           Commodity.Set.onlyElectricity);
-        Set<ActuatorCapabilities> actuatorCapabilities = new HashSet<BufferRegistration.ActuatorCapabilities>();
-        actuatorCapabilities.add(actuatorCapability);
+
+        Actuator actuator = new Actuator(batteryActuator.getActuatorId(),
+                                         "Battery",
+                                         CommoditySet.onlyElectricity);
+        Set<Actuator> actuatorCapabilities = new HashSet<Actuator>();
+        actuatorCapabilities.add(actuator);
         BufferRegistration reg = new BufferRegistration(null,
                                                         changedStateTimestamp,
                                                         toSeconds(0),
@@ -89,13 +88,17 @@ BufferResourceManager {
         double lowerBound = 0; // 0 Wh
         double upperBound = 6000; // 6 KWh
         double leakageSpeed = 0.0001; // 0.0001W/s
-        LeakageFunction bufferLeakage = LeakageFunction.create().add(lowerBound, upperBound, leakageSpeed).build();
-        BufferSystemDescription sysDescr = new BufferSystemDescription(null,
+        // LeakageFunction bufferLeakage = LeakageFunction.create().add(lowerBound, upperBound, leakageSpeed).build();
+        LeakageRate bufferLeakageRate = new LeakageRate(leakageSpeed);
+        FillLevelFunction<Object> bufferLeakageFunction = FillLevelFunction.create(lowerBound)
+                                                                           .add(upperBound, bufferLeakageRate)
+                                                                           .build();
+
+        BufferSystemDescription sysDescr = new BufferSystemDescription(reg,
                                                                        changedStateTimestamp,
                                                                        changedStateTimestamp,
-                                                                       toSeconds(0),
                                                                        Arrays.asList(batteryActuator),
-                                                                       bufferLeakage);
+                                                                       bufferLeakageFunction);
 
         // Buffer state update, based on batteryState
         Measure<Double, Energy> currentFillLevel = getCurrentFillLevel(batteryState);
@@ -158,8 +161,8 @@ BufferResourceManager {
 
     // ---------------------------- helper classes -----------------------------
     /**
-     * make a Battery actuator with runningmodes for each BatteryMode, transitions between them and no timers.
-     *
+     * make a Battery actuator with running modes for each BatteryMode, transitions between them and no timers.
+     * 
      * @param actuatorId
      * @return
      */
@@ -192,7 +195,7 @@ BufferResourceManager {
 
     /**
      * Make a transistion with no timers;
-     *
+     * 
      * @param transitionId
      * @return
      */
@@ -210,7 +213,7 @@ BufferResourceManager {
 
     /**
      * Make a runningMode based on the batteryMode with an optional number of transitions
-     *
+     * 
      * @param batteryMode
      * @param name
      * @param runningModeRangeElements
@@ -231,7 +234,7 @@ BufferResourceManager {
 
     /**
      * Helper class for the charging running mode elements
-     *
+     * 
      * @return
      */
     private RunningModeRangeElement[] makeRunningModeChargingElements() {
@@ -247,7 +250,7 @@ BufferResourceManager {
 
     /**
      * Helper class for the idle running mode elements
-     *
+     * 
      * @return
      */
     private RunningModeRangeElement[] makeRunningModeIdleElements() {
@@ -263,7 +266,7 @@ BufferResourceManager {
 
     /**
      * Helper class for the discharging running mode elements
-     *
+     * 
      * @return
      */
     private RunningModeRangeElement[] makeRunningModeDisChargingElements() {
@@ -279,7 +282,7 @@ BufferResourceManager {
 
     /**
      * Create the battery actuator set, based on the battery mode
-     *
+     * 
      * @param batteryMode
      * @return
      */
@@ -292,7 +295,7 @@ BufferResourceManager {
 
     /**
      * current fill level is calculated by multiplying the total capacity with the state of charge.
-     *
+     * 
      * @param batteryState
      * @return
      */

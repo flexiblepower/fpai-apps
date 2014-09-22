@@ -305,4 +305,8 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
     protected void handleControlParameters(BatteryControlParameters controlParameters) {
         mode = controlParameters.getMode();
     }
+
+    protected State getCurrentState() {
+        return new State(stateOfCharge, mode);
+    }
 }
