@@ -21,6 +21,7 @@ import javax.measure.unit.Unit;
 import org.flexiblepower.battery.manager.BatteryManager.Config;
 import org.flexiblepower.efi.BufferResourceManager;
 import org.flexiblepower.efi.buffer.Actuator;
+import org.flexiblepower.efi.buffer.ActuatorAllocation;
 import org.flexiblepower.efi.buffer.ActuatorBehaviour;
 import org.flexiblepower.efi.buffer.ActuatorUpdate;
 import org.flexiblepower.efi.buffer.BufferAllocation;
@@ -138,6 +139,16 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
         if (message instanceof BufferAllocation) {
             BufferAllocation bufferAllocation = (BufferAllocation) message;
 
+            if (!bufferAllocation.isEmergencyAllocation()) {
+                Set<ActuatorAllocation> allocations = bufferAllocation.getActuatorAllocations();
+
+                for (ActuatorAllocation allocation : allocations) {
+                    int runningMode = allocation.getRunningModeId();
+                    Date startTime = allocation.getStartTime();
+
+                    // if (startTime < x) { new BattereyControlParameters; break; }
+                }
+            }
             // waarom krijgen we ook de ControlSpaceUpdate mee?
             // hoe komen we aan de actuatorAllocations, daar is geen method voor.
             // hoe schedulen we een timer, als er getimde allocations zijn?
@@ -151,7 +162,8 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
 
             return batteryControlParameters;
         } else {
-            log.warn("Unexpected resource (" + message.toString() + ") message received");
+            log.warn("Unexpected resource (" + message.toString() + ") message type (" + message.getClass().getName()
+                     + ")received");
             return null;
         }
     }
@@ -245,7 +257,7 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
 
     /**
      * Make a transistion with no timers;
-     *
+     * 
      * @param transitionId
      * @return
      */
@@ -263,7 +275,7 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
 
     /**
      * Create the battery actuator set, based on the battery mode
-     *
+     * 
      * @param batteryMode
      * @return
      */
@@ -276,7 +288,7 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
 
     /**
      * current fill level is calculated by multiplying the total capacity with the state of charge.
-     *
+     * 
      * @param batteryState
      * @return
      */
