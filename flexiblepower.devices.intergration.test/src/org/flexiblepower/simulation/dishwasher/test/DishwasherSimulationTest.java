@@ -20,7 +20,10 @@ import org.flexiblepower.efi.timeshifter.TimeShifterUpdate;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.miele.dishwasher.manager.MieleDishwasherManager;
 import org.flexiblepower.rai.values.Commodity;
+import org.flexiblepower.rai.values.CommodityForecast;
+import org.flexiblepower.rai.values.CommoditySet;
 import org.flexiblepower.rai.values.CommodityUncertainMeasurables;
+import org.flexiblepower.rai.values.Profile.Element;
 import org.flexiblepower.rai.values.UncertainMeasure;
 import org.flexiblepower.simulation.dishwasher.DishwasherSimulation;
 import org.flexiblepower.simulation.test.SimulationTest;
@@ -29,6 +32,8 @@ import org.flexiblepower.time.TimeUtil;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.cm.Configuration;
 import org.osgi.util.tracker.ServiceTracker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import aQute.bnd.annotation.component.Reference;
 
@@ -36,6 +41,7 @@ public class DishwasherSimulationTest extends SimulationTest {
     private ServiceTracker<Endpoint, Endpoint> dishwasherSimulationTracker;
     private ServiceTracker<Endpoint, Endpoint> dishwasherManagerTracker;
     private ServiceTracker<Endpoint, Endpoint> otherEndEnergyAppTracker;
+    private static final Logger log = LoggerFactory.getLogger(DishwasherSimulationTest.class);
 
     private TimeService timeService;
 
@@ -156,6 +162,7 @@ public class DishwasherSimulationTest extends SimulationTest {
 
     public void testUpdate() throws Exception {
         OtherEndEnergyApp otherEnd = create(1, true, "", "2014-09-11 15:30", "Aan", true);
+        TimeShifterRegistration timeshifterRegistration = otherEnd.getTimeshifterRegistration();
         TimeShifterUpdate timeshifterUpdate = otherEnd.getTimeshifterUpdate();
         assertNotNull(timeshifterUpdate);
         Date validFrom = timeshifterUpdate.getValidFrom();
@@ -169,10 +176,28 @@ public class DishwasherSimulationTest extends SimulationTest {
         assertNotNull(timeshifterUpdate);
         Date validFrom = timeshifterUpdate.getValidFrom();
         List<SequentialProfile> timeShifterProfiles = timeshifterUpdate.getTimeShifterProfiles();
-        // Map commodityProfiles = timeShifterProfiles.get(0).getCommodityProfiles();
-        // assertNotNull(commodityProfiles);
-        /* not testing further now, as the commodityProfiles will change with the new EFI */
-        // TODO: write more tests
+        Date endBefore = timeshifterUpdate.getEndBefore();
+
+        assertEquals(timeShifterProfiles.size(), 1);
+        SequentialProfile sequentialProfile = timeShifterProfiles.get(0);
+
+        assertEquals(sequentialProfile.getMaxIntervalBefore().doubleValue(SI.SECOND), 0);
+
+        CommodityForecast commodityForecast = sequentialProfile.getCommodityForecast();
+        Measurable<Duration> totalDuration = commodityForecast.getTotalDuration();
+        CommoditySet commodities = commodityForecast.getCommodities();
+
+        for (Element<CommodityUncertainMeasurables> measurable : commodityForecast) {
+            Measurable<Duration> duration = measurable.getDuration();
+            UncertainMeasure<Power> value = measurable.getValue().get(Commodity.ELECTRICITY);
+            log.info("Measurable found, value: {} W, duration: {} s",
+                     value.doubleValue(SI.WATT),
+                     duration.doubleValue(SI.SECOND));
+
+            // TODO: check value and duration
+
+        }
+
     }
 
     public void testStart() throws Exception {
