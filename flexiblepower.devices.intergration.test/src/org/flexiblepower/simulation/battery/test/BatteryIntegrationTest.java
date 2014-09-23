@@ -22,13 +22,13 @@ public class BatteryIntegrationTest extends SimulationTest {
         super.setUp();
 
         batteryTracker = new ServiceTracker<Endpoint, Endpoint>(bundleContext,
-                bundleContext.createFilter("(testa=batterysim)"),
-                null);
+                                                                bundleContext.createFilter("(testa=batterysim)"),
+                                                                null);
         batteryTracker.open();
 
         bufferManagerTracker = new ServiceTracker<Endpoint, Endpoint>(bundleContext,
-                bundleContext.createFilter("(testb=batterysim)"),
-                null);
+                                                                      bundleContext.createFilter("(testb=batterysim)"),
+                                                                      null);
         bufferManagerTracker.open();
 
     }
@@ -39,16 +39,17 @@ public class BatteryIntegrationTest extends SimulationTest {
     private Configuration managerConfig;
     private BatteryManager batteryManager;
 
-    private OtherEndBatteryApp create(long updateInterval,
-                                      double totalCapacity,
-                                      double initialStateOfCharge,
-                                      long chargePower,
-                                      long dischargePower,
-                                      double chargeEfficiency,
-                                      double dischargeEfficiency,
-                                      long selfDischargePower
+    private OtherEndBatteryEnergyApp create(long updateInterval,
+                                            double totalCapacity,
+                                            double initialStateOfCharge,
+                                            long chargePower,
+                                            long dischargePower,
+                                            double chargeEfficiency,
+                                            double dischargeEfficiency,
+                                            long selfDischargePower
 
             ) throws Exception {
+        // config battery simulation
         simConfig = configAdmin.createFactoryConfiguration("org.flexiblepower.simulation.battery.BatterySimulation",
                                                            null);
         Dictionary<String, Object> properties = new Hashtable<String, Object>();
@@ -62,11 +63,10 @@ public class BatteryIntegrationTest extends SimulationTest {
         properties.put("selfDischargePower", selfDischargePower);
         properties.put("testa", "batterysim");
         simConfig.update(properties);
-
         batterySimulation = (BatterySimulation) batteryTracker.waitForService(1000);
-
         assertNotNull(batterySimulation);
 
+        // config battery manager
         managerConfig = configAdmin.createFactoryConfiguration("org.flexiblepower.battery.manager.BatteryManager",
                                                                null);
         Dictionary<String, Object> managerProperties = new Hashtable<String, Object>();
@@ -78,7 +78,8 @@ public class BatteryIntegrationTest extends SimulationTest {
         batteryManager = (BatteryManager) bufferManagerTracker.waitForService(1000);
         assertNotNull(batteryManager);
 
-        OtherEndBatteryApp otherEnd = new OtherEndBatteryApp();
+        // set up the other end = energy app simulation
+        OtherEndBatteryEnergyApp otherEnd = new OtherEndBatteryEnergyApp();
         otherEndRegistration = bundleContext.registerService(Endpoint.class, otherEnd, null);
 
         connectionManager.autoConnect();
@@ -117,7 +118,7 @@ public class BatteryIntegrationTest extends SimulationTest {
     }
 
     public void testAutoconnect() throws Exception {
-        OtherEndBatteryApp otherEnd = create(5L, 1, 0.5, 1500L, 1500L, 0.9, 0.9, 50L);
+        OtherEndBatteryEnergyApp otherEnd = create(5L, 1, 0.5, 1500L, 1500L, 0.9, 0.9, 50L);
         assertNotNull(otherEnd.getConnection());
     }
     //

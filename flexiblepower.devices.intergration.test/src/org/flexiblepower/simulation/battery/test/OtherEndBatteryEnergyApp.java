@@ -4,6 +4,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import javax.measure.quantity.Energy;
+
 import junit.framework.Assert;
 
 import org.flexiblepower.efi.buffer.BufferAllocation;
@@ -28,16 +30,16 @@ import org.slf4j.LoggerFactory;
                  AllocationStatusUpdate.class,
                  ControlSpaceRevoke.class },
       cardinality = Cardinality.SINGLE)
-public class OtherEndBatteryApp implements Endpoint {
-    private static final Logger log = LoggerFactory.getLogger(OtherEndBatteryApp.class);
+public class OtherEndBatteryEnergyApp implements Endpoint {
+    private static final Logger log = LoggerFactory.getLogger(OtherEndBatteryEnergyApp.class);
     private volatile Connection connection;
 
     public Connection getConnection() {
         return connection;
     }
 
-    private final BlockingQueue<BufferRegistration> bufferRegistrations = new LinkedBlockingQueue<BufferRegistration>();
-    private final BlockingQueue<BufferStateUpdate> bufferStateUpdates = new LinkedBlockingQueue<BufferStateUpdate>();
+    private final BlockingQueue<BufferRegistration<Energy>> bufferRegistrations = new LinkedBlockingQueue<BufferRegistration<Energy>>();
+    private final BlockingQueue<BufferStateUpdate<Energy>> bufferStateUpdates = new LinkedBlockingQueue<BufferStateUpdate<Energy>>();
     private final BlockingQueue<AllocationStatusUpdate> allocationStatusUpdates = new LinkedBlockingQueue<AllocationStatusUpdate>();
     private final BlockingQueue<ControlSpaceRevoke> controlSpaceRevokes = new LinkedBlockingQueue<ControlSpaceRevoke>();
 
@@ -52,11 +54,15 @@ public class OtherEndBatteryApp implements Endpoint {
                 Assert.assertTrue(ResourceMessage.class.isAssignableFrom(message.getClass()));
 
                 if (BufferRegistration.class.isAssignableFrom(message.getClass())) {
-                    BufferRegistration resourceMessage = (BufferRegistration) message;
-                    log.debug("Received BufferRegistration");
-                    bufferRegistrations.add(resourceMessage);
+                    BufferRegistration<?> untypedBufferRegistration = (BufferRegistration<?>) message;
+                    if (untypedBufferRegistration.getFillLevelUnit() instanceof Energy) {
+                        BufferRegistration<Energy> resourceMessage = (BufferRegistration<Energy>) untypedBufferRegistration;
+                        log.debug("Received BufferRegistration");
+                        bufferRegistrations.add(resourceMessage);
+                    }
                 } else if (BufferStateUpdate.class.isAssignableFrom(message.getClass())) {
-                    BufferStateUpdate resourceMessage = (BufferStateUpdate) message;
+                    BufferStateUpdate<?> untypedBufferStateUpdate = (BufferStateUpdate<?>) message;
+                    BufferStateUpdate<Energy> resourceMessage = (BufferStateUpdate<Energy>) untypedBufferStateUpdate;
                     log.debug("Received BufferStateUpdate");
                     bufferStateUpdates.add(resourceMessage);
                 } else if (AllocationStatusUpdate.class.isAssignableFrom(message.getClass())) {
@@ -75,7 +81,7 @@ public class OtherEndBatteryApp implements Endpoint {
 
             @Override
             public void disconnected() {
-                OtherEndBatteryApp.this.connection = null;
+                OtherEndBatteryEnergyApp.this.connection = null;
             }
         };
     }

@@ -1,8 +1,6 @@
 package org.flexiblepower.battery.manager;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -14,6 +12,7 @@ import javax.measure.Measure;
 import javax.measure.quantity.Duration;
 import javax.measure.quantity.Energy;
 import javax.measure.quantity.Money;
+import javax.measure.quantity.MoneyFlow;
 import javax.measure.quantity.Power;
 import javax.measure.unit.NonSI;
 import javax.measure.unit.SI;
@@ -22,17 +21,20 @@ import javax.measure.unit.Unit;
 import org.flexiblepower.battery.manager.BatteryManager.Config;
 import org.flexiblepower.efi.BufferResourceManager;
 import org.flexiblepower.efi.buffer.Actuator;
+import org.flexiblepower.efi.buffer.ActuatorBehaviour;
 import org.flexiblepower.efi.buffer.ActuatorUpdate;
 import org.flexiblepower.efi.buffer.BufferAllocation;
 import org.flexiblepower.efi.buffer.BufferRegistration;
 import org.flexiblepower.efi.buffer.BufferStateUpdate;
 import org.flexiblepower.efi.buffer.BufferSystemDescription;
 import org.flexiblepower.efi.buffer.LeakageRate;
+import org.flexiblepower.efi.buffer.RunningModeBehaviour;
 import org.flexiblepower.efi.util.FillLevelFunction;
 import org.flexiblepower.efi.util.RunningMode;
 import org.flexiblepower.efi.util.Timer;
 import org.flexiblepower.efi.util.Transition;
 import org.flexiblepower.rai.ResourceMessage;
+import org.flexiblepower.rai.values.CommodityMeasurables;
 import org.flexiblepower.rai.values.CommoditySet;
 import org.flexiblepower.ral.ResourceManager;
 import org.flexiblepower.ral.drivers.battery.BatteryControlParameters;
@@ -62,7 +64,8 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
 
     private BatteryState currentBatteryState;
     private Date changedStateTimestamp;
-    private Actuator batteryActuator;
+    Actuator batteryActuator;
+    private BufferRegistration<Energy> batteryBufferRegistration;
 
     @Override
     protected List<? extends ResourceMessage> startRegistration(BatteryState batteryState) {
@@ -70,49 +73,45 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
         changedStateTimestamp = timeService.getTime();
 
         // Buffer registration
-        batteryActuator = makeBatteryActuator(BATTERY_ACTUATOR_ID);
-
-        Actuator actuator = new Actuator(batteryActuator.getActuatorId(),
-                                         "Battery",
-                                         CommoditySet.onlyElectricity);
-        Set<Actuator> actuatorCapabilities = new HashSet<Actuator>();
-        actuatorCapabilities.add(actuator);
-        BufferRegistration reg = new BufferRegistration(null,
-                                                        changedStateTimestamp,
-                                                        toSeconds(0),
-                                                        "Battery level",
-                                                        WH, // WH
-                                                        actuatorCapabilities);
+        batteryActuator = new Actuator(BATTERY_ACTUATOR_ID,
+                                       "Battery",
+                                       CommoditySet.onlyElectricity);
+        Set<Actuator> actuators = new HashSet<Actuator>();
+        actuators.add(batteryActuator);
+        batteryBufferRegistration = new BufferRegistration<Energy>(null,
+                                                                   changedStateTimestamp,
+                                                                   toSeconds(0),
+                                                                   "Battery level",
+                                                                   WH,
+                                                                   actuators);
 
         // Buffer system description
-        double lowerBound = 0; // 0 Wh
-        double upperBound = 6000; // 6 KWh
-        double leakageSpeed = 0.0001; // 0.0001W/s
-        // LeakageFunction bufferLeakage = LeakageFunction.create().add(lowerBound, upperBound, leakageSpeed).build();
-        LeakageRate bufferLeakageRate = new LeakageRate(leakageSpeed);
-        FillLevelFunction<Object> bufferLeakageFunction = FillLevelFunction.create(lowerBound)
-                                                                           .add(upperBound, bufferLeakageRate)
-                                                                           .build();
-
-        BufferSystemDescription sysDescr = new BufferSystemDescription(reg,
+        ActuatorBehaviour batteryActuatorBehaviour = makeBatteryActuatorBehaviour(batteryActuator.getActuatorId());
+        FillLevelFunction<LeakageRate> bufferLeakageFunction = FillLevelFunction.<LeakageRate> create(0)
+                                                                                .add(6000, new LeakageRate(0.0001))
+                                                                                .build();
+        Set<ActuatorBehaviour> actuatorsBehaviours = new HashSet<ActuatorBehaviour>();
+        actuatorsBehaviours.add(batteryActuatorBehaviour);
+        BufferSystemDescription sysDescr = new BufferSystemDescription(batteryBufferRegistration,
                                                                        changedStateTimestamp,
                                                                        changedStateTimestamp,
-                                                                       Arrays.asList(batteryActuator),
+                                                                       actuatorsBehaviours,
                                                                        bufferLeakageFunction);
 
         // Buffer state update, based on batteryState
         Measure<Double, Energy> currentFillLevel = getCurrentFillLevel(batteryState);
-        Set<ActuatorUpdate> currentRunningMode = makeBatteryActuatorUpdateSet(batteryState.getCurrentMode());
-        BufferStateUpdate update = new BufferStateUpdate(null,
-                                                         changedStateTimestamp,
-                                                         changedStateTimestamp,
-                                                         toSeconds(0),
-                                                         currentFillLevel,
-                                                         currentRunningMode);
+        Set<ActuatorUpdate> currentRunningMode = makeBatteryActuatorUpdateSet(batteryActuator.getActuatorId(),
+                                                                              batteryState.getCurrentMode());
+        BufferStateUpdate<Energy> update = new BufferStateUpdate<Energy>(batteryBufferRegistration,
+                                                                         changedStateTimestamp,
+                                                                         changedStateTimestamp,
+                                                                         currentFillLevel,
+                                                                         currentRunningMode);
 
-        return Arrays.asList(reg, sysDescr, update);
+        return Arrays.asList(batteryBufferRegistration, sysDescr, update);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected List<? extends ResourceMessage> updatedState(BatteryState batteryState) {
         if (batteryState.equals(currentBatteryState)) {
@@ -121,17 +120,15 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
             currentBatteryState = batteryState;
             changedStateTimestamp = timeService.getTime();
             Date validFrom = changedStateTimestamp;
-            Measurable<Duration> allocationDelay = toSeconds(0);
             Measure<Double, Energy> currentFillLevel = getCurrentFillLevel(batteryState);
 
-            // convert BatteryState into runningMode
-            Set<ActuatorUpdate> actuatorUpdateSet = makeBatteryActuatorUpdateSet(batteryState.getCurrentMode());
-            BufferStateUpdate update = new BufferStateUpdate(null,
-                                                             changedStateTimestamp,
-                                                             validFrom,
-                                                             allocationDelay,
-                                                             currentFillLevel,
-                                                             actuatorUpdateSet);
+            Set<ActuatorUpdate> actuatorUpdateSet = makeBatteryActuatorUpdateSet(batteryActuator.getActuatorId(),
+                                                                                 batteryState.getCurrentMode());
+            BufferStateUpdate<Energy> update = new BufferStateUpdate<Energy>(batteryBufferRegistration,
+                                                                             changedStateTimestamp,
+                                                                             validFrom,
+                                                                             currentFillLevel,
+                                                                             actuatorUpdateSet);
             return Arrays.asList(update);
         }
     }
@@ -160,42 +157,95 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
     }
 
     // ---------------------------- helper classes -----------------------------
-    /**
-     * make a Battery actuator with running modes for each BatteryMode, transitions between them and no timers.
-     * 
-     * @param actuatorId
-     * @return
-     */
-    private Actuator makeBatteryActuator(int actuatorId) {
+
+    private ActuatorBehaviour makeBatteryActuatorBehaviour(int actuatorId) {
         // transitions
         Transition toChargingTransition = makeTransition(0);
         Transition toIdleTransition = makeTransition(1);
         Transition toDisChargingTransition = makeTransition(2);
 
+        Set<Transition> idleTransition = new HashSet<Transition>();
+        idleTransition.add(toChargingTransition);
+        idleTransition.add(toDisChargingTransition);
+        Set<Transition> chargeTransition = new HashSet<Transition>();
+        chargeTransition.add(toIdleTransition);
+        chargeTransition.add(toDisChargingTransition);
+        Set<Transition> dischargeTransition = new HashSet<Transition>();
+        dischargeTransition.add(toIdleTransition);
+        dischargeTransition.add(toChargingTransition);
+
         // running battery modes
-        RunningMode chargingRunningMode = makeRunningMode(BatteryMode.CHARGE,
-                                                          "charging", makeRunningModeChargingElements(),
-                                                          toIdleTransition, toDisChargingTransition);
-        RunningMode idleRunningMode = makeRunningMode(BatteryMode.IDLE,
-                                                      "idle",
-                                                      makeRunningModeIdleElements(),
-                                                      toChargingTransition,
-                                                      toDisChargingTransition);
-        RunningMode dischargingRunningMode = makeRunningMode(BatteryMode.DISCHARGE,
-                                                             "discharging", makeRunningModeDisChargingElements(),
-                                                             toIdleTransition, toChargingTransition);
-        List<RunningMode> runningModes = Arrays.asList(chargingRunningMode, idleRunningMode, dischargingRunningMode);
+        FillLevelFunction<RunningModeBehaviour> idleFillLevelFunctions = FillLevelFunction.<RunningModeBehaviour> create(0)
+                                                                                          .add(5000,
+                                                                                               new RunningModeBehaviour(0.3968,
+                                                                                                                        CommodityMeasurables.create()
+                                                                                                                                            .electricity(toWatt(0))
+                                                                                                                                            .build(),
+                                                                                                                        toEuroPerHour(0)))
+                                                                                          .add(6000,
+                                                                                               new RunningModeBehaviour(0.2778,
+                                                                                                                        CommodityMeasurables.create()
+                                                                                                                                            .electricity(toWatt(0))
+                                                                                                                                            .build(),
+                                                                                                                        toEuroPerHour(0)))
+                                                                                          .build();
 
-        // this battery actuator has no timers.
-        Collection<Timer> timerList = null;
+        FillLevelFunction<RunningModeBehaviour> chargeFillLevelFunctions = FillLevelFunction.<RunningModeBehaviour> create(0)
+                                                                                            .add(5000,
+                                                                                                 new RunningModeBehaviour(0.3968,
+                                                                                                                          CommodityMeasurables.create()
+                                                                                                                                              .electricity(toWatt(1460))
+                                                                                                                                              .build(),
+                                                                                                                          toEuroPerHour(0)))
+                                                                                            .add(6000,
+                                                                                                 new RunningModeBehaviour(0.2778,
+                                                                                                                          CommodityMeasurables.create()
+                                                                                                                                              .electricity(toWatt(1050))
+                                                                                                                                              .build(),
+                                                                                                                          toEuroPerHour(0)))
+                                                                                            .build();
+        FillLevelFunction<RunningModeBehaviour> dischargeFillLevelFunctions = FillLevelFunction.<RunningModeBehaviour> create(0)
+                                                                                               .add(5000,
+                                                                                                    new RunningModeBehaviour(-0.3968,
+                                                                                                                             CommodityMeasurables.create()
+                                                                                                                                                 .electricity(toWatt(-1400))
+                                                                                                                                                 .build(),
+                                                                                                                             toEuroPerHour(0)))
+                                                                                               .add(6000,
+                                                                                                    new RunningModeBehaviour(-0.3968,
+                                                                                                                             CommodityMeasurables.create()
+                                                                                                                                                 .electricity(toWatt(-1400))
+                                                                                                                                                 .build(),
+                                                                                                                             toEuroPerHour(0)))
+                                                                                               .build();
 
-        // return the actuator
-        return new Actuator(actuatorId, timerList, runningModes);
+        RunningMode<FillLevelFunction<RunningModeBehaviour>> idleRunningMode =
+                                                                               new RunningMode<FillLevelFunction<RunningModeBehaviour>>(BatteryMode.IDLE.ordinal(),
+                                                                                                                                        "idle",
+                                                                                                                                        idleFillLevelFunctions,
+                                                                                                                                        idleTransition);
+
+        RunningMode<FillLevelFunction<RunningModeBehaviour>> chargeRunningMode =
+                                                                                 new RunningMode<FillLevelFunction<RunningModeBehaviour>>(BatteryMode.CHARGE.ordinal(),
+                                                                                                                                          "charging",
+                                                                                                                                          chargeFillLevelFunctions,
+                                                                                                                                          chargeTransition);
+        RunningMode<FillLevelFunction<RunningModeBehaviour>> dischargeRunningMode =
+                                                                                    new RunningMode<FillLevelFunction<RunningModeBehaviour>>(BatteryMode.DISCHARGE.ordinal(),
+                                                                                                                                             "discharging",
+                                                                                                                                             dischargeFillLevelFunctions,
+                                                                                                                                             dischargeTransition);
+
+        return ActuatorBehaviour.create(actuatorId)
+                                .add(idleRunningMode)
+                                .add(chargeRunningMode)
+                                .add(dischargeRunningMode)
+                                .build();
     }
 
     /**
      * Make a transistion with no timers;
-     * 
+     *
      * @param transitionId
      * @return
      */
@@ -212,90 +262,21 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
     }
 
     /**
-     * Make a runningMode based on the batteryMode with an optional number of transitions
-     * 
-     * @param batteryMode
-     * @param name
-     * @param runningModeRangeElements
-     * @param transitions
-     * @return
-     */
-    private RunningMode makeRunningMode(BatteryMode batteryMode,
-                                        String name,
-                                        RunningModeRangeElement[] runningModeRangeElements,
-                                        Transition... transitions) {
-        Set<Transition> transistionSet = new HashSet<Transition>();
-        for (Transition transition : transitions) {
-            transistionSet.add(transition);
-        }
-
-        return new RunningMode(batteryMode.ordinal(), name, transistionSet, runningModeRangeElements);
-    }
-
-    /**
-     * Helper class for the charging running mode elements
-     * 
-     * @return
-     */
-    private RunningModeRangeElement[] makeRunningModeChargingElements() {
-        List<RunningModeRangeElement> rows = new ArrayList<RunningModeRangeElement>();
-
-        Measurements commodityConsumptionRow0 = new Measurements(toWatt(1460), null);
-        rows.add(new RunningModeRangeElement(0, 5000, 0.3968, commodityConsumptionRow0, toEurocent(0)));
-        Measurements commodityConsumptionRow1 = new Measurements(toWatt(1050), null);
-        rows.add(new RunningModeRangeElement(5000, 6000, 0.2778, commodityConsumptionRow1, toEurocent(0)));
-
-        return (RunningModeRangeElement[]) rows.toArray();
-    }
-
-    /**
-     * Helper class for the idle running mode elements
-     * 
-     * @return
-     */
-    private RunningModeRangeElement[] makeRunningModeIdleElements() {
-        List<RunningModeRangeElement> rows = new ArrayList<RunningModeRangeElement>();
-
-        Measurements commodityConsumptionRow0 = new Measurements(toWatt(0), null);
-        rows.add(new RunningModeRangeElement(0, 5000, 0, commodityConsumptionRow0, toEurocent(0)));
-        Measurements commodityConsumptionRow1 = new Measurements(toWatt(0), null);
-        rows.add(new RunningModeRangeElement(5000, 6000, 0, commodityConsumptionRow1, toEurocent(0)));
-
-        return (RunningModeRangeElement[]) rows.toArray();
-    }
-
-    /**
-     * Helper class for the discharging running mode elements
-     * 
-     * @return
-     */
-    private RunningModeRangeElement[] makeRunningModeDisChargingElements() {
-        List<RunningModeRangeElement> rows = new ArrayList<RunningModeRangeElement>();
-
-        Measurements commodityConsumptionRow0 = new Measurements(toWatt(-1400), null);
-        rows.add(new RunningModeRangeElement(0, 5000, -0.3968, commodityConsumptionRow0, toEurocent(0)));
-        Measurements commodityConsumptionRow1 = new Measurements(toWatt(-1400), null);
-        rows.add(new RunningModeRangeElement(5000, 6000, -0.3968, commodityConsumptionRow1, toEurocent(0)));
-
-        return (RunningModeRangeElement[]) rows.toArray();
-    }
-
-    /**
      * Create the battery actuator set, based on the battery mode
-     * 
+     *
      * @param batteryMode
      * @return
      */
-    private Set<ActuatorUpdate> makeBatteryActuatorUpdateSet(BatteryMode batteryMode) {
+    private Set<ActuatorUpdate> makeBatteryActuatorUpdateSet(int actuatorId, BatteryMode batteryMode) {
         Set<ActuatorUpdate> runningModes = new HashSet<ActuatorUpdate>();
-        ActuatorUpdate actuatorUpdate = new ActuatorUpdate(batteryActuator.getId(), batteryMode.ordinal(), null);
+        ActuatorUpdate actuatorUpdate = new ActuatorUpdate(actuatorId, batteryMode.ordinal(), null);
         runningModes.add(actuatorUpdate);
         return runningModes;
     }
 
     /**
      * current fill level is calculated by multiplying the total capacity with the state of charge.
-     * 
+     *
      * @param batteryState
      * @return
      */
@@ -321,6 +302,11 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
 
     private Measure<Integer, Money> toEurocent(int eurocent) {
         return Measure.valueOf(eurocent, NonSI.EUROCENT);
+    }
+
+    private Measurable<MoneyFlow> toEuroPerHour(int euroPerHour) {
+        return Measure.valueOf(euroPerHour,
+                               NonSI.EUR_PER_HOUR);
     }
 
     private Measure<Integer, Duration> toSeconds(int seconds) {
