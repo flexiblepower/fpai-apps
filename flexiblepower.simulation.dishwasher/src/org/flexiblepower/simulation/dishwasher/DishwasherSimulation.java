@@ -140,9 +140,11 @@ public class DishwasherSimulation extends AbstractResourceDriver<DishwasherState
             SimpleDateFormat parserSDF = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
             final Date latestStartTime = parserSDF.parse(latestStartTimeString);
-            Measurable<Duration> diff = TimeUtil.difference(timeService.getTime(), latestStartTime);
+            final Measurable<Duration> diff = TimeUtil.difference(timeService.getTime(), latestStartTime);
 
-            log.debug("time to start dishwasher:" + Math.max(0, diff.longValue(SI.SECOND)));
+            log.debug("time wait before start dishwasher: {}, currentTime: {} , millis: {}",
+                      Math.max(0, diff.longValue(SI.SECOND)),
+                      timeService.getTime(), timeService.getCurrentTimeMillis());
 
             final String program = configuration.program();
 
@@ -155,7 +157,10 @@ public class DishwasherSimulation extends AbstractResourceDriver<DishwasherState
             Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
-                    log.debug("Started by device");
+                    log.debug("Started by device after wait of: {}, currentTime: {}, millis: {} ",
+                              diff.longValue(SI.SECOND),
+                              timeService.getTime(),
+                              timeService.getCurrentTimeMillis());
 
                     currentState = new State(isConnected,
                                              latestStartTime,
