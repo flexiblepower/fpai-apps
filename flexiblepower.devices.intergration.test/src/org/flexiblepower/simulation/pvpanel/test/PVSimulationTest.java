@@ -60,7 +60,7 @@ public class PVSimulationTest extends SimulationTest {
         }
 
         connectionManager.autoConnect();
-        simulation.startSimulation(new Date(), 100);
+        simulation.startSimulation(new Date(), 10);
         return otherEnd;
     }
 
@@ -116,10 +116,6 @@ public class PVSimulationTest extends SimulationTest {
         pvSimulation.setWeather(Weather.clouds);
         ignoreMeasures(otherEnd, 10); // ignore some measures, to be sure that the weather is set correctly
         otherEnd.expectedRandomValues(-400.0, -200.0);
-
-        otherEnd.expectedState(-400.0, -200.0);
-        otherEnd.expectedState(-400.0, -200.0); // read one extra measure, because the calculations of last test could
-                                                // have taken to much time..
 
         pvSimulation.setWeather(Weather.sun);
         ignoreMeasures(otherEnd, 10); // ignore some measures, to be sure that the weather is set correctly

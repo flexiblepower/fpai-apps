@@ -69,7 +69,7 @@ public class PVIntegrationTest extends SimulationTest {
         properties.put("testa", "pvsim");
         simConfig.update(properties);
 
-        pvSimulation = (PVSimulation) pvPanelTracker.waitForService(1000);
+        pvSimulation = (PVSimulation) pvPanelTracker.waitForService(10);
 
         assertNotNull(pvSimulation);
 
