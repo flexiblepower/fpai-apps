@@ -6,7 +6,6 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 
 import org.flexiblepower.messaging.Endpoint;
-import org.flexiblepower.ral.drivers.uncontrolled.PowerState;
 import org.flexiblepower.simulation.pvpanel.PVSimulation;
 import org.flexiblepower.simulation.pvpanel.Weather;
 import org.flexiblepower.simulation.test.SimulationTest;
@@ -47,20 +46,21 @@ public class PVSimulationTest extends SimulationTest {
         config.update(properties);
 
         pvSimulation = (PVSimulation) pvpanelSimulationTracker.waitForService(1000);
-
         assertNotNull(pvSimulation);
 
         OtherEndPVPanelManager otherEnd = new OtherEndPVPanelManager();
         otherEndRegistration = bundleContext.registerService(Endpoint.class, otherEnd, null);
 
+        for (int i = 0; i < 10; i++) {
+            if (connectionManager.getEndpoints().size() < 2) {
+                Thread.sleep(50);
+            } else {
+                break;
+            }
+        }
+
         connectionManager.autoConnect();
-
-        simulation.startSimulation(new Date(), 5);
-
-        PowerState initialState = otherEnd.getState();
-        // assertEquals(selfDischargePower, initialState.getSelfDischargeSpeed().doubleValue(SI.WATT), 0.01);
-        // TODO add assertions.... (What can we assert here?)
-
+        simulation.startSimulation(new Date(), 10000);
         return otherEnd;
     }
 
@@ -112,6 +112,10 @@ public class PVSimulationTest extends SimulationTest {
         OtherEndPVPanelManager otherEnd = create(1, 0.0, 200.0, 1500.0);
         pvSimulation.setWeather(Weather.clouds);
         otherEnd.expectedRandomValues(-400.0, -200.0);
+
+        otherEnd.expectedState(-400.0, -200.0);
+        otherEnd.expectedState(-400.0, -200.0); // read one extra measure, because the calculations of last test could
+                                                // have taken to much time..
 
         pvSimulation.setWeather(Weather.sun);
         otherEnd.expectedRandomValues(-1650.0, -1500.0);

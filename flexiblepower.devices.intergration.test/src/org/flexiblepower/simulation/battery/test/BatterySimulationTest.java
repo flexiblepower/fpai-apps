@@ -66,7 +66,7 @@ public class BatterySimulationTest extends SimulationTest {
 
         connectionManager.autoConnect();
 
-        simulation.startSimulation(new Date(), 100);
+        simulation.startSimulation(new Date(), 10000);
 
         BatteryState initialState = otherEnd.getState();
         assertEquals(totalCapacity, initialState.getTotalCapacity().doubleValue(NonSI.KWH));

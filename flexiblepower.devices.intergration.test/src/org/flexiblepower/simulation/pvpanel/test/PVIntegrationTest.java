@@ -23,7 +23,6 @@ import org.flexiblepower.rai.values.CommodityMeasurables;
 import org.flexiblepower.simulation.pvpanel.PVSimulation;
 import org.flexiblepower.simulation.pvpanel.Weather;
 import org.flexiblepower.simulation.test.SimulationTest;
-import org.flexiblepower.uncontrolled.manager.UncontrolledManager;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.cm.Configuration;
 import org.osgi.util.tracker.ServiceTracker;
@@ -55,7 +54,6 @@ public class PVIntegrationTest extends SimulationTest {
     private volatile ServiceRegistration<Endpoint> otherEndRegistration;
     private volatile PVSimulation pvSimulation;
     private Configuration managerConfig;
-    private UncontrolledManager uncontrolledManager;
 
     private OtherEndPVPanelApp create(int updateDelay,
                                       double powerWhenStandBy,
@@ -83,15 +81,21 @@ public class PVIntegrationTest extends SimulationTest {
         managerProperties.put("expirationTime", "30");
         managerProperties.put("testb", "pvsim");
         managerConfig.update(managerProperties);
-        uncontrolledManager = (UncontrolledManager) uncontrolledManagerTracker.waitForService(1000);
-        assertNotNull(uncontrolledManager);
 
         OtherEndPVPanelApp otherEnd = new OtherEndPVPanelApp();
         otherEndRegistration = bundleContext.registerService(Endpoint.class, otherEnd, null);
 
+        for (int i = 0; i < 10; i++) {
+            if (connectionManager.getEndpoints().size() < 3) {
+                Thread.sleep(50);
+            } else {
+                break;
+            }
+        }
+
         connectionManager.autoConnect();
 
-        simulation.startSimulation(new Date(), 5);
+        simulation.startSimulation(new Date(), 10000);
 
         // PowerState initialState = otherEnd.getState();
         // assertEquals(selfDischargePower, initialState.getSelfDischargeSpeed().doubleValue(SI.WATT), 0.01);
@@ -197,6 +201,9 @@ public class PVIntegrationTest extends SimulationTest {
         OtherEndPVPanelApp otherEnd = create(1, 0.0, 200.0, 1500.0);
         pvSimulation.setWeather(Weather.clouds);
         expectedRandomValues(otherEnd, -400.0, -200.0);
+
+        getConsumptionMeasure(otherEnd); // read one extra measure, because the calculations of last test could have
+                                         // taken to much time..
 
         pvSimulation.setWeather(Weather.sun);
         expectedRandomValues(otherEnd, -1650.0, -1500.0);

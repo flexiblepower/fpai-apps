@@ -33,7 +33,6 @@ import org.slf4j.LoggerFactory;
 import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Deactivate;
-import aQute.bnd.annotation.component.Modified;
 import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
@@ -119,9 +118,58 @@ public class DishwasherSimulation extends AbstractResourceDriver<DishwasherState
         this.timeService = timeService;
     }
 
-    private DishwasherWidget widget;
-    private ServiceRegistration<Widget> widgetRegistration;
     private Config configuration;
+
+    private DishwasherWidget widget;
+
+    private ServiceRegistration<Widget> widgetRegistration;
+
+    @Activate
+    public void activate(BundleContext context, Map<String, Object> properties) {
+        log.info("Activated");
+        configuration = Configurable.createConfigurable(Config.class, properties);
+
+        Measurable<Duration> diff = getTimeDiff();
+
+        if (runFuture != null && !runFuture.isDone()) {
+            runFuture.cancel(false);
+        }
+
+        final boolean isConnected = configuration.isConnected();
+        final Date startTime = timeService.getTime();
+        final Date latestStartTime = getLatestTime();
+        final String program = configuration.program();
+
+        currentState = new State(isConnected,
+                                 null,
+                                 latestStartTime,
+                                 program);
+        publishState(currentState);
+
+        runFuture = scheduler.schedule(new Runnable() {
+            @Override
+            public void run() {
+                log.debug("Started by device");
+
+                currentState = new State(isConnected,
+                                         startTime,
+                                         latestStartTime,
+                                         program);
+                publishState(currentState);
+            }
+        },
+                                       diff.longValue(SI.SECOND),
+                                       TimeUnit.SECONDS);
+
+        widget = new DishwasherWidget(this, timeService);
+        widgetRegistration = context.registerService(Widget.class, widget, null);
+    }
+
+    @Deactivate
+    public void deactivate() {
+        log.info("Deactivated");
+        widgetRegistration.unregister();
+    }
 
     private Measurable<Duration> getTimeDiff() {
         Date current = timeService.getTime();
@@ -142,74 +190,6 @@ public class DishwasherSimulation extends AbstractResourceDriver<DishwasherState
         return latestTime;
     }
 
-    @Activate
-    public void activate(BundleContext context, Map<String, Object> properties) {
-        log.info("Activated");
-        configuration = Configurable.createConfigurable(Config.class, properties);
-
-        Measurable<Duration> diff = getTimeDiff();
-
-        if (runFuture != null && !runFuture.isDone()) {
-            runFuture.cancel(false);
-        }
-
-        runFuture = scheduler.schedule(new Runnable() {
-            @Override
-            public void run() {
-                log.debug("Started by device");
-                boolean isConnected = configuration.isConnected();
-                Date currentTime = timeService.getTime();
-                Date latestStartTime = getLatestTime();
-                String program = configuration.program();
-
-                currentState = new State(isConnected,
-                                         currentTime,
-                                         latestStartTime,
-                                         program);
-                publishState(currentState);
-            }
-        },
-                                       diff.longValue(SI.SECOND),
-                                       TimeUnit.SECONDS);
-
-        widget = new DishwasherWidget(this, timeService);
-        widgetRegistration = context.registerService(Widget.class, widget, null);
-    }
-
-    @Modified
-    public void modify(BundleContext bundleContext, Map<String, Object> properties) {
-        log.info("Modified");
-        configuration = Configurable.createConfigurable(Config.class, properties);
-        Measurable<Duration> diff = getTimeDiff();
-
-        if (runFuture != null && !runFuture.isDone()) {
-            runFuture.cancel(false);
-        }
-
-        runFuture = scheduler.schedule(new Runnable() {
-            @Override
-            public void run() {
-                log.debug("Started by device");
-                boolean isConnected = configuration.isConnected();
-                Date currentTime = timeService.getTime();
-                Date latestStartTime = getLatestTime();
-                String program = configuration.program();
-
-                currentState = new State(isConnected,
-                                         currentTime,
-                                         latestStartTime,
-                                         program);
-                publishState(currentState);
-            }
-        }, diff.longValue(SI.SECOND), TimeUnit.SECONDS);
-    }
-
-    @Deactivate
-    public void deactivate() {
-        log.info("Deactivated");
-        widgetRegistration.unregister();
-    }
-
     private volatile State currentState;
 
     public State getCurrentState() {
@@ -219,7 +199,7 @@ public class DishwasherSimulation extends AbstractResourceDriver<DishwasherState
     private volatile Future<?> runFuture;
 
     @Override
-    public void handleControlParameters(DishwasherControlParameters resourceControlParameters) {
+    public void handleControlParameters(final DishwasherControlParameters resourceControlParameters) {
         if (resourceControlParameters.getProgram().equals(currentState.getProgram())) {
             Measurable<Duration> diff = TimeUtil.difference(timeService.getTime(),
                                                             resourceControlParameters.getStartTime());
@@ -228,42 +208,31 @@ public class DishwasherSimulation extends AbstractResourceDriver<DishwasherState
                 runFuture.cancel(false);
             }
 
-            runFuture = scheduler.schedule(new Runnable() {
+            final boolean isConnected = configuration.isConnected();
+            final Date latestStartTime = resourceControlParameters.getStartTime();
+            final String program = configuration.program();
+
+            currentState = new State(isConnected,
+                                     null,
+                                     latestStartTime,
+                                     program);
+
+            publishState(currentState);
+            Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
                     log.debug("Started by manager");
-                    boolean isConnected = configuration.isConnected();
-                    Date currentTime = timeService.getTime();
-                    Date latestStartTime = getLatestTime();
-                    String program = configuration.program();
-
                     currentState = new State(isConnected,
-                                             currentTime,
+                                             latestStartTime,
                                              latestStartTime,
                                              program);
                     publishState(currentState);
                 }
-            },
+            };
+            runFuture = scheduler.schedule(runnable,
                                            diff.longValue(SI.SECOND),
                                            TimeUnit.SECONDS);
+
         }
     }
-
-    // @Override
-    // public synchronized void run() {
-    // Date currentTime = timeService.getTime();
-    // double timeSinceUpdate = (currentTime.getTime() - currentState.getStartTime().getTime()) / 1000.0; // in seconds
-    // logger.debug("Dishwasher simulation step. Program={} Timestep={}s", currentState.getProgram(), timeSinceUpdate);
-    // if (currentState.getStartTime() != null) {
-    // // Machine has not started yet
-    // if (currentTime.after(configuration.latestStartTime())) {
-    // // you have to start now!
-    // log.debug("Starting dishwasher, as it is after latest start time");
-    // currentState = new State(currentTime, currentState.getProgram());
-    // publishState(currentState);
-    // } else {
-    // log.debug("Not starting yet, it is before latest start time");
-    // }
-    // }
-    // }
 }

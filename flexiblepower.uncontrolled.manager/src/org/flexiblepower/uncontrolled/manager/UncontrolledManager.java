@@ -19,6 +19,8 @@ import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.messaging.Port;
 import org.flexiblepower.rai.ResourceMessage;
 import org.flexiblepower.rai.values.CommodityMeasurables;
+import org.flexiblepower.rai.values.CommoditySet;
+import org.flexiblepower.rai.values.ConstraintListMap;
 import org.flexiblepower.ral.ResourceControlParameters;
 import org.flexiblepower.ral.drivers.uncontrolled.PowerState;
 import org.flexiblepower.ral.ext.AbstractResourceManager;
@@ -107,10 +109,13 @@ public class UncontrolledManager extends
         currentState = state;
         changedState = timeService.getTime();
         allocationDelay = Measure.valueOf(5, SI.SECOND);
+        ConstraintListMap constraintList = ConstraintListMap.electricity(null); // this version of the uncontrolled
+                                                                                // manager does not support
+                                                                                // curtailments...
         UncontrolledRegistration reg = new UncontrolledRegistration(getResourceId(),
                                                                     changedState,
                                                                     allocationDelay,
-                                                                    null);
+                                                                    CommoditySet.onlyElectricity, constraintList);
         UncontrolledUpdate update = createUncontrolledUpdate(state);
         return Arrays.asList(reg, update);
     }

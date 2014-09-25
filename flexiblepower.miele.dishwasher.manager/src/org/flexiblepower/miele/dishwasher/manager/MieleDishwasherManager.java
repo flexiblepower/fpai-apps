@@ -25,6 +25,7 @@ import org.flexiblepower.miele.dishwasher.manager.MieleDishwasherManager.Config;
 import org.flexiblepower.rai.AllocationRevoke;
 import org.flexiblepower.rai.ResourceMessage;
 import org.flexiblepower.rai.values.CommodityForecast;
+import org.flexiblepower.rai.values.CommodityForecast.Builder;
 import org.flexiblepower.rai.values.CommoditySet;
 import org.flexiblepower.rai.values.UncertainMeasure;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherControlParameters;
@@ -107,6 +108,7 @@ public class MieleDishwasherManager extends
                                                                   allocationDelay,
                                                                   CommoditySet.onlyElectricity);
         TimeShifterUpdate update = createControlSpace(state);
+        log.debug("sending timeshifter registration and update");
         return Arrays.asList(reg, update);
     }
 
@@ -118,26 +120,34 @@ public class MieleDishwasherManager extends
             currentState = state;
             changedState = timeService.getTime();
             TimeShifterUpdate update = createControlSpace(state);
+            log.debug("sending timeshifter update");
             return Arrays.asList(update);
         }
     }
 
     @Override
     protected DishwasherControlParameters receivedAllocation(ResourceMessage message) {
+        log.debug("Allocation received");
         if (message instanceof TimeShifterAllocation) {
+            log.debug("TimeShifterAllocation received");
             currentAllocation = (TimeShifterAllocation) message;
-            if (currentUpdate != null && currentAllocation.getControlSpaceUpdateId()
-                                                          .equals(currentUpdate.getResourceMessageId())) {
-                List<SequentialProfileAllocation> sequentialProfileAllocations = currentAllocation.getSequentialProfileAllocation();
-                if (!sequentialProfileAllocations.isEmpty()) {
-                    SequentialProfileAllocation sequentialProfileAllocation = sequentialProfileAllocations.get(0);
+            List<SequentialProfileAllocation> sequentialProfileAllocations = currentAllocation.getSequentialProfileAllocation();
+            if (!sequentialProfileAllocations.isEmpty() && currentState != null && currentState.getProgram() != null) {
+
+                log.debug("returning new controlparameters");
+                SequentialProfileAllocation sequentialProfileAllocation = sequentialProfileAllocations.get(0);
+
+                // publishToController(createControlSpace());
+                if (sequentialProfileAllocation.getStartTime() != null) {
                     return new DishwasherControlParametersImpl(sequentialProfileAllocation.getStartTime(),
                                                                currentState.getProgram());
+                } else {
+                    log.error("starttime in sequential profileAllocation is null! Ignoring");
                 }
-            } else {
-                currentAllocation = null;
             }
+
         } else if (message instanceof AllocationRevoke) {
+            log.debug("Revocation message received");
             if (currentAllocation != null) {
                 return new DishwasherControlParametersImpl(null, null);
             }
@@ -148,45 +158,70 @@ public class MieleDishwasherManager extends
     }
 
     private TimeShifterUpdate createControlSpace(DishwasherState info) {
-        // Get values from driver
-        String program = "";
-        Date startTime = timeService.getTime();
-
-        if (info.getStartTime() == null) {
-            return null;
-        }
-
         logger.debug("Program selected: " + info.getProgram());
-        program = info.getProgram();
-        startTime = info.getStartTime();
+        String program = info.getProgram();
 
         // Create energy Profile
-        UncertainMeasure<Power> energy = new UncertainMeasure<Power>(1000, SI.WATT);
-        UncertainMeasure<Duration> duration = new UncertainMeasure<Duration>(1, HOUR);
+        UncertainMeasure<Power> energy1 = null;
+        UncertainMeasure<Duration> duration1 = null;
+        UncertainMeasure<Power> energy2 = null;
+        UncertainMeasure<Duration> duration2 = null;
+        UncertainMeasure<Power> energy3 = null;
+        UncertainMeasure<Duration> duration3 = null;
+
+        Builder forecastBuilder = CommodityForecast.create();
 
         // Set Energy Profile
-        if (program == "Energy Save") {
-        } else if (program == "Sensor Wash") {
-            duration = new UncertainMeasure<Duration>(2, HOUR);
+        if (program.equalsIgnoreCase("Energy Save")) {
+            energy1 = new UncertainMeasure<Power>(1000, SI.WATT);
+            duration1 = new UncertainMeasure<Duration>(1, HOUR);
+            forecastBuilder.duration(duration1);
+            forecastBuilder.electricity(energy1);
+            forecastBuilder.next();
+            energy2 = new UncertainMeasure<Power>(500, SI.WATT);
+            duration2 = new UncertainMeasure<Duration>(1, HOUR);
+            forecastBuilder.duration(duration2);
+            forecastBuilder.electricity(energy2);
+            forecastBuilder.next();
+
+        } else if (program.equalsIgnoreCase("Sensor Wash")) {
+            energy1 = new UncertainMeasure<Power>(1000, SI.WATT);
+            duration1 = new UncertainMeasure<Duration>(2, HOUR);
+            forecastBuilder.duration(duration1);
+            forecastBuilder.electricity(energy1);
+            forecastBuilder.next();
+            energy2 = new UncertainMeasure<Power>(1500, SI.WATT);
+            duration2 = new UncertainMeasure<Duration>(0.5, HOUR);
+            forecastBuilder.duration(duration2);
+            forecastBuilder.electricity(energy2);
+            forecastBuilder.next();
+            energy3 = new UncertainMeasure<Power>(500, SI.WATT);
+            duration3 = new UncertainMeasure<Duration>(0.3, HOUR);
+            forecastBuilder.duration(duration3);
+            forecastBuilder.electricity(energy3);
+            forecastBuilder.next();
         } else {
-            energy = new UncertainMeasure<Power>(330, SI.WATT);
-            duration = new UncertainMeasure<Duration>(2, HOUR);
+            energy1 = new UncertainMeasure<Power>(2000, SI.WATT);
+            duration1 = new UncertainMeasure<Duration>(3, HOUR);
+            forecastBuilder.duration(duration1);
+            forecastBuilder.electricity(energy1);
+            forecastBuilder.next();
+            energy2 = new UncertainMeasure<Power>(1000, SI.WATT);
+            duration2 = new UncertainMeasure<Duration>(1, HOUR);
+            forecastBuilder.duration(duration2);
+            forecastBuilder.electricity(energy2);
+            forecastBuilder.next();
         }
 
-        // Set Start and Stop Time
-        Date startBefore = new Date(startTime.getTime());
+        CommodityForecast forecast = forecastBuilder.build();
+        UncertainMeasure<Duration> maxInterval = new UncertainMeasure<Duration>(0, HOUR);
 
-        CommodityForecast forecast = CommodityForecast.create()
-                                                      .duration(duration)
-                                                      .electricity(energy)
-                                                      .next()
-                                                      .build();
         return new TimeShifterUpdate(configuration.resourceId(),
                                      changedState,
                                      changedState,
-                                     startBefore,
+                                     info.getLatestStartTime(),
                                      new SequentialProfile(0,
-                                                           duration,
+                                                           maxInterval,
                                                            forecast));
     }
 
