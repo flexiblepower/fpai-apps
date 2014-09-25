@@ -89,7 +89,7 @@ public class MieleDishwasherManager extends
     }
 
     private DishwasherState currentState;
-    private Date changedState;
+    private Date changedStateTime;
     private TimeShifterUpdate currentUpdate;
     private TimeShifterAllocation currentAllocation;
     private Measure<Integer, Duration> allocationDelay;
@@ -100,11 +100,11 @@ public class MieleDishwasherManager extends
     @Override
     protected List<? extends ResourceMessage> startRegistration(DishwasherState state) {
         currentState = state;
-        changedState = timeService.getTime();
+        changedStateTime = timeService.getTime();
         allocationDelay = Measure.valueOf(5, SI.SECOND);
 
         TimeShifterRegistration reg = new TimeShifterRegistration(configuration.resourceId(),
-                                                                  changedState,
+                                                                  changedStateTime,
                                                                   allocationDelay,
                                                                   CommoditySet.onlyElectricity);
         TimeShifterUpdate update = createControlSpace(state);
@@ -118,7 +118,7 @@ public class MieleDishwasherManager extends
             return Collections.emptyList();
         } else {
             currentState = state;
-            changedState = timeService.getTime();
+            changedStateTime = timeService.getTime();
             TimeShifterUpdate update = createControlSpace(state);
             log.debug("sending timeshifter update");
             return Arrays.asList(update);
@@ -217,8 +217,8 @@ public class MieleDishwasherManager extends
         UncertainMeasure<Duration> maxInterval = new UncertainMeasure<Duration>(0, HOUR);
 
         return new TimeShifterUpdate(configuration.resourceId(),
-                                     changedState,
-                                     changedState,
+                                     changedStateTime,
+                                     changedStateTime,
                                      info.getLatestStartTime(),
                                      new SequentialProfile(0,
                                                            maxInterval,

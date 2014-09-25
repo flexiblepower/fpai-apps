@@ -21,7 +21,6 @@ import org.flexiblepower.efi.timeshifter.TimeShifterUpdate;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.rai.values.Commodity;
 import org.flexiblepower.rai.values.CommodityForecast;
-import org.flexiblepower.rai.values.CommoditySet;
 import org.flexiblepower.simulation.dishwasher.DishwasherSimulation;
 import org.flexiblepower.simulation.test.SimulationTest;
 import org.flexiblepower.time.TimeUtil;
@@ -101,29 +100,24 @@ public class DishwasherSimulationTest extends SimulationTest {
             fail("Not all endpoints are picked up by the connection manager");
         }
         connectionManager.autoConnect();
-
-        simulation.startSimulation(new Date(), 10000);
+        simulation.startSimulation(new Date(), 100);
     }
 
     @Override
     protected void tearDown() throws Exception {
         destroy();
-
         dishwasherSimulationTracker.close();
         otherEndEnergyAppTracker.close();
         energyapp.clearQueues();
-
         super.tearDown();
     }
 
     private void destroy() throws IOException {
         simulation.stopSimulation();
-
         if (energyappConfig != null) {
             energyappConfig.delete();
             energyappConfig = null;
         }
-
         if (managerConfig != null) {
             managerConfig.delete();
             managerConfig = null;
@@ -140,27 +134,21 @@ public class DishwasherSimulationTest extends SimulationTest {
         Measurable<Duration> allocationDelay = timeshifterRegistration.getAllocationDelay();
         assertEquals(allocationDelay, Measure.valueOf(5, SI.SECOND));
         assertNotNull(timeshifterRegistration);
-        // otherEnd.clearQueues();
     }
 
     public void testUpdate() throws Exception {
         create(1, true, "", "2014-09-11 15:30", "Aan", true);
-        TimeShifterRegistration timeshifterRegistration = energyapp.getTimeshifterRegistration();
         TimeShifterUpdate timeshifterUpdate = energyapp.getTimeshifterUpdate();
         assertNotNull(timeshifterUpdate);
-        Date validFrom = timeshifterUpdate.getValidFrom();
         List<SequentialProfile> timeShifterProfiles = timeshifterUpdate.getTimeShifterProfiles();
         assertNotNull(timeShifterProfiles);
-        // otherEnd.clearQueues();
     }
 
     public void testSensorWashProgram() throws Exception {
         create(1, true, "", "2014-09-11 15:30", "Sensor Wash", true);
         TimeShifterUpdate timeshifterUpdate = energyapp.getTimeshifterUpdate();
         assertNotNull(timeshifterUpdate);
-        Date validFrom = timeshifterUpdate.getValidFrom();
         List<SequentialProfile> timeShifterProfiles = timeshifterUpdate.getTimeShifterProfiles();
-        Date endBefore = timeshifterUpdate.getEndBefore();
 
         // test number of timeshifterprofiles. (1 expected)
         assertEquals(timeShifterProfiles.size(), 1);
@@ -170,8 +158,6 @@ public class DishwasherSimulationTest extends SimulationTest {
         assertEquals(sequentialProfile.getMaxIntervalBefore().doubleValue(SI.SECOND), 0.0);
 
         CommodityForecast commodityForecast = sequentialProfile.getCommodityForecast();
-        Measurable<Duration> totalDuration = commodityForecast.getTotalDuration();
-        CommoditySet commodities = commodityForecast.getCommodities();
 
         // test number of measureables in commodityforecasts (expected 3 in sensorwash programm)
         assertEquals(3, commodityForecast.size());
@@ -185,17 +171,13 @@ public class DishwasherSimulationTest extends SimulationTest {
         assertEquals(commodityForecast.get(0).getValue().get(Commodity.ELECTRICITY).doubleValue(SI.WATT), 1000.0);
         assertEquals(commodityForecast.get(1).getValue().get(Commodity.ELECTRICITY).doubleValue(SI.WATT), 1500.0);
         assertEquals(commodityForecast.get(2).getValue().get(Commodity.ELECTRICITY).doubleValue(SI.WATT), 500.0);
-
-        // otherEnd.clearQueues();
     }
 
     public void testEnergySaveProgram() throws Exception {
         create(1, true, "", "2014-09-11 15:30", "Energy Save", true);
         TimeShifterUpdate timeshifterUpdate = energyapp.getTimeshifterUpdate();
         assertNotNull(timeshifterUpdate);
-        Date validFrom = timeshifterUpdate.getValidFrom();
         List<SequentialProfile> timeShifterProfiles = timeshifterUpdate.getTimeShifterProfiles();
-        Date endBefore = timeshifterUpdate.getEndBefore();
 
         // test number of timeshifterprofiles. (1 expected)
         assertEquals(timeShifterProfiles.size(), 1);
@@ -203,10 +185,7 @@ public class DishwasherSimulationTest extends SimulationTest {
 
         // test max interval before (0 expected, because there is only 1 timeshifterprofile)
         assertEquals(sequentialProfile.getMaxIntervalBefore().doubleValue(SI.SECOND), 0.0);
-
         CommodityForecast commodityForecast = sequentialProfile.getCommodityForecast();
-        Measurable<Duration> totalDuration = commodityForecast.getTotalDuration();
-        CommoditySet commodities = commodityForecast.getCommodities();
 
         // test number of measureables in commodityforecasts (expected 2 in energy save programm)
         assertEquals(2, commodityForecast.size());
@@ -218,8 +197,6 @@ public class DishwasherSimulationTest extends SimulationTest {
         // test energy consumption
         assertEquals(commodityForecast.get(0).getValue().get(Commodity.ELECTRICITY).doubleValue(SI.WATT), 1000.0);
         assertEquals(commodityForecast.get(1).getValue().get(Commodity.ELECTRICITY).doubleValue(SI.WATT), 500.0);
-
-        // otherEnd.clearQueues();
     }
 
     public void testLatestStartTime() throws Exception {
@@ -228,14 +205,12 @@ public class DishwasherSimulationTest extends SimulationTest {
         Measurable<Duration> allocationDelay = timeshifterRegistration.getAllocationDelay();
         assertEquals(allocationDelay, Measure.valueOf(5, SI.SECOND));
         assertNotNull(timeshifterRegistration);
-        // TODO: test whether commodity profiles are changed
         assertNotNull(dishwasherSimulation.getCurrentState().getStartTime()); // Started!
-        // otherEnd.clearQueues();
 
     }
 
-    public void testStart() throws Exception {
-        create(1, true, "", "2013-01-01 12:00", "Aan", true);
+    public void testAllocation() throws Exception {
+        create(1, true, "", "2015-01-01 12:00", "Aan", true);
         log.debug("requesting registration");
         TimeShifterRegistration timeshifterRegistration = energyapp.getTimeshifterRegistration();
         log.debug("requesting update");
@@ -244,7 +219,6 @@ public class DishwasherSimulationTest extends SimulationTest {
         Measurable<Duration> allocationDelay = timeshifterRegistration.getAllocationDelay();
         assertEquals(allocationDelay, Measure.valueOf(5, SI.SECOND));
         assertNotNull(timeshifterRegistration);
-        // TODO: test whether commodity profiles are changed
 
         List<SequentialProfile> profiles = update.getTimeShifterProfiles();
         List<SequentialProfileAllocation> alocations = new ArrayList<SequentialProfileAllocation>();
@@ -252,60 +226,20 @@ public class DishwasherSimulationTest extends SimulationTest {
         SequentialProfile profile = profiles.get(0);
         Date startTime = TimeUtil.add(simulation.getTime(), Measure.valueOf(4, SI.SECOND));
         alocations.add(new SequentialProfileAllocation(profile.getId(), startTime));
-        Measurable<Duration> totalDuration = profile.getCommodityForecast().getTotalDuration();
 
+        // test whether the dishwasher is still turned off
+        assertNull(dishwasherSimulation.getCurrentState().getStartTime()); // Not Started!
+
+        // create allocation to start now
         TimeShifterAllocation allocation = new TimeShifterAllocation(update, simulation.getTime(), false,
                                                                      alocations);
 
         log.debug("sending allocation");
         energyapp.sendAllocation(allocation);
 
-        update = energyapp.getTimeshifterUpdate();
-        List<SequentialProfile> newSeqProfs = update.getTimeShifterProfiles();
-        assertEquals(newSeqProfs.size(), 1);
-        SequentialProfile newSeqProf = newSeqProfs.get(0);
-        CommodityForecast newComForcast = newSeqProf.getCommodityForecast();
-        // endBefore = newComForcast.get
-        assertEquals(2, newComForcast.size());
-        // newSeqProf.
-
-        // log.debug("end before: {}", new SimpleDateFormat("yyMMddHHmm").format(endBefore));
-        // log.debug("estimated end: {} ", new SimpleDateFormat("yyMMddHHmm").format(TimeUtil.add(startTime,
-        // totalDuration)));
-        // assertTrue(new SimpleDateFormat("yyMMddHHmm").format(endBefore).equals(new
-        // SimpleDateFormat("yyMMddHHmm").format(TimeUtil.add(startTime,
-        // totalDuration))));
+        // test to see whether it has started
+        assertNotNull(dishwasherSimulation.getCurrentState().getStartTime()); // Started!
 
     }
-
-    // public void testUpdates() throws Exception {
-    //
-    // Date latestStartTime = simulation.getTime();
-    // TimeUtil.add(latestStartTime, Measure.valueOf(30, SI.SECOND));
-    // String latestStartTimeString = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ENGLISH).format(latestStartTime);
-    //
-    // OtherEndEnergyApp otherEnd = create(1, true, latestStartTimeString, latestStartTimeString, "Energy Save", true);
-    //
-    // assertEquals(0, getConsumptionMeasure(otherEnd));
-    // // TODO: test when the dishwasher starts...
-    //
-    // // otherEnd.clearQueues();
-    //
-    // }
-
-    // private double getConsumptionMeasure(OtherEndEnergyApp otherEnd) throws InterruptedException {
-    //
-    // TimeShifterUpdate update = otherEnd.getTimeshifterUpdate();
-    // assertNotNull(update);
-    // assertNotNull(update.getValidFrom());
-    // assertNotNull(update.getTimestamp());
-    //
-    // List<SequentialProfile> profiles = update.getTimeShifterProfiles();
-    // SequentialProfile profile = profiles.get(0);
-    // CommodityUncertainMeasurables commodityMeasurable = profile.getCommodityForecast().get(0).getValue();
-    // UncertainMeasure<Power> measure = commodityMeasurable.get(Commodity.ELECTRICITY);
-    // return measure.getMean().doubleValue(SI.WATT);
-    //
-    // }
 
 }

@@ -5,7 +5,6 @@ import static javax.measure.unit.NonSI.HOUR;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -27,6 +26,7 @@ import org.flexiblepower.time.TimeUtil;
 import org.flexiblepower.ui.Widget;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
+import org.osgi.service.component.annotations.Modified;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -129,38 +129,98 @@ public class DishwasherSimulation extends AbstractResourceDriver<DishwasherState
         log.info("Activated");
         configuration = Configurable.createConfigurable(Config.class, properties);
 
-        Measurable<Duration> diff = getTimeDiff();
+        if (runFuture != null && !runFuture.isDone()) {
+            runFuture.cancel(false);
+        }
+        String latestStartTimeString = null;
+        try {
+            final boolean isConnected = configuration.isConnected();
+            final Date startTime = null;
+            latestStartTimeString = configuration.latestStartTime();
+            SimpleDateFormat parserSDF = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+
+            final Date latestStartTime = parserSDF.parse(latestStartTimeString);
+            Measurable<Duration> diff = TimeUtil.difference(timeService.getTime(), latestStartTime);
+
+            log.debug("time to start dishwasher:" + Math.max(0, diff.longValue(SI.SECOND)));
+
+            final String program = configuration.program();
+
+            currentState = new State(isConnected,
+                                     startTime,
+                                     latestStartTime,
+                                     program);
+            publishState(currentState);
+
+            Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+                    log.debug("Started by device");
+
+                    currentState = new State(isConnected,
+                                             latestStartTime,
+                                             latestStartTime,
+                                             program);
+                    publishState(currentState);
+                }
+            };
+            runFuture = scheduler.schedule(runnable,
+                                           Math.max(0, diff.longValue(SI.SECOND)),
+                                           TimeUnit.SECONDS);
+        } catch (ParseException e) {
+            log.debug("ParsingError during parsing of LatestStartTime: {}", latestStartTimeString);
+        }
+        widget = new DishwasherWidget(this, timeService);
+        widgetRegistration = context.registerService(Widget.class, widget, null);
+    }
+
+    // separate modify method needed, because the activate overwrites the startTime.
+    @Modified
+    public void Modify(BundleContext context, Map<String, Object> properties) {
+        log.info("Modifying");
+        configuration = Configurable.createConfigurable(Config.class, properties);
 
         if (runFuture != null && !runFuture.isDone()) {
             runFuture.cancel(false);
         }
+        String latestStartTimeString = null;
+        try {
+            final boolean isConnected = configuration.isConnected();
+            final Date startTime = currentState.getStartTime();
+            latestStartTimeString = configuration.latestStartTime();
+            SimpleDateFormat parserSDF = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
-        final boolean isConnected = configuration.isConnected();
-        final Date startTime = timeService.getTime();
-        final Date latestStartTime = getLatestTime();
-        final String program = configuration.program();
+            final Date latestStartTime = parserSDF.parse(latestStartTimeString);
+            Measurable<Duration> diff = TimeUtil.difference(timeService.getTime(), latestStartTime);
 
-        currentState = new State(isConnected,
-                                 null,
-                                 latestStartTime,
-                                 program);
-        publishState(currentState);
+            // log.debug("time to start dishwasher:" + diff.doubleValue(SI.SECOND));
 
-        runFuture = scheduler.schedule(new Runnable() {
-            @Override
-            public void run() {
-                log.debug("Started by device");
+            final String program = configuration.program();
 
-                currentState = new State(isConnected,
-                                         startTime,
-                                         latestStartTime,
-                                         program);
-                publishState(currentState);
-            }
-        },
-                                       diff.longValue(SI.SECOND),
-                                       TimeUnit.SECONDS);
+            currentState = new State(isConnected,
+                                     startTime,
+                                     latestStartTime,
+                                     program);
+            publishState(currentState);
 
+            Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+                    log.debug("Started by device");
+
+                    currentState = new State(isConnected,
+                                             startTime,
+                                             latestStartTime,
+                                             program);
+                    publishState(currentState);
+                }
+            };
+            runFuture = scheduler.schedule(runnable,
+                                           Math.max(0, diff.longValue(SI.SECOND)),
+                                           TimeUnit.SECONDS);
+        } catch (ParseException e) {
+            log.debug("ParsingError during parsing of LatestStartTime: {}", latestStartTimeString);
+        }
         widget = new DishwasherWidget(this, timeService);
         widgetRegistration = context.registerService(Widget.class, widget, null);
     }
@@ -169,25 +229,6 @@ public class DishwasherSimulation extends AbstractResourceDriver<DishwasherState
     public void deactivate() {
         log.info("Deactivated");
         widgetRegistration.unregister();
-    }
-
-    private Measurable<Duration> getTimeDiff() {
-        Date current = timeService.getTime();
-        Date latestTime = getLatestTime();
-        return TimeUtil.difference(current, latestTime);
-    }
-
-    private Date getLatestTime() {
-        Date latestTime = timeService.getTime();
-        String datestring = null;
-        try {
-            datestring = configuration.latestStartTime();
-            latestTime = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ENGLISH).parse(datestring);
-        } catch (ParseException e) {
-            log.error("Parse error, parsing date string to Date object: {}", datestring);
-            e.printStackTrace();
-        }
-        return latestTime;
     }
 
     private volatile State currentState;

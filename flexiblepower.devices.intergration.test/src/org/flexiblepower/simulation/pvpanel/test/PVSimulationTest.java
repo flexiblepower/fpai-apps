@@ -60,7 +60,7 @@ public class PVSimulationTest extends SimulationTest {
         }
 
         connectionManager.autoConnect();
-        simulation.startSimulation(new Date(), 10000);
+        simulation.startSimulation(new Date(), 100);
         return otherEnd;
     }
 
@@ -87,6 +87,7 @@ public class PVSimulationTest extends SimulationTest {
     public void testMoonWeather() throws Exception {
         OtherEndPVPanelManager otherEnd = create(1, 0.0, 200.0, 1500.0);
         pvSimulation.setWeather(Weather.moon);
+        ignoreMeasures(otherEnd, 10); // ignore some measures, to be sure that the weather is set correctly
         for (int i = 0; i < 100; i++) {
             otherEnd.expectedState(0.0, 0.0);
         }
@@ -95,6 +96,7 @@ public class PVSimulationTest extends SimulationTest {
     public void testCloudyWeather() throws Exception {
         OtherEndPVPanelManager otherEnd = create(1, 0.0, 200.0, 1500.0);
         pvSimulation.setWeather(Weather.clouds);
+        ignoreMeasures(otherEnd, 10); // ignore some measures, to be sure that the weather is set correctly
         for (int i = 0; i < 100; i++) {
             otherEnd.expectedState(-400.0, -200.0);
         }
@@ -103,6 +105,7 @@ public class PVSimulationTest extends SimulationTest {
     public void testSunnyWeather() throws Exception {
         OtherEndPVPanelManager otherEnd = create(1, 0.0, 200.0, 1500.0);
         pvSimulation.setWeather(Weather.sun);
+        ignoreMeasures(otherEnd, 10); // ignore some measures, to be sure that the weather is set correctly
         for (int i = 0; i < 100; i++) {
             otherEnd.expectedState(-1650.0, -1500.0);
         }
@@ -111,6 +114,7 @@ public class PVSimulationTest extends SimulationTest {
     public void testRandomFactor() throws Exception {
         OtherEndPVPanelManager otherEnd = create(1, 0.0, 200.0, 1500.0);
         pvSimulation.setWeather(Weather.clouds);
+        ignoreMeasures(otherEnd, 10); // ignore some measures, to be sure that the weather is set correctly
         otherEnd.expectedRandomValues(-400.0, -200.0);
 
         otherEnd.expectedState(-400.0, -200.0);
@@ -118,8 +122,16 @@ public class PVSimulationTest extends SimulationTest {
                                                 // have taken to much time..
 
         pvSimulation.setWeather(Weather.sun);
+        ignoreMeasures(otherEnd, 10); // ignore some measures, to be sure that the weather is set correctly
         otherEnd.expectedRandomValues(-1650.0, -1500.0);
 
+    }
+
+    private void
+            ignoreMeasures(OtherEndPVPanelManager otherEnd, int numberOfMeasureToIgnore) throws InterruptedException {
+        for (int i = 0; i < numberOfMeasureToIgnore; i++) {
+            otherEnd.getState();
+        }
     }
 
 }
