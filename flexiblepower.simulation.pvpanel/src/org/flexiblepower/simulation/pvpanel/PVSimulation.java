@@ -26,7 +26,6 @@ import org.osgi.framework.ServiceRegistration;
 import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Deactivate;
-import aQute.bnd.annotation.component.Modified;
 import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
@@ -100,21 +99,6 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
             widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
         } catch (RuntimeException ex) {
             logger.error("Error during initialization of the PV simulation: " + ex.getMessage(), ex);
-            deactivate();
-            throw ex;
-        }
-    }
-
-    @Modified
-    public void modify(BundleContext bundleContext, Map<String, Object> properties) {
-        try {
-            config = Configurable.createConfigurable(Config.class, properties);
-
-            cloudy = config.powerWhenCloudy();
-            sunny = config.powerWhenSunny();
-
-        } catch (RuntimeException ex) {
-            logger.error("Error during modification of the PV simulation: " + ex.getMessage(), ex);
             deactivate();
             throw ex;
         }

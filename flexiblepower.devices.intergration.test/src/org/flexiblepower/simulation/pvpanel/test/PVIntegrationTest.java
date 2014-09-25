@@ -23,7 +23,6 @@ import org.flexiblepower.rai.values.CommodityMeasurables;
 import org.flexiblepower.simulation.pvpanel.PVSimulation;
 import org.flexiblepower.simulation.pvpanel.Weather;
 import org.flexiblepower.simulation.test.SimulationTest;
-import org.flexiblepower.uncontrolled.manager.UncontrolledManager;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.cm.Configuration;
 import org.osgi.util.tracker.ServiceTracker;
@@ -55,7 +54,6 @@ public class PVIntegrationTest extends SimulationTest {
     private volatile ServiceRegistration<Endpoint> otherEndRegistration;
     private volatile PVSimulation pvSimulation;
     private Configuration managerConfig;
-    private UncontrolledManager uncontrolledManager;
 
     private OtherEndPVPanelApp create(int updateDelay,
                                       double powerWhenStandBy,
@@ -71,7 +69,7 @@ public class PVIntegrationTest extends SimulationTest {
         properties.put("testa", "pvsim");
         simConfig.update(properties);
 
-        pvSimulation = (PVSimulation) pvPanelTracker.waitForService(1000);
+        pvSimulation = (PVSimulation) pvPanelTracker.waitForService(10);
 
         assertNotNull(pvSimulation);
 
@@ -83,15 +81,21 @@ public class PVIntegrationTest extends SimulationTest {
         managerProperties.put("expirationTime", "30");
         managerProperties.put("testb", "pvsim");
         managerConfig.update(managerProperties);
-        uncontrolledManager = (UncontrolledManager) uncontrolledManagerTracker.waitForService(1000);
-        assertNotNull(uncontrolledManager);
 
         OtherEndPVPanelApp otherEnd = new OtherEndPVPanelApp();
         otherEndRegistration = bundleContext.registerService(Endpoint.class, otherEnd, null);
 
+        for (int i = 0; i < 10; i++) {
+            if (connectionManager.getEndpoints().size() < 3) {
+                Thread.sleep(50);
+            } else {
+                break;
+            }
+        }
+
         connectionManager.autoConnect();
 
-        simulation.startSimulation(new Date(), 5);
+        simulation.startSimulation(new Date(), 100);
 
         // PowerState initialState = otherEnd.getState();
         // assertEquals(selfDischargePower, initialState.getSelfDischargeSpeed().doubleValue(SI.WATT), 0.01);
@@ -141,6 +145,8 @@ public class PVIntegrationTest extends SimulationTest {
         OtherEndPVPanelApp otherEnd = create(1, 0.0, 200.0, 1500.0);
 
         pvSimulation.setWeather(Weather.moon);
+        ignoreMeasures(otherEnd, 10); // ignore some measures, to be sure that the weather is set correctly
+
         for (int i = 0; i < 100; i++) {
             double energyUsage = getConsumptionMeasure(otherEnd);
             assertEquals(-0.0, energyUsage);
@@ -151,6 +157,8 @@ public class PVIntegrationTest extends SimulationTest {
         OtherEndPVPanelApp otherEnd = create(1, 0.0, 200.0, 1500.0);
 
         pvSimulation.setWeather(Weather.clouds);
+        ignoreMeasures(otherEnd, 10); // ignore some measures, to be sure that the weather is set correctly
+
         for (int i = 0; i < 100; i++) {
             double production = getConsumptionMeasure(otherEnd);
             double minExpectedProduction = -400;
@@ -174,6 +182,7 @@ public class PVIntegrationTest extends SimulationTest {
         OtherEndPVPanelApp otherEnd = create(1, 0.0, 200.0, 1500.0);
 
         pvSimulation.setWeather(Weather.sun);
+        ignoreMeasures(otherEnd, 10); // ignore some measures, to be sure that the weather is set correctly
         for (int i = 0; i < 100; i++) {
             double production = getConsumptionMeasure(otherEnd);
             double minExpectedProduction = -1650;
@@ -196,9 +205,11 @@ public class PVIntegrationTest extends SimulationTest {
     public void testRandomFactor() throws Exception {
         OtherEndPVPanelApp otherEnd = create(1, 0.0, 200.0, 1500.0);
         pvSimulation.setWeather(Weather.clouds);
+        ignoreMeasures(otherEnd, 10); // ignore some measures, to be sure that the weather is set correctly
         expectedRandomValues(otherEnd, -400.0, -200.0);
 
         pvSimulation.setWeather(Weather.sun);
+        ignoreMeasures(otherEnd, 10); // ignore some measures, to be sure that the weather is set correctly
         expectedRandomValues(otherEnd, -1650.0, -1500.0);
 
     }
@@ -238,6 +249,12 @@ public class PVIntegrationTest extends SimulationTest {
         CommodityMeasurables measure = measurement.getMeasurable();
         return measure.get(Commodity.ELECTRICITY).doubleValue(SI.WATT);
 
+    }
+
+    private void ignoreMeasures(OtherEndPVPanelApp otherEnd, int numberOfMeasureToIgnore) throws InterruptedException {
+        for (int i = 0; i < numberOfMeasureToIgnore; i++) {
+            otherEnd.getUncontrolledUpdate();
+        }
     }
 
 }
