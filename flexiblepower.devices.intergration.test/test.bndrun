@@ -24,6 +24,7 @@
 	flexiblepower.simulation.dishwasher;version=latest,\
 	flexiblepower.miele.dishwasher.manager;version=latest,\
 	flexiblepower.uncontrolled.manager;version=latest,\
+	flexiblepower.battery.manager;version=latest,\
 	flexiblepower.devices.intergration.test;version=latest
 
 -runee: JavaSE-1.6
