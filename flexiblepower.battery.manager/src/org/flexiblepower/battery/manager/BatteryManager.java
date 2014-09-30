@@ -34,10 +34,16 @@ import org.flexiblepower.efi.util.FillLevelFunction;
 import org.flexiblepower.efi.util.RunningMode;
 import org.flexiblepower.efi.util.Timer;
 import org.flexiblepower.efi.util.Transition;
+import org.flexiblepower.messaging.Cardinality;
+import org.flexiblepower.messaging.Endpoint;
+import org.flexiblepower.messaging.Port;
+import org.flexiblepower.messaging.Ports;
+import org.flexiblepower.rai.AllocationRevoke;
+import org.flexiblepower.rai.AllocationStatusUpdate;
+import org.flexiblepower.rai.ControlSpaceRevoke;
 import org.flexiblepower.rai.ResourceMessage;
 import org.flexiblepower.rai.values.CommodityMeasurables;
 import org.flexiblepower.rai.values.CommoditySet;
-import org.flexiblepower.ral.ResourceManager;
 import org.flexiblepower.ral.drivers.battery.BatteryControlParameters;
 import org.flexiblepower.ral.drivers.battery.BatteryMode;
 import org.flexiblepower.ral.drivers.battery.BatteryState;
@@ -50,7 +56,15 @@ import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Meta;
 
-@Component(designateFactory = Config.class, provide = ResourceManager.class)
+@Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
+@Ports({ @Port(name = "driver", sends = BatteryControlParameters.class, accepts = BatteryState.class),
+        @Port(name = "controller",
+              accepts = { BufferAllocation.class, AllocationRevoke.class },
+              sends = { BufferRegistration.class,
+                       BufferStateUpdate.class,
+                       AllocationStatusUpdate.class,
+                       ControlSpaceRevoke.class },
+              cardinality = Cardinality.SINGLE) })
 public class BatteryManager extends AbstractResourceManager<BatteryState, BatteryControlParameters>
                                                                                                    implements
                                                                                                    BufferResourceManager {
@@ -61,6 +75,8 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
 
     @Meta.OCD
     interface Config {
+        @Meta.AD(deflt = "true", description = "Whether to show the widget")
+        boolean showWidget();
     }
 
     private BatteryState currentBatteryState;
