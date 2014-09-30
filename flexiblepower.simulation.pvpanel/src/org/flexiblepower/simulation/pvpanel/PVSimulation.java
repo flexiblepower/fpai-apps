@@ -137,7 +137,7 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
     @Override
     public synchronized void run() {
         try {
-            demand = -(updateDelay * weather.getProduction(Math.random(), cloudy, sunny));
+            demand = -(weather.getProduction(Math.random(), cloudy, sunny));
             logger.info("new demand has been set to: {}", demand);
 
             if (demand < 0.1 && demand > -0.1 && config.powerWhenStandBy() > 0) {

@@ -60,31 +60,24 @@ public class OtherEndEnergyApp implements Endpoint {
 
                 synchronized (OtherEndEnergyApp.this) {
 
-                    log.info("Received message");
                     Assert.assertNotNull(message);
                     Assert.assertTrue(ResourceMessage.class.isAssignableFrom(message.getClass()));
 
                     if (TimeShifterRegistration.class.isAssignableFrom(message.getClass())) {
                         TimeShifterRegistration resourceMessage = (TimeShifterRegistration) message;
-                        log.debug("Received TimeShifterRegistration");
                         timeShifterRegistrations.add(resourceMessage);
                     } else if (TimeShifterUpdate.class.isAssignableFrom(message.getClass())) {
                         TimeShifterUpdate resourceMessage = (TimeShifterUpdate) message;
-                        log.debug("Received TimeShifterUpdate");
                         timeShifterUpdates.add(resourceMessage);
                     } else if (AllocationStatusUpdate.class.isAssignableFrom(message.getClass())) {
                         AllocationStatusUpdate resourceMessage = (AllocationStatusUpdate) message;
-                        log.debug("Received AllocationStatusUpdate");
                         allocationStatusUpdates.add(resourceMessage);
                     } else if (ControlSpaceRevoke.class.isAssignableFrom(message.getClass())) {
                         ControlSpaceRevoke resourceMessage = (ControlSpaceRevoke) message;
-                        log.debug("Received ControlSpaceRevoke");
                         controlSpaceRevokes.add(resourceMessage);
                     } else {
                         throw new AssertionError();
                     }
-                    log.debug("PUSHING - size of updateQueue: {}", timeShifterUpdates.size());
-                    log.debug("PUSHING - size of registrationQueue: {}", timeShifterRegistrations.size());
                 }
             }
 
@@ -96,14 +89,12 @@ public class OtherEndEnergyApp implements Endpoint {
     }
 
     public TimeShifterRegistration getTimeshifterRegistration() throws InterruptedException {
-        log.debug("POLLING - size of registrationQueue: {}", timeShifterRegistrations.size());
         TimeShifterRegistration state = timeShifterRegistrations.poll(5, TimeUnit.SECONDS);
         Assert.assertNotNull(state);
         return state;
     }
 
     public TimeShifterUpdate getTimeshifterUpdate() throws InterruptedException {
-        log.debug("POLLING - size of updateQueue: {}", timeShifterUpdates.size());
         TimeShifterUpdate state = timeShifterUpdates.poll(5, TimeUnit.SECONDS);
         Assert.assertNotNull(state);
         return state;
