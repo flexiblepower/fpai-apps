@@ -63,7 +63,7 @@ public class BatteryIntegrationTest extends SimulationTest {
         properties.put("selfDischargePower", selfDischargePower);
         properties.put("testa", "batterysim");
         simConfig.update(properties);
-        batterySimulation = (BatterySimulation) batteryTracker.waitForService(1000);
+        batterySimulation = (BatterySimulation) batteryTracker.waitForService(5000);
         assertNotNull(batterySimulation);
 
         // config battery manager
@@ -75,7 +75,7 @@ public class BatteryIntegrationTest extends SimulationTest {
         managerProperties.put("expirationTime", "30");
         managerProperties.put("testb", "batterysim");
         managerConfig.update(managerProperties);
-        batteryManager = (BatteryManager) bufferManagerTracker.waitForService(1000);
+        batteryManager = (BatteryManager) bufferManagerTracker.waitForService(5000);
         assertNotNull(batteryManager);
 
         // set up the other end = energy app simulation
@@ -84,7 +84,7 @@ public class BatteryIntegrationTest extends SimulationTest {
 
         connectionManager.autoConnect();
 
-        simulation.startSimulation(new Date(), 1);
+        simulation.startSimulation(new Date(), 100);
 
         // PowerState initialState = otherEnd.getState();
         // assertEquals(selfDischargePower, initialState.getSelfDischargeSpeed().doubleValue(SI.WATT), 0.01);
@@ -118,7 +118,7 @@ public class BatteryIntegrationTest extends SimulationTest {
     }
 
     public void testAutoconnect() throws Exception {
-        OtherEndBatteryEnergyApp otherEnd = create(5L, 1, 0.5, 1500L, 1500L, 0.9, 0.9, 50L);
+        OtherEndBatteryEnergyApp otherEnd = create(5L, 1, 0.7, 1500L, 1500L, 0.9, 0.9, 50L);
         assertNotNull(otherEnd.getConnection());
     }
     //

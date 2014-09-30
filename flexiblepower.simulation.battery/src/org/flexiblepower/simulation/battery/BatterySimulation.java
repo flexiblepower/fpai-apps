@@ -168,6 +168,9 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
     private double stateOfCharge;
 
     private ScheduledExecutorService scheduler;
+
+    private ScheduledFuture<?> scheduledFuture;
+
     private ServiceRegistration<Widget> widgetRegistration;
 
     private BatteryWidget widget;
@@ -239,10 +242,8 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
         lastUpdatedTime = timeService.getTime();
     }
 
-    private ScheduledFuture<?> scheduledFuture;
-
     @Reference
-    public void setScheduler(ScheduledExecutorService scheduler) {
+    public void setScheduledExecutorService(ScheduledExecutorService scheduler) {
         this.scheduler = scheduler;
     }
 

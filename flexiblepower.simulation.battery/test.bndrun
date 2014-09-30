@@ -13,6 +13,7 @@
 	flexiblepower.api;version='[1.0.0,1.0.1)',\
 	flexiblepower.api.ext;version='[1.0.0,1.0.1)',\
 	flexiblepower.battery.simulation;version=latest,\
+	flexiblepower.battery.manager;version=latest,\
 	flexiblepower.runtime.simulation;version='[1.0.0,1.0.1)',\
 	org.apache.commons.fileupload;version='[1.2.2,1.2.3)',\
 	org.apache.commons.io;version='[2.4.0,2.4.1)',\
