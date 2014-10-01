@@ -2,9 +2,12 @@ package org.flexiblepower.simulation.dishwasher;
 
 import static javax.measure.unit.NonSI.HOUR;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Dictionary;
+import java.util.Hashtable;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -13,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import javax.measure.Measurable;
 import javax.measure.Measure;
 import javax.measure.quantity.Duration;
+import javax.measure.unit.NonSI;
 import javax.measure.unit.SI;
 
 import org.flexiblepower.messaging.Endpoint;
@@ -25,8 +29,12 @@ import org.flexiblepower.time.TimeService;
 import org.flexiblepower.time.TimeUtil;
 import org.flexiblepower.ui.Widget;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceRegistration;
+import org.osgi.service.cm.Configuration;
+import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.annotations.Modified;
+import org.osgi.util.tracker.ServiceTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -124,10 +132,25 @@ public class DishwasherSimulation extends AbstractResourceDriver<DishwasherState
 
     private ServiceRegistration<Widget> widgetRegistration;
 
+    private ServiceTracker<ConfigurationAdmin, ConfigurationAdmin> configAdminTracker;
+
+    private ConfigurationAdmin configAdmin;
+
     @Activate
     public void activate(BundleContext context, Map<String, Object> properties) {
         log.info("Activated");
         configuration = Configurable.createConfigurable(Config.class, properties);
+        BundleContext bundleContext = FrameworkUtil.getBundle(getClass()).getBundleContext();
+        configAdminTracker = new ServiceTracker<ConfigurationAdmin, ConfigurationAdmin>(bundleContext,
+                                                                                        ConfigurationAdmin.class,
+                                                                                        null);
+        configAdminTracker.open();
+        try {
+            configAdmin = configAdminTracker.waitForService(10000);
+        } catch (InterruptedException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
 
         if (runFuture != null && !runFuture.isDone()) {
             runFuture.cancel(false);
@@ -280,5 +303,34 @@ public class DishwasherSimulation extends AbstractResourceDriver<DishwasherState
                                            TimeUnit.SECONDS);
 
         }
+    }
+
+    public void handleClick() {
+        log.debug("Started by widget");
+        boolean isConnected = true;
+        Date currentTime = timeService.getTime();
+        Date latestStartTime = TimeUtil.add(currentTime, Measure.valueOf(2, NonSI.HOUR)); // latestStartTime is
+                                                                                          // currentTime + 2 hour
+        String program = "Program by click";
+
+        Configuration simConfig;
+        try {
+            simConfig = configAdmin.createFactoryConfiguration("org.flexiblepower.simulation.dishwasher.DishwasherSimulation",
+                                                               null);
+            Dictionary<String, Object> simProperties = new Hashtable<String, Object>();
+            simProperties.put("isConnected", isConnected);
+            simProperties.put("startTime", timeService.getTime());
+            simProperties.put("latestStartTime", latestStartTime);
+            simProperties.put("program", program);
+            simProperties.put("testa", "dishwashersim");
+            simConfig.update(simProperties);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        currentState = new State(isConnected, latestStartTime,
+                                 currentTime, program);
+        publishState(currentState);
     }
 }
