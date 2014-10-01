@@ -40,9 +40,9 @@ import aQute.bnd.annotation.metatype.Meta;
 
 /**
  * TODO Uit BatteryState weghalen van de charge en discharge efficiency
- * 
+ *
  * @author waaijbdvd
- * 
+ *
  */
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 public class BatterySimulation extends AbstractResourceDriver<BatteryState, BatteryControlParameters> implements
@@ -270,7 +270,8 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
                 throw new AssertionError();
             }
             // always also self discharge
-            double changeInWS = (amountOfChargeInWatt - selfDischargeSpeedInWatt.doubleValue(WATT)) * durationSinceLastUpdate;
+            double changeInW = amountOfChargeInWatt - selfDischargeSpeedInWatt.doubleValue(WATT);
+            double changeInWS = changeInW * durationSinceLastUpdate;
             double changeinKWH = changeInWS / 1000.0 / 3600.0;
 
             double newStateOfCharge = stateOfCharge + (changeinKWH / totalCapacityInKWh.doubleValue(KWH));
@@ -288,17 +289,17 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
                 }
             }
 
-            log.debug("durationSinceLastUpdate =" + durationSinceLastUpdate
-                      + " old stateOfCharge =" + stateOfCharge
-                      + " amountOfCharge =" + amountOfChargeInWatt
-                      + " newStateOfChargeInJoulesValue ="
-                      + newStateOfCharge
-                      + " new stateOfCharge ="
+            log.debug(" Old stateOfCharge=" + stateOfCharge
+                      + " deltaT =" + durationSinceLastUpdate
+                      + " changeInW=" + changeInW
+                      + " newStateOfChargeInJoulesValue="
                       + newStateOfCharge);
 
             State state = new State(newStateOfCharge, mode);
             logger.debug("Publishing state {}", state);
             publishState(state);
+
+            stateOfCharge = newStateOfCharge;
         }
     }
 
