@@ -5,13 +5,24 @@ import java.util.Date;
 import java.util.Dictionary;
 import java.util.Hashtable;
 
+import javax.measure.Measurable;
+import javax.measure.Measure;
+import javax.measure.quantity.Duration;
+import javax.measure.unit.SI;
+
 import org.flexiblepower.battery.manager.BatteryManager;
+import org.flexiblepower.efi.buffer.BufferRegistration;
+import org.flexiblepower.efi.buffer.BufferStateUpdate;
+import org.flexiblepower.efi.buffer.BufferSystemDescription;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.simulation.battery.BatterySimulation;
 import org.flexiblepower.simulation.test.SimulationTest;
+import org.flexiblepower.time.TimeService;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.cm.Configuration;
 import org.osgi.util.tracker.ServiceTracker;
+
+import aQute.bnd.annotation.component.Reference;
 
 public class BatteryIntegrationTest extends SimulationTest {
     private ServiceTracker<Endpoint, Endpoint> batteryTracker;
@@ -70,9 +81,7 @@ public class BatteryIntegrationTest extends SimulationTest {
         managerConfig = configAdmin.createFactoryConfiguration("org.flexiblepower.battery.manager.BatteryManager",
                                                                null);
         Dictionary<String, Object> managerProperties = new Hashtable<String, Object>();
-        managerProperties.put("showWidget", "true");
-        managerProperties.put("resourceID", "battery");
-        managerProperties.put("expirationTime", "30");
+        managerProperties.put("resourceId", "battery");
         managerProperties.put("testb", "batterysim");
         managerConfig.update(managerProperties);
         batteryManager = (BatteryManager) bufferManagerTracker.waitForService(5000);
@@ -93,7 +102,7 @@ public class BatteryIntegrationTest extends SimulationTest {
         }
         connectionManager.autoConnect();
 
-        simulation.startSimulation(new Date(), 100);
+        simulation.startSimulation(new Date(), 1);
 
         // PowerState initialState = otherEnd.getState();
         // assertEquals(selfDischargePower, initialState.getSelfDischargeSpeed().doubleValue(SI.WATT), 0.01);
@@ -126,10 +135,49 @@ public class BatteryIntegrationTest extends SimulationTest {
         }
     }
 
-    public void testAutoconnect() throws Exception {
-        OtherEndBatteryEnergyApp otherEnd = create(5L, 1, 0.7, 1500L, 1500L, 0.9, 0.9, 50L);
-        assertNotNull(otherEnd.getConnection());
+    // public void testAutoconnect() throws Exception {
+    // OtherEndBatteryEnergyApp otherEnd = create(5L, 1, 0.7, 1500L, 1500L, 0.9, 0.9, 50L);
+    // assertNotNull(otherEnd.getConnection());
+    // }
+    //
+    // public void testRegistration() throws Exception {
+    // OtherEndBatteryEnergyApp otherEnd = create(5L, 1, 0.7, 1500L, 1500L, 0.9, 0.9, 50L);
+    // BufferRegistration bufferRegistration = otherEnd.getBufferRegistration();
+    // assertNotNull(bufferRegistration);
+    // Measurable<Duration> allocationDelay = bufferRegistration.getAllocationDelay();
+    // assertEquals(allocationDelay, Measure.valueOf(0, SI.SECOND));
+    // BufferSystemDescription bufferSystemDescription = otherEnd.getBufferSystemDescription();
+    // assertNotNull(bufferSystemDescription);
+    // BufferStateUpdate bufferStateUpdate = otherEnd.getBufferStateUpdate();
+    // assertNotNull(bufferStateUpdate);
+    // }
+
+    public void testAllocation() throws Exception {
+        OtherEndBatteryEnergyApp otherEnd = create(1L, 1, 0.7, 1500L, 1500L, 0.9, 0.9, 50L);
+        BufferRegistration<?> bufferRegistration = otherEnd.getBufferRegistration();
+        assertNotNull(bufferRegistration);
+        Measurable<Duration> allocationDelay = bufferRegistration.getAllocationDelay();
+        assertEquals(allocationDelay, Measure.valueOf(0, SI.SECOND));
+        BufferSystemDescription bufferSystemDescription = otherEnd.getBufferSystemDescription();
+        assertNotNull(bufferSystemDescription);
+        BufferStateUpdate<?> bufferStateUpdate = otherEnd.getBufferStateUpdate();
+        assertNotNull(bufferStateUpdate);
+
+        otherEnd.sendAllocation(bufferSystemDescription, bufferStateUpdate);
+
+        BufferStateUpdate<?> bufferStateUpdate2 = otherEnd.getBufferStateUpdate();
+        assertNotNull(bufferStateUpdate2);
+
+        Thread.sleep(15000);
     }
+
+    private TimeService timeService;
+
+    @Reference
+    public void setTimeService(TimeService timeService) {
+        this.timeService = timeService;
+    }
+
     //
     // public void testRegistration() throws Exception {
     // OtherEndBatteryApp otherEnd = create(1, 0.0, 200.0, 1500.0);
