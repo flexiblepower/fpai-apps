@@ -248,8 +248,9 @@ public class DishwasherSimulation extends AbstractResourceDriver<DishwasherState
         } catch (ParseException e) {
             log.debug("ParsingError during parsing of LatestStartTime: {}", latestStartTimeString);
         }
-        widgetRegistration.unregister();
-
+        if (widgetRegistration != null) {
+            widgetRegistration.unregister();
+        }
         widget = new DishwasherWidget(this, timeService);
         widgetRegistration = context.registerService(Widget.class, widget, null);
     }
