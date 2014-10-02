@@ -5,6 +5,7 @@ $(window).load(function() {
 		$(".error").hide();
 		$("#program").text(data.program);
 		$("#startTime").text(data.date);
+		$("#icon").attr("src", "dishwasher.png");
 		
 		if(data.state == 4) {
 			$("#startProgram").show();
@@ -20,7 +21,7 @@ $(window).load(function() {
 		$(".error").text(msg);
 	}
 	
-	$("#startProgram").click(function() {
+	$("#icon").click(function() {
 		w.call("startProgram", {}, w.callback);
 	});
 });

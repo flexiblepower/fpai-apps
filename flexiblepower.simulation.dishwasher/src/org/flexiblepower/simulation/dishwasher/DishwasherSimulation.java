@@ -2,12 +2,10 @@ package org.flexiblepower.simulation.dishwasher;
 
 import static javax.measure.unit.NonSI.HOUR;
 
-import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Dictionary;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -31,7 +29,6 @@ import org.flexiblepower.ui.Widget;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceRegistration;
-import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.annotations.Modified;
 import org.osgi.util.tracker.ServiceTracker;
@@ -136,11 +133,13 @@ public class DishwasherSimulation extends AbstractResourceDriver<DishwasherState
 
     private ConfigurationAdmin configAdmin;
 
+    private BundleContext bundleContext;
+
     @Activate
     public void activate(BundleContext context, Map<String, Object> properties) {
         log.info("Activated");
         configuration = Configurable.createConfigurable(Config.class, properties);
-        BundleContext bundleContext = FrameworkUtil.getBundle(getClass()).getBundleContext();
+        bundleContext = FrameworkUtil.getBundle(getClass()).getBundleContext();
         configAdminTracker = new ServiceTracker<ConfigurationAdmin, ConfigurationAdmin>(bundleContext,
                                                                                         ConfigurationAdmin.class,
                                                                                         null);
@@ -249,6 +248,8 @@ public class DishwasherSimulation extends AbstractResourceDriver<DishwasherState
         } catch (ParseException e) {
             log.debug("ParsingError during parsing of LatestStartTime: {}", latestStartTimeString);
         }
+        widgetRegistration.unregister();
+
         widget = new DishwasherWidget(this, timeService);
         widgetRegistration = context.registerService(Widget.class, widget, null);
     }
@@ -313,21 +314,14 @@ public class DishwasherSimulation extends AbstractResourceDriver<DishwasherState
                                                                                           // currentTime + 2 hour
         String program = "Program by click";
 
-        Configuration simConfig;
-        try {
-            simConfig = configAdmin.createFactoryConfiguration("org.flexiblepower.simulation.dishwasher.DishwasherSimulation",
-                                                               null);
-            Dictionary<String, Object> simProperties = new Hashtable<String, Object>();
-            simProperties.put("isConnected", isConnected);
-            simProperties.put("startTime", timeService.getTime());
-            simProperties.put("latestStartTime", latestStartTime);
-            simProperties.put("program", program);
-            simProperties.put("testa", "dishwashersim");
-            simConfig.update(simProperties);
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        Map<String, Object> simProperties = new HashMap<String, Object>();
+        simProperties.put("isConnected", isConnected);
+        simProperties.put("startTime", timeService.getTime());
+        simProperties.put("latestStartTime", latestStartTime);
+        simProperties.put("program", program);
+        simProperties.put("testa", "dishwashersim");
+
+        Modify(bundleContext, simProperties);
 
         currentState = new State(isConnected, latestStartTime,
                                  currentTime, program);
