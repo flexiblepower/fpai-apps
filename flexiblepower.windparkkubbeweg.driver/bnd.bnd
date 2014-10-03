@@ -1,6 +1,0 @@
--buildpath: ${default-buildpath},\
-	junit.osgi
-
-Bundle-Version: 1.0.0-${qualifier}
-Private-Package: flexiblepower.windparkkubbeweg.driver
-Service-Component: *

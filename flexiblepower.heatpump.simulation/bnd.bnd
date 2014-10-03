@@ -1,6 +1,0 @@
--buildpath: ${default-buildpath},\
-	junit.osgi
-Private-Package: org.flexiblepower.heatpump.simulation
-
-Bundle-Version: 2.0.0.${qualifier}
-Service-Component: *

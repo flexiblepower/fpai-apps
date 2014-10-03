@@ -1,4 +1,0 @@
-(org.osgi.framework.ServicePermission "*" "get,register")
-(org.osgi.framework.PackagePermission "*" "import,exportonly")
-(java.net.SocketPermission "*" "connect,resolve,listen,accept")
-(java.lang.RuntimePermission "getClassLoader")
