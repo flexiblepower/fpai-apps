@@ -12,11 +12,9 @@ import nl.tno.hexabus.protocol.Device;
 import nl.tno.hexabus.protocol.Device.Endpoint;
 import nl.tno.hexabus.protocol.PacketCodec.HexDumper;
 
-import org.flexiblepower.observation.Observation;
 import org.flexiblepower.observation.ext.ObservationProviderRegistrationHelper;
 import org.flexiblepower.ral.ResourceDriver;
 import org.flexiblepower.ral.ext.AbstractResourceDriver;
-import org.flexiblepower.time.TimeService;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 
@@ -58,26 +56,22 @@ public class HexabusDriver extends AbstractResourceDriver<HexabusState, HexabusC
     }
 
     private final Device device;
-    private final TimeService timeService;
     private final ServiceRegistration<?> serviceRegistration;
 
-    public HexabusDriver(BundleContext bundleContext, Device device, TimeService timeService) {
+    public HexabusDriver(BundleContext bundleContext, Device device) {
         this.device = device;
-        this.timeService = timeService;
 
         device.setListener(new Device.Listener() {
             @Override
             public void updated(Endpoint<?> endpoint, final Data data) {
                 if (isPower(endpoint)) {
                     final boolean switchedOn = HexabusDriver.this.isSwitchedOn();
-                    publish(new Observation<HexabusState>(HexabusDriver.this.timeService.getTime(),
-                                                          new HexabusStateImpl(true, switchedOn, (Long) data.getValue())));
+                    publishState(new HexabusStateImpl(true, switchedOn, (Long) data.getValue()));
                 } else if (isSwitch(endpoint)) {
                     final long currentPower = HexabusDriver.this.getCurrentPower();
-                    publish(new Observation<HexabusState>(HexabusDriver.this.timeService.getTime(),
-                                                          new HexabusStateImpl(true,
-                                                                               (Boolean) data.getValue(),
-                                                                               currentPower)));
+                    publishState(new HexabusStateImpl(true,
+                                                      (Boolean) data.getValue(),
+                                                      currentPower));
                 }
             }
         });
@@ -98,7 +92,7 @@ public class HexabusDriver extends AbstractResourceDriver<HexabusState, HexabusC
     }
 
     @Override
-    public void setControlParameters(HexabusControlParameters resourceControlParameters) {
+    public void handleControlParameters(HexabusControlParameters resourceControlParameters) {
         Endpoint<Data.Bool> switchEndpoint = detectSwitch();
 
         Data.Bool current = switchEndpoint.queryAndWait();
