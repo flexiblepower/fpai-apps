@@ -18,6 +18,7 @@
 	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.dishwasher)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.http.jetty)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.pvpanel)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.battery)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.uncontrolled.manager)',\
 	osgi.identity;filter:='(osgi.identity=org.slf4j.osgi-over-slf4j)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.battery)',\
