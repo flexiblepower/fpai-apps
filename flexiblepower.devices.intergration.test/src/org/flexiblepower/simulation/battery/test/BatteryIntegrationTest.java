@@ -20,9 +20,8 @@ import org.flexiblepower.simulation.test.SimulationTest;
 import org.flexiblepower.time.TimeService;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.cm.Configuration;
+import org.osgi.service.component.annotations.Reference;
 import org.osgi.util.tracker.ServiceTracker;
-
-import aQute.bnd.annotation.component.Reference;
 
 public class BatteryIntegrationTest extends SimulationTest {
     private ServiceTracker<Endpoint, Endpoint> batteryTracker;
@@ -102,11 +101,7 @@ public class BatteryIntegrationTest extends SimulationTest {
         }
         connectionManager.autoConnect();
 
-        simulation.startSimulation(new Date(), 1);
-
-        // PowerState initialState = otherEnd.getState();
-        // assertEquals(selfDischargePower, initialState.getSelfDischargeSpeed().doubleValue(SI.WATT), 0.01);
-        // TODO add assertions.... (What can we assert here?)
+        simulation.startSimulation(new Date(), 10);
 
         return otherEnd;
     }
@@ -135,22 +130,22 @@ public class BatteryIntegrationTest extends SimulationTest {
         }
     }
 
-    // public void testAutoconnect() throws Exception {
-    // OtherEndBatteryEnergyApp otherEnd = create(5L, 1, 0.7, 1500L, 1500L, 0.9, 0.9, 50L);
-    // assertNotNull(otherEnd.getConnection());
-    // }
-    //
-    // public void testRegistration() throws Exception {
-    // OtherEndBatteryEnergyApp otherEnd = create(5L, 1, 0.7, 1500L, 1500L, 0.9, 0.9, 50L);
-    // BufferRegistration bufferRegistration = otherEnd.getBufferRegistration();
-    // assertNotNull(bufferRegistration);
-    // Measurable<Duration> allocationDelay = bufferRegistration.getAllocationDelay();
-    // assertEquals(allocationDelay, Measure.valueOf(0, SI.SECOND));
-    // BufferSystemDescription bufferSystemDescription = otherEnd.getBufferSystemDescription();
-    // assertNotNull(bufferSystemDescription);
-    // BufferStateUpdate bufferStateUpdate = otherEnd.getBufferStateUpdate();
-    // assertNotNull(bufferStateUpdate);
-    // }
+    public void testAutoconnect() throws Exception {
+        OtherEndBatteryEnergyApp otherEnd = create(5L, 1, 0.7, 1500L, 1500L, 0.9, 0.9, 50L);
+        assertNotNull(otherEnd.getConnection());
+    }
+
+    public void testRegistration() throws Exception {
+        OtherEndBatteryEnergyApp otherEnd = create(5L, 1, 0.7, 1500L, 1500L, 0.9, 0.9, 50L);
+        BufferRegistration<?> bufferRegistration = otherEnd.getBufferRegistration();
+        assertNotNull(bufferRegistration);
+        Measurable<Duration> allocationDelay = bufferRegistration.getAllocationDelay();
+        assertEquals(allocationDelay, Measure.valueOf(0, SI.SECOND));
+        BufferSystemDescription bufferSystemDescription = otherEnd.getBufferSystemDescription();
+        assertNotNull(bufferSystemDescription);
+        BufferStateUpdate<?> bufferStateUpdate = otherEnd.getBufferStateUpdate();
+        assertNotNull(bufferStateUpdate);
+    }
 
     public void testAllocation() throws Exception {
         OtherEndBatteryEnergyApp otherEnd = create(1L, 1, 0.7, 1500L, 1500L, 0.9, 0.9, 50L);
@@ -168,7 +163,7 @@ public class BatteryIntegrationTest extends SimulationTest {
         BufferStateUpdate<?> bufferStateUpdate2 = otherEnd.getBufferStateUpdate();
         assertNotNull(bufferStateUpdate2);
 
-        Thread.sleep(15000);
+        Thread.sleep(5000); // let the battery simulation for 5 sec * (simulationspeed = 10)
     }
 
     private TimeService timeService;
@@ -177,54 +172,5 @@ public class BatteryIntegrationTest extends SimulationTest {
     public void setTimeService(TimeService timeService) {
         this.timeService = timeService;
     }
-
-    //
-    // public void testRegistration() throws Exception {
-    // OtherEndBatteryApp otherEnd = create(1, 0.0, 200.0, 1500.0);
-    // UncontrolledRegistration registration = otherEnd.getBufferRegistration();
-    // Measurable<Duration> allocationDelay = registration.getAllocationDelay();
-    // assertEquals(allocationDelay, Measure.valueOf(5, SI.SECOND));
-    // assertNotNull(registration);
-    // }
-    //
-    // public void testUpdate() throws Exception {
-    // OtherEndBatteryApp otherEnd = create(1, 0.0, 200.0, 1500.0);
-    // UncontrolledUpdate uncontrolledUpdate = otherEnd.getBufferStateUpdate();
-    // assertNotNull(uncontrolledUpdate);
-    //
-    // assertNotNull(uncontrolledUpdate.getValidFrom());
-    // assertNotNull(uncontrolledUpdate.getTimestamp());
-    // assertEquals(5, uncontrolledUpdate.getAllocationDelay().longValue(SI.SECOND));
-    //
-    // }
-
-    // public void testMeasurement() throws Exception{
-    // OtherEndPVPanelApp otherEnd = create(1,0.0,200,1500);
-    // AllocationStatusUpdate update = otherEnd.getAllocationStatusUpdate();
-    //
-    // }
-    //
-
-    // public void testPrograms() throws Exception {
-    // OtherEndEnergyApp otherEnd = create(1, true, "", "2014-09-11 15:30", "Energy Save", true);
-    // TimeShifterUpdate timeshifterUpdate = otherEnd.getTimeshifterUpdate();
-    // assertNotNull(timeshifterUpdate);
-    // Date validFrom = timeshifterUpdate.getValidFrom();
-    // List<SequentialProfile> timeShifterProfiles = timeshifterUpdate.getTimeShifterProfiles();
-    // Map commodityProfiles = timeShifterProfiles.get(0).getCommodityProfiles();
-    // assertNotNull(commodityProfiles);
-    // /* not testing further now, as the commodityProfiles will change with the new EFI */
-    // // TODO: write more tests
-    // }
-    //
-    // public void testStart() throws Exception {
-    // OtherEndEnergyApp otherEnd = create(1, true, "", "2013-01-01 12:00", "Aan", true); // in the past!
-    // TimeShifterRegistration timeshifterRegistration = otherEnd.getTimeshifterRegistration();
-    // Measurable<Duration> allocationDelay = timeshifterRegistration.getAllocationDelay();
-    // assertEquals(allocationDelay, Measure.valueOf(5, SI.SECOND));
-    // assertNotNull(timeshifterRegistration);
-    // // TODO: test whether commodity profiles are changed
-    // assertNotNull(pvSimulation.getCurrentState().getStartTime()); // Started!
-    // }
 
 }

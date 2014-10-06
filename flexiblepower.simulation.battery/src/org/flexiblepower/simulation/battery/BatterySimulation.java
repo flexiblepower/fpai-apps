@@ -272,7 +272,7 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
             // always also self discharge
             double changeInW = amountOfChargeInWatt - selfDischargeSpeedInWatt.doubleValue(WATT);
             double changeInWS = changeInW * durationSinceLastUpdate;
-            double changeinKWH = changeInWS / 1000.0 / 3600.0;
+            double changeinKWH = changeInWS / (1000.0 * 3600.0);
 
             double newStateOfCharge = stateOfCharge + (changeinKWH / totalCapacityInKWh.doubleValue(KWH));
 
@@ -288,12 +288,6 @@ public class BatterySimulation extends AbstractResourceDriver<BatteryState, Batt
                     mode = BatteryMode.IDLE;
                 }
             }
-
-            log.debug(" Old stateOfCharge=" + stateOfCharge
-                      + " deltaT =" + durationSinceLastUpdate
-                      + " changeInW=" + changeInW
-                      + " newStateOfChargeInJoulesValue="
-                      + newStateOfCharge);
 
             State state = new State(newStateOfCharge, mode);
             logger.debug("Publishing state {}", state);
