@@ -1,7 +1,8 @@
 package org.flexiblepower.miele.dishwasher.driver;
 
 import static javax.measure.unit.NonSI.HOUR;
-import static javax.measure.unit.NonSI.KWH;
+import static javax.measure.unit.SI.KILO;
+import static javax.measure.unit.SI.WATT;
 
 import java.util.Date;
 import java.util.Map;
@@ -12,14 +13,11 @@ import java.util.concurrent.TimeUnit;
 import javax.measure.Measurable;
 import javax.measure.Measure;
 import javax.measure.quantity.Duration;
-import javax.measure.quantity.Energy;
-import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
 import org.flexiblepower.protocol.mielegateway.api.ActionPerformer;
 import org.flexiblepower.protocol.mielegateway.api.ActionResult;
 import org.flexiblepower.protocol.mielegateway.api.MieleResourceDriver;
-import org.flexiblepower.rai.values.Commodity;
 import org.flexiblepower.rai.values.CommodityProfile;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherControlParameters;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherState;
@@ -36,7 +34,7 @@ import aQute.bnd.annotation.component.Deactivate;
 import aQute.bnd.annotation.component.Reference;
 
 public class DishwasherDriver extends MieleResourceDriver<DishwasherState, DishwasherControlParameters> implements
-org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver {
+                                                                                                       org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver {
     private static final Logger log = LoggerFactory.getLogger(DishwasherDriver.State.class);
 
     static final class State implements DishwasherState {
@@ -77,9 +75,9 @@ org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver {
         }
 
         @Override
-        public CommodityProfile<Energy, Power> getEnergyProfile() {
-            return CommodityProfile.create(Commodity.ELECTRICITY)
-                                   .add(Measure.valueOf(1, HOUR), Measure.valueOf(1, KWH))
+        public CommodityProfile getEnergyProfile() {
+            return CommodityProfile.create()
+                                   .duration(Measure.valueOf(1, HOUR)).electricity(Measure.valueOf(1, KILO(WATT)))
                                    .build();
         }
     }
