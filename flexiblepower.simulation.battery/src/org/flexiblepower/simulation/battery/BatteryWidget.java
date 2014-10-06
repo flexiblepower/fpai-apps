@@ -42,9 +42,10 @@ public class BatteryWidget implements Widget {
     public Update update() {
         BatteryState state = simulation.getCurrentState();
         double soc = state.getStateOfCharge();
+        int socPercentage = (int) (soc * 100.0);
         double capacity = state.getTotalCapacity().doubleValue(KWH);
         BatteryMode mode = state.getCurrentMode();
-        return new Update((int) soc, String.format("%2.1f kWh", capacity), mode.toString());
+        return new Update(socPercentage, String.format("%2.1f kWh", capacity), mode.toString());
     }
 
     @Override
