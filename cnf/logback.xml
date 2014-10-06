@@ -6,7 +6,6 @@
     </appender>
     <logger name="org.flexiblepower.runtime.ui" level="ERROR" />
     <logger name="org.flexiblepower" level="DEBUG" />
-    <logger name="org.flexiblepower.battery" level="ERROR" />
     <logger name="net.powermatcher" level="ERROR" />
     <logger name="org.flexiblepower.miele.dishwasher.manager" level="DEBUG" />
     <logger name="org.eclipse.jetty" level="ERROR" />
