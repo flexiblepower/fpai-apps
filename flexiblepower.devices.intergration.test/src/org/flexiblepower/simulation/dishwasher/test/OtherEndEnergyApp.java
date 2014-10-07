@@ -18,8 +18,6 @@ import org.flexiblepower.rai.AllocationStatusUpdate;
 import org.flexiblepower.rai.ControlSpaceRevoke;
 import org.flexiblepower.rai.ResourceMessage;
 import org.flexiblepower.simulation.dishwasher.test.OtherEndEnergyApp.Config;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.metatype.Meta;
@@ -35,10 +33,8 @@ import aQute.bnd.annotation.metatype.Meta;
 public class OtherEndEnergyApp implements Endpoint {
     @Meta.OCD
     interface Config {
-
     }
 
-    private static final Logger log = LoggerFactory.getLogger(OtherEndEnergyApp.class);
     private volatile Connection connection;
 
     public Connection getConnection() {

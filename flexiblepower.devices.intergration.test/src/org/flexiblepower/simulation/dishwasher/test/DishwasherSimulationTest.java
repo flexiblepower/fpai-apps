@@ -21,7 +21,7 @@ import org.flexiblepower.efi.timeshifter.TimeShifterUpdate;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.rai.values.Commodity;
 import org.flexiblepower.rai.values.CommodityForecast;
-import org.flexiblepower.simulation.dishwasher.DishwasherSimulation;
+import org.flexiblepower.simulation.api.dishwasher.DishwasherSimulation;
 import org.flexiblepower.simulation.test.SimulationTest;
 import org.flexiblepower.time.TimeUtil;
 import org.osgi.service.cm.Configuration;
@@ -30,7 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DishwasherSimulationTest extends SimulationTest {
-    private ServiceTracker<Endpoint, Endpoint> dishwasherSimulationTracker;
+    private ServiceTracker<DishwasherSimulation, DishwasherSimulation> dishwasherSimulationTracker;
     private ServiceTracker<Endpoint, Endpoint> otherEndEnergyAppTracker;
     private static final Logger log = LoggerFactory.getLogger(DishwasherSimulationTest.class);
 
@@ -38,9 +38,9 @@ public class DishwasherSimulationTest extends SimulationTest {
     protected void setUp() throws Exception {
         super.setUp();
 
-        dishwasherSimulationTracker = new ServiceTracker<Endpoint, Endpoint>(bundleContext,
-                                                                             bundleContext.createFilter("(testa=dishwashersim)"),
-                                                                             null);
+        dishwasherSimulationTracker = new ServiceTracker<DishwasherSimulation, DishwasherSimulation>(bundleContext,
+                                                                                                     DishwasherSimulation.class,
+                                                                                                     null);
         dishwasherSimulationTracker.open();
 
         otherEndEnergyAppTracker = new ServiceTracker<Endpoint, Endpoint>(bundleContext,
@@ -55,29 +55,21 @@ public class DishwasherSimulationTest extends SimulationTest {
     private volatile Configuration energyappConfig;
     private volatile OtherEndEnergyApp energyapp;
 
-    private void create(int updateFrequency,
-                        boolean isConnected,
-                        String startTime,
-                        String latestStartTime,
-                        String program,
-                        boolean showWidget) throws Exception {
-        simConfig = configAdmin.createFactoryConfiguration("org.flexiblepower.simulation.dishwasher.DishwasherSimulation",
+    private void create() throws Exception {
+        simConfig = configAdmin.createFactoryConfiguration("org.flexiblepower.simulation.dishwasher.DishwasherSimulationImpl",
                                                            null);
         Dictionary<String, Object> simProperties = new Hashtable<String, Object>();
-        simProperties.put("isConnected", isConnected);
-        simProperties.put("startTime", startTime);
-        simProperties.put("latestStartTime", latestStartTime);
-        simProperties.put("program", program);
+        simProperties.put("resource.id", "dishwashersim");
         simProperties.put("testa", "dishwashersim");
         simConfig.update(simProperties);
-        dishwasherSimulation = (DishwasherSimulation) dishwasherSimulationTracker.waitForService(1000);
+        dishwasherSimulation = dishwasherSimulationTracker.waitForService(1000);
         assertNotNull(dishwasherSimulation);
 
         managerConfig = configAdmin.createFactoryConfiguration("org.flexiblepower.miele.dishwasher.manager.MieleDishwasherManager",
                                                                null);
         Dictionary<String, Object> managerProperties = new Hashtable<String, Object>();
         managerProperties.put("resourceId", "MieleDishWasherManager");
-        managerProperties.put("showWidget", showWidget);
+        managerProperties.put("showWidget", false);
         managerProperties.put("testb", "dishwasherman");
         managerConfig.update(managerProperties);
 
@@ -117,26 +109,30 @@ public class DishwasherSimulationTest extends SimulationTest {
         }
     }
 
-    public void testRegistration() throws Exception {
-        create(1, true, "", "2014-09-11 15:30", "Aan", true);
-        TimeShifterRegistration timeshifterRegistration = energyapp.getTimeshifterRegistration();
-        Measurable<Duration> allocationDelay = timeshifterRegistration.getAllocationDelay();
-        assertEquals(allocationDelay, Measure.valueOf(5, SI.SECOND));
-        assertNotNull(timeshifterRegistration);
+    private TimeShifterUpdate expectFutureUpdate() throws InterruptedException {
+        TimeShifterUpdate timeshifterUpdate = energyapp.getTimeshifterUpdate();
+        assertNotNull(timeshifterUpdate);
+        assertNotNull(timeshifterUpdate.getResourceId());
+        assertNotNull(timeshifterUpdate.getTimeShifterProfiles());
+        return timeshifterUpdate;
     }
 
     public void testUpdate() throws Exception {
-        create(1, true, "", "2014-09-11 15:30", "Aan", true);
-        TimeShifterUpdate timeshifterUpdate = energyapp.getTimeshifterUpdate();
-        assertNotNull(timeshifterUpdate);
-        List<SequentialProfile> timeShifterProfiles = timeshifterUpdate.getTimeShifterProfiles();
-        assertNotNull(timeShifterProfiles);
+        create();
+
+        dishwasherSimulation.setProgram("Test Program",
+                                        TimeUtil.add(simulation.getTime(), Measure.valueOf(2, NonSI.HOUR)));
+
+        expectFutureUpdate();
     }
 
     public void testSensorWashProgram() throws Exception {
-        create(1, true, "", "2014-09-11 15:30", "Sensor Wash", true);
-        TimeShifterUpdate timeshifterUpdate = energyapp.getTimeshifterUpdate();
-        assertNotNull(timeshifterUpdate);
+        create();
+
+        dishwasherSimulation.setProgram("Sensor Wash",
+                                        TimeUtil.add(simulation.getTime(), Measure.valueOf(2, NonSI.HOUR)));
+
+        TimeShifterUpdate timeshifterUpdate = expectFutureUpdate();
         List<SequentialProfile> timeShifterProfiles = timeshifterUpdate.getTimeShifterProfiles();
 
         // test number of timeshifterprofiles. (1 expected)
@@ -163,9 +159,12 @@ public class DishwasherSimulationTest extends SimulationTest {
     }
 
     public void testEnergySaveProgram() throws Exception {
-        create(1, true, "", "2014-09-11 15:30", "Energy Save", true);
-        TimeShifterUpdate timeshifterUpdate = energyapp.getTimeshifterUpdate();
-        assertNotNull(timeshifterUpdate);
+        create();
+
+        dishwasherSimulation.setProgram("Energy Save",
+                                        TimeUtil.add(simulation.getTime(), Measure.valueOf(2, NonSI.HOUR)));
+
+        TimeShifterUpdate timeshifterUpdate = expectFutureUpdate();
         List<SequentialProfile> timeShifterProfiles = timeshifterUpdate.getTimeShifterProfiles();
 
         // test number of timeshifterprofiles. (1 expected)
@@ -189,17 +188,20 @@ public class DishwasherSimulationTest extends SimulationTest {
     }
 
     public void testLatestStartTime() throws Exception {
-        create(1, true, "", "2013-01-01 12:00", "Aan", true); // in the past!
-        TimeShifterRegistration timeshifterRegistration = energyapp.getTimeshifterRegistration();
-        Measurable<Duration> allocationDelay = timeshifterRegistration.getAllocationDelay();
-        assertEquals(allocationDelay, Measure.valueOf(5, SI.SECOND));
-        assertNotNull(timeshifterRegistration);
-        assertNotNull(dishwasherSimulation.getCurrentState().getStartTime()); // Started!
-
+        create();
+        dishwasherSimulation.setProgram("Test Program",
+                                        TimeUtil.add(simulation.getTime(), Measure.valueOf(1, SI.SECOND)));
+        expectFutureUpdate();
+        expectFutureUpdate();
+        assertNotNull(dishwasherSimulation.getLatestState().getStartTime()); // Started!
     }
 
     public void testAllocation() throws Exception {
-        create(1, true, "", "2015-01-01 12:00", "Aan", true);
+        create();
+
+        dishwasherSimulation.setProgram("Sensor Wash",
+                                        TimeUtil.add(simulation.getTime(), Measure.valueOf(2, NonSI.HOUR)));
+
         log.debug("requesting registration");
         TimeShifterRegistration timeshifterRegistration = energyapp.getTimeshifterRegistration();
         log.debug("requesting update");
@@ -217,7 +219,7 @@ public class DishwasherSimulationTest extends SimulationTest {
         alocations.add(new SequentialProfileAllocation(profile.getId(), startTime));
 
         // test whether the dishwasher is still turned off
-        assertNull(dishwasherSimulation.getCurrentState().getStartTime()); // Not Started!
+        assertNull(dishwasherSimulation.getLatestState().getStartTime()); // Not Started!
 
         // create allocation to start now
         TimeShifterAllocation allocation = new TimeShifterAllocation(update, simulation.getTime(), false,
@@ -226,9 +228,9 @@ public class DishwasherSimulationTest extends SimulationTest {
         log.debug("sending allocation");
         energyapp.sendAllocation(allocation);
 
+        expectFutureUpdate();
+
         // test to see whether it has started
-        assertNotNull(dishwasherSimulation.getCurrentState().getStartTime()); // Started!
-
+        assertNotNull(dishwasherSimulation.getLatestState().getStartTime()); // Started!
     }
-
 }

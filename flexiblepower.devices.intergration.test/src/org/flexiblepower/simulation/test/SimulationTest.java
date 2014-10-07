@@ -78,6 +78,7 @@ public abstract class SimulationTest extends TestCase {
         assertEquals(expectedNrOfEndpoints, connectionManager.getEndpoints().size());
 
         connectionManager.autoConnect();
-        simulation.startSimulation(new Date(), 500);
+        // Always start at 1 january 2014 0:00
+        simulation.startSimulation(new Date(1388534400000L), 500);
     }
 }

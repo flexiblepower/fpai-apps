@@ -23,6 +23,7 @@ import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.messaging.Port;
 import org.flexiblepower.miele.dishwasher.manager.MieleDishwasherManager.Config;
 import org.flexiblepower.rai.AllocationRevoke;
+import org.flexiblepower.rai.ControlSpaceRevoke;
 import org.flexiblepower.rai.ResourceMessage;
 import org.flexiblepower.rai.values.CommodityForecast;
 import org.flexiblepower.rai.values.CommodityForecast.Builder;
@@ -47,9 +48,10 @@ import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 @Port(name = "driver", sends = DishwasherControlParameters.class, accepts = DishwasherState.class)
-public class MieleDishwasherManager extends
-                                   AbstractResourceManager<DishwasherState, DishwasherControlParameters> implements
-                                                                                                        TimeShifterResourceManager {
+public class MieleDishwasherManager
+    extends AbstractResourceManager<DishwasherState, DishwasherControlParameters>
+    implements TimeShifterResourceManager {
+
     private static final Logger log = LoggerFactory.getLogger(MieleDishwasherManager.class);
 
     private final class DishwasherControlParametersImpl implements DishwasherControlParameters {
@@ -69,6 +71,11 @@ public class MieleDishwasherManager extends
         @Override
         public String getProgram() {
             return program;
+        }
+
+        @Override
+        public String toString() {
+            return "DishwasherControlParametersImpl [startTime=" + startTime + ", program=" + program + "]";
         }
     }
 
@@ -93,7 +100,7 @@ public class MieleDishwasherManager extends
     private TimeShifterUpdate currentUpdate;
     private TimeShifterAllocation currentAllocation;
     private Measure<Integer, Duration> allocationDelay;
-    private ServiceRegistration widgetRegistration;
+    private ServiceRegistration<Widget> widgetRegistration;
     private MieleDishwasherWidget widget;
     private Config configuration;
 
@@ -107,9 +114,14 @@ public class MieleDishwasherManager extends
                                                                   changedStateTime,
                                                                   allocationDelay,
                                                                   CommoditySet.onlyElectricity);
-        TimeShifterUpdate update = createControlSpace(state);
-        log.debug("sending timeshifter registration and update");
-        return Arrays.asList(reg, update);
+        ResourceMessage update = createControlSpace(state);
+
+        if (update != null) {
+            log.debug("sending timeshifter registration and update");
+            return Arrays.asList(reg, update);
+        } else {
+            return Arrays.asList(reg);
+        }
     }
 
     @Override
@@ -119,9 +131,8 @@ public class MieleDishwasherManager extends
         } else {
             currentState = state;
             changedStateTime = timeService.getTime();
-            TimeShifterUpdate update = createControlSpace(state);
             log.debug("sending timeshifter update");
-            return Arrays.asList(update);
+            return Arrays.asList(createControlSpace(state));
         }
     }
 
@@ -157,7 +168,17 @@ public class MieleDishwasherManager extends
         return null;
     }
 
-    private TimeShifterUpdate createControlSpace(DishwasherState info) {
+    private ResourceMessage createControlSpace(DishwasherState info) {
+        if (info.getProgram() == null) {
+            // No program selected, so revoke all previous updates
+            if (currentUpdate != null) {
+                currentUpdate = null;
+                return new ControlSpaceRevoke(configuration.resourceId(), changedStateTime);
+            } else {
+                return null;
+            }
+        }
+
         logger.debug("Program selected: " + info.getProgram());
         String program = info.getProgram();
 
@@ -216,13 +237,14 @@ public class MieleDishwasherManager extends
         CommodityForecast forecast = forecastBuilder.build();
         UncertainMeasure<Duration> maxInterval = new UncertainMeasure<Duration>(0, HOUR);
 
-        return new TimeShifterUpdate(configuration.resourceId(),
-                                     changedStateTime,
-                                     changedStateTime,
-                                     info.getLatestStartTime(),
-                                     new SequentialProfile(0,
-                                                           maxInterval,
-                                                           forecast));
+        currentUpdate = new TimeShifterUpdate(configuration.resourceId(),
+                                              changedStateTime,
+                                              changedStateTime,
+                                              info.getLatestStartTime(),
+                                              new SequentialProfile(0,
+                                                                    maxInterval,
+                                                                    forecast));
+        return currentUpdate;
     }
 
     protected DishwasherState getCurrentState() {
@@ -243,7 +265,8 @@ public class MieleDishwasherManager extends
 
     @Deactivate
     public void deactivate() {
-        widgetRegistration.unregister();
+        if (widgetRegistration != null) {
+            widgetRegistration.unregister();
+        }
     }
-
 }
