@@ -7,9 +7,7 @@ import org.flexiblepower.ral.ResourceState;
 
 public interface SmartMeterState extends ResourceState {
 
-    public SmartMeterMeasurement getMeasurement();
-
-    public Date getTimeStamp();
+    public Date getTimestamp();
 
     public BigDecimal getCurrentPowerConsumptionW();
 

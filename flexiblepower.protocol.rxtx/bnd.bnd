@@ -1,0 +1,11 @@
+-buildpath: biz.aQute.bnd.annotation, slf4j.api
+Bundle-Version: 1.0.0.${qualifier}
+Service-Component: *
+Export-Package: org.flexiblepower.protocol.rxtx
+Private-Package: org.flexiblepower.protocol.rxtx.*, gnu.io
+
+Bundle-NativeCode: \
+	linux/librxtxSerial.so; osname=Linux; processor=x86 ; processor=amd64 ; processor=x86_64,\
+	technolution/librxtxSerial.so; osname=Linux; processor=arm,\
+	win32/rxtxSerial.dll; osname=WindowsXP ; osname=Windows XP ; osname=WinXP ; osname=WindowsVista ; osname=Windows Vista ; osname=Windows2003 ; osname=Windows 7 ; osname=Win32; processor=x86 ,\
+	win64/rxtxSerial.dll; osname=WindowsXP ; osname=Windows XP ; osname=WinXP ; osname=WindowsVista ; osname=Windows Vista ; osname=Windows2003 ; osname=Windows 7 ; osname=Win32 ; processor=amd64 ; processor=x86_64,*

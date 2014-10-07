@@ -1,22 +1,15 @@
 package org.flexiblepower.smartmeter.parser;
 
-
-import org.flexiblepower.smartmeter.driver.interfaces.SmartMeterMeasurement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
 public class DatagramParser {
+    public static final DatagramParser SINGLETON = new DatagramParser();
 
-    private Logger logger = LoggerFactory.getLogger(getClass());
+    private final Map<String, PropertyAndPattern> mapping;
 
-    private Map<String, PropertyAndPattern> mapping;
-
-    public DatagramParser() {
+    private DatagramParser() {
         mapping = new HashMap<String, PropertyAndPattern>();
         mapping.put("1-0:1.8.1", new PropertyAndPattern(new KwhValueParser(), "electricityConsumptionLowRateKwh"));
         mapping.put("1-0:1.8.2", new PropertyAndPattern(new KwhValueParser(), "electricityConsumptionNormalRateKwh"));
@@ -48,8 +41,8 @@ public class DatagramParser {
 
     private class PropertyAndPattern {
 
-        private ValueParser valueParser;
-        private String fieldName;
+        private final ValueParser valueParser;
+        private final String fieldName;
 
         public PropertyAndPattern(ValueParser valueParser, String fieldName) {
             this.valueParser = valueParser;
@@ -58,32 +51,32 @@ public class DatagramParser {
 
         public void extract(String line, SmartMeterMeasurement measurement) {
             BigDecimal value = valueParser.parse(line);
-            
-            if (fieldName.equals("electricityConsumptionLowRateKwh")){
-            	measurement.setElectricityConsumptionLowRateKwh(value);
+
+            if (fieldName.equals("electricityConsumptionLowRateKwh")) {
+                measurement.setElectricityConsumptionLowRateKwh(value);
             }
-            
-            else if (fieldName.equals("electricityConsumptionNormalRateKwh")){
-            	measurement.setElectricityConsumptionNormalRateKwh(value);
+
+            else if (fieldName.equals("electricityConsumptionNormalRateKwh")) {
+                measurement.setElectricityConsumptionNormalRateKwh(value);
             }
-            
-            else if (fieldName.equals("electricityProductionLowRateKwh")){
-            	measurement.setElectricityProductionLowRateKwh(value);
+
+            else if (fieldName.equals("electricityProductionLowRateKwh")) {
+                measurement.setElectricityProductionLowRateKwh(value);
             }
-            
-            else if (fieldName.equals("electricityProductionNormalRateKwh")){
-            	measurement.setElectricityProductionNormalRateKwh(value);
+
+            else if (fieldName.equals("electricityProductionNormalRateKwh")) {
+                measurement.setElectricityProductionNormalRateKwh(value);
             }
-            
-            else if (fieldName.equals("currentPowerConsumptionW")){
-            	measurement.setCurrentPowerConsumptionW(value);
+
+            else if (fieldName.equals("currentPowerConsumptionW")) {
+                measurement.setCurrentPowerConsumptionW(value);
             }
-            
-            else if (fieldName.equals("currentPowerProductionW")){
-            	measurement.setCurrentPowerProductionW(value);
+
+            else if (fieldName.equals("currentPowerProductionW")) {
+                measurement.setCurrentPowerProductionW(value);
             }
-            else if (fieldName.equals("gasConsumptionM3")){
-            	measurement.setGasConsumptionM3(value);
+            else if (fieldName.equals("gasConsumptionM3")) {
+                measurement.setGasConsumptionM3(value);
             }
 
         }
