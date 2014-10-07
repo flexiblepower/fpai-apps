@@ -32,4 +32,4 @@
 -runee: JavaSE-1.6
 -runfw: org.apache.felix.framework
 -runtrace: true
--runvm: -ea -Dlogback.configurationFile=../cnf/logback.xml
+-runvm: -Dlogback.configurationFile=../cnf/logback.xml
