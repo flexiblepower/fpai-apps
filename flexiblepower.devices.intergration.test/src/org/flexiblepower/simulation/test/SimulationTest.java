@@ -79,6 +79,6 @@ public abstract class SimulationTest extends TestCase {
 
         connectionManager.autoConnect();
         // Always start at 1 january 2014 0:00 and make it as quick as possible
-        simulation.startSimulation(new Date(1388534400000L), 10000);
+        simulation.startSimulation(new Date(1388534400000L), 200);
     }
 }
