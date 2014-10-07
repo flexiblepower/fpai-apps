@@ -1,8 +1,0 @@
--buildpath: ${default-buildpath},\
-	flexiblepower.smartmeter.resource.driver;version=latest
-
-Bundle-Version: 1.0.0
-Private-Package: org.flexiblepower.smartmeter.manager
-Service-Component: *
-Import-Package: org.flexiblepower*,\
-	*
