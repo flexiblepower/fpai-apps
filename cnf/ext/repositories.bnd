@@ -10,4 +10,4 @@ plugindir: ${workspace}/cnf.shared/bnd
 	aQute.bnd.deployer.repository.FixedIndexedRepo;name=FPAI (SNAPSHOT);locations=http://fpai-ci.sensorlab.tno.nl/builds/fpai-core/snapshots/development/14.10-LATEST-SNAPSHOT/repo/index.xml;cache=${workspace}/cnf/cache,\
 	aQute.bnd.deployer.repository.FixedIndexedRepo;name=PowerMatcher;locations=https://github.com/flexiblepower/powermatcher/releases/download/v0.9/index.xml.gz;cache=${workspace}/cnf/cache,\
 	aQute.bnd.deployer.repository.FixedIndexedRepo;name=FPAI PowerMatcher(SNAPSHOT);locations=http://fpai-ci.sensorlab.tno.nl/builds/fpai-powermatcher/snapshots/newefi/14.02-LATEST-SNAPSHOT/repo/index.xml;cache=${workspace}/cnf/cache
--releaserepo: Release 
+-releaserepo: Release
