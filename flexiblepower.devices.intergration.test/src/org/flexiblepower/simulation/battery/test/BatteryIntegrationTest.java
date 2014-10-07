@@ -1,7 +1,6 @@
 package org.flexiblepower.simulation.battery.test;
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.Dictionary;
 import java.util.Hashtable;
 
@@ -90,19 +89,8 @@ public class BatteryIntegrationTest extends SimulationTest {
         // set up the other end = energy app simulation
         OtherEndBatteryEnergyApp otherEnd = new OtherEndBatteryEnergyApp();
         otherEndRegistration = bundleContext.registerService(Endpoint.class, otherEnd, null);
-        for (int i = 0; i < 10; i++) {
-            if (connectionManager.getEndpoints().size() < 3) {
-                Thread.sleep(50);
-            } else {
-                break;
-            }
-        }
-        if (connectionManager.getEndpoints().size() < 3) {
-            fail("Not all endpoints are picked up by the connection manager");
-        }
-        connectionManager.autoConnect();
 
-        simulation.startSimulation(new Date(), 1);
+        connectAndStartSimulation(3);
 
         // PowerState initialState = otherEnd.getState();
         // assertEquals(selfDischargePower, initialState.getSelfDischargeSpeed().doubleValue(SI.WATT), 0.01);

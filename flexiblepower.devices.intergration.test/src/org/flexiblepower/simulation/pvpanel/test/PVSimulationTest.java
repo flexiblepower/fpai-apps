@@ -1,7 +1,5 @@
 package org.flexiblepower.simulation.pvpanel.test;
 
-import java.io.IOException;
-import java.util.Date;
 import java.util.Dictionary;
 import java.util.Hashtable;
 
@@ -51,27 +49,13 @@ public class PVSimulationTest extends SimulationTest {
         OtherEndPVPanelManager otherEnd = new OtherEndPVPanelManager();
         otherEndRegistration = bundleContext.registerService(Endpoint.class, otherEnd, null);
 
-        for (int i = 0; i < 10; i++) {
-            if (connectionManager.getEndpoints().size() < 2) {
-                Thread.sleep(50);
-            } else {
-                break;
-            }
-        }
+        connectAndStartSimulation(2);
 
-        connectionManager.autoConnect();
-        simulation.startSimulation(new Date(), 10);
         return otherEnd;
     }
 
     @Override
     protected void tearDown() throws Exception {
-        destroy();
-        pvpanelSimulationTracker.close();
-        super.tearDown();
-    }
-
-    private void destroy() throws IOException {
         simulation.stopSimulation();
 
         if (otherEndRegistration != null) {
@@ -82,6 +66,10 @@ public class PVSimulationTest extends SimulationTest {
             config.delete();
             config = null;
         }
+
+        pvpanelSimulationTracker.close();
+
+        super.tearDown();
     }
 
     public void testMoonWeather() throws Exception {

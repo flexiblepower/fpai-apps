@@ -89,18 +89,7 @@ public class DishwasherSimulationTest extends SimulationTest {
         energyapp = (OtherEndEnergyApp) otherEndEnergyAppTracker.waitForService(1000);
         assertNotNull(energyapp);
 
-        for (int i = 0; i < 10; i++) {
-            if (connectionManager.getEndpoints().size() < 3) {
-                Thread.sleep(50);
-            } else {
-                break;
-            }
-        }
-        if (connectionManager.getEndpoints().size() < 3) {
-            fail("Not all endpoints are picked up by the connection manager");
-        }
-        connectionManager.autoConnect();
-        simulation.startSimulation(new Date(), 100);
+        connectAndStartSimulation(3);
     }
 
     @Override

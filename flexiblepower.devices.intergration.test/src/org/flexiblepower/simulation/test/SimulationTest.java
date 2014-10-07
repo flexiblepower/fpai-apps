@@ -1,5 +1,7 @@
 package org.flexiblepower.simulation.test;
 
+import java.util.Date;
+
 import junit.framework.TestCase;
 
 import org.flexiblepower.messaging.ConnectionManager;
@@ -55,10 +57,27 @@ public abstract class SimulationTest extends TestCase {
 
     @Override
     protected void tearDown() throws Exception {
-        log.debug("Tearing down");
+        simulation = null;
         simulationTracker.close();
+        connectionManager = null;
         connectionManagerTracker.close();
+        configAdmin = null;
         configAdminTracker.close();
+
         super.tearDown();
+    }
+
+    protected void connectAndStartSimulation(int expectedNrOfEndpoints) throws InterruptedException {
+        for (int i = 0; i < 10; i++) {
+            if (connectionManager.getEndpoints().size() < expectedNrOfEndpoints) {
+                Thread.sleep(50);
+            } else {
+                break;
+            }
+        }
+        assertEquals(expectedNrOfEndpoints, connectionManager.getEndpoints().size());
+
+        connectionManager.autoConnect();
+        simulation.startSimulation(new Date(), 500);
     }
 }
