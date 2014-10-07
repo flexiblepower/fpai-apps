@@ -15,8 +15,4 @@ Bundle-Version: 1.0.0.${qualifier}
 
 Service-Component: *
 Test-Cases: ${classes;CONCRETE;EXTENDS;junit.framework.TestCase},${classes;ANNOTATION;org.junit.Test}
-Export-Package:  \
-	org.flexiblepower.simulation.battery.test,\
-	org.flexiblepower.simulation.dishwasher.test,\
-	org.flexiblepower.simulation.pvpanel.test,\
-	org.flexiblepower.simulation.test
+Private-Package:  org.flexiblepower.simulation.*test
