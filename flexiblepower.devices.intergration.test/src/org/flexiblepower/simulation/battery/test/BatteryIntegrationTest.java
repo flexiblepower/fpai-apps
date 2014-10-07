@@ -16,12 +16,9 @@ import org.flexiblepower.efi.buffer.BufferSystemDescription;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.simulation.battery.BatterySimulation;
 import org.flexiblepower.simulation.test.SimulationTest;
-import org.flexiblepower.time.TimeService;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.cm.Configuration;
 import org.osgi.util.tracker.ServiceTracker;
-
-import aQute.bnd.annotation.component.Reference;
 
 public class BatteryIntegrationTest extends SimulationTest {
     private ServiceTracker<Endpoint, Endpoint> batteryTracker;
@@ -156,14 +153,7 @@ public class BatteryIntegrationTest extends SimulationTest {
         BufferStateUpdate<?> bufferStateUpdate2 = otherEnd.getBufferStateUpdate();
         assertNotNull(bufferStateUpdate2);
 
-        Thread.sleep(15000);
-    }
-
-    private TimeService timeService;
-
-    @Reference
-    public void setTimeService(TimeService timeService) {
-        this.timeService = timeService;
+        Thread.sleep(1000);
     }
 
     //

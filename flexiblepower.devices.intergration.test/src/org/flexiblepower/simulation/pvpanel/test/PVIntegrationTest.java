@@ -1,7 +1,6 @@
 package org.flexiblepower.simulation.pvpanel.test;
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.Dictionary;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -85,17 +84,7 @@ public class PVIntegrationTest extends SimulationTest {
         OtherEndPVPanelApp otherEnd = new OtherEndPVPanelApp();
         otherEndRegistration = bundleContext.registerService(Endpoint.class, otherEnd, null);
 
-        for (int i = 0; i < 10; i++) {
-            if (connectionManager.getEndpoints().size() < 3) {
-                Thread.sleep(50);
-            } else {
-                break;
-            }
-        }
-
-        connectionManager.autoConnect();
-
-        simulation.startSimulation(new Date(), 100);
+        connectAndStartSimulation(3);
 
         // PowerState initialState = otherEnd.getState();
         // assertEquals(selfDischargePower, initialState.getSelfDischargeSpeed().doubleValue(SI.WATT), 0.01);
