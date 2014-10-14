@@ -1,6 +1,5 @@
 package org.flexiblepower.simulation.pvpanel.test;
 
-import java.io.IOException;
 import java.util.Dictionary;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -95,12 +94,6 @@ public class PVIntegrationTest extends SimulationTest {
 
     @Override
     protected void tearDown() throws Exception {
-        destroy();
-        pvPanelTracker.close();
-        super.tearDown();
-    }
-
-    private void destroy() throws IOException {
         simulation.stopSimulation();
 
         if (otherEndRegistration != null) {
@@ -115,6 +108,9 @@ public class PVIntegrationTest extends SimulationTest {
             managerConfig.delete();
             managerConfig = null;
         }
+        pvPanelTracker.close();
+        uncontrolledManagerTracker.close();
+        super.tearDown();
     }
 
     public void testAutoconnect() throws Exception {
@@ -200,7 +196,6 @@ public class PVIntegrationTest extends SimulationTest {
         pvSimulation.setWeather(Weather.sun);
         ignoreMeasures(otherEnd, 10); // ignore some measures, to be sure that the weather is set correctly
         expectedRandomValues(otherEnd, -1650.0, -1500.0);
-
     }
 
     public void

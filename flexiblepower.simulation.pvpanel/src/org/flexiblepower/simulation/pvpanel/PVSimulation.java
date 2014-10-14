@@ -31,9 +31,9 @@ import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
-public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceControlParameters> implements
-                                                                                               UncontrollableDriver,
-                                                                                               Runnable {
+public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceControlParameters>
+    implements UncontrollableDriver, Runnable {
+
     public final static class PowerStateImpl implements PowerState {
         private final Measurable<Power> demand;
         private final Date currentTime;
@@ -56,6 +56,11 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
         public Date getTime() {
             return currentTime;
         }
+
+        @Override
+        public String toString() {
+            return "PowerStateImpl [demand=" + demand + ", currentTime=" + currentTime + "]";
+        }
     }
 
     @Meta.OCD
@@ -77,7 +82,7 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
     private double demand = -0.01;
     private double cloudy = 200;
     private double sunny = 1500;
-    private Weather weather = Weather.moon;
+    private volatile Weather weather = Weather.moon;
     private int updateDelay = 0;
 
     private PVWidget widget;
