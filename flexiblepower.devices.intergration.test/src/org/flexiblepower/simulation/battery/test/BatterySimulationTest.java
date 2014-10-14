@@ -108,7 +108,7 @@ public class BatterySimulationTest extends SimulationTest {
 
         log.debug("------------ Start charging ---------------");
         // charging state with charge power and no leakage
-        otherEndBattery.startCharging();
+        expectedStateOfCharge = otherEndBattery.startCharging();
         for (int i = 0; i < 100; i++) {
             // calculate charge power relative to the total capacity
             expectedStateOfCharge = incrementStateOfCharge(expectedStateOfCharge, TEN_WATT * deltaT, 0, total_Capacity);
@@ -117,14 +117,14 @@ public class BatterySimulationTest extends SimulationTest {
 
         log.debug("------------ Switch to IDLE ---------------");
         // in idle mode nothing changes
-        otherEndBattery.switchToIdle();
+        expectedStateOfCharge = otherEndBattery.switchToIdle();
         for (int i = 0; i < 10; i++) {
             otherEndBattery.expectedState(expectedStateOfCharge);
         }
 
         log.debug("------------ Switch to Discharging ---------------");
         // discharging
-        otherEndBattery.startDischarging();
+        expectedStateOfCharge = otherEndBattery.startDischarging();
         for (int i = 0; i < 100; i++) {
             // calculate discharge power relative to the total capacity
             expectedStateOfCharge = incrementStateOfCharge(expectedStateOfCharge, -TEN_WATT * deltaT, 0, total_Capacity);
@@ -133,7 +133,7 @@ public class BatterySimulationTest extends SimulationTest {
 
         log.debug("------------ Switch to IDLE ---------------");
         // in idle mode nothing changes
-        otherEndBattery.switchToIdle();
+        expectedStateOfCharge = otherEndBattery.switchToIdle();
         for (int i = 0; i < 10; i++) {
             otherEndBattery.expectedState(0);
         }
@@ -159,7 +159,7 @@ public class BatterySimulationTest extends SimulationTest {
 
         log.debug("------------ Start charging ---------------");
         // charging state with charge power and no leakage
-        otherEndBattery.startCharging();
+        expectedStateOfCharge = otherEndBattery.startCharging();
         for (int i = 0; i < 100; i++) {
             // calculate charge power relative to the total capacity
             expectedStateOfCharge = incrementStateOfCharge(expectedStateOfCharge,
@@ -171,7 +171,7 @@ public class BatterySimulationTest extends SimulationTest {
 
         log.debug("------------ Switch to IDLE ---------------");
         // in idle mode nothing changes
-        otherEndBattery.switchToIdle();
+        expectedStateOfCharge = otherEndBattery.switchToIdle();
         for (int i = 0; i < 100; i++) {
             // calculate leakage relative to the total capacity
             expectedStateOfCharge = incrementStateOfCharge(expectedStateOfCharge, 0, -leakage * deltaT, total_Capacity);
@@ -180,7 +180,7 @@ public class BatterySimulationTest extends SimulationTest {
 
         log.debug("------------ Switch to Discharging ---------------");
         // discharging
-        otherEndBattery.startDischarging();
+        expectedStateOfCharge = otherEndBattery.startDischarging();
         for (int i = 0; i < 100; i++) {
             // calculate discharge power relative to the total capacity
             expectedStateOfCharge = incrementStateOfCharge(expectedStateOfCharge,
@@ -192,7 +192,7 @@ public class BatterySimulationTest extends SimulationTest {
 
         log.debug("------------ Switch to IDLE ---------------");
         // in idle mode nothing changes
-        otherEndBattery.switchToIdle();
+        expectedStateOfCharge = otherEndBattery.switchToIdle();
         for (int i = 0; i < 10; i++) {
             // calculate leakage relative to the total capacity
             expectedStateOfCharge = incrementStateOfCharge(expectedStateOfCharge, 0, -leakage * deltaT, total_Capacity);

@@ -72,18 +72,27 @@ public class OtherEndBatteryManager implements Endpoint {
         Assert.assertEquals(expectedStateOfCharge, stateOfCharge, 0.00001);
     }
 
-    public void startCharging() {
+    public double startCharging() throws InterruptedException {
         connection.sendMessage(new BatteryControlParametersImpl(BatteryMode.CHARGE));
-        messages.clear();
+        return assertChangeTo(BatteryMode.CHARGE);
     }
 
-    public void startDischarging() {
+    public double startDischarging() throws InterruptedException {
         connection.sendMessage(new BatteryControlParametersImpl(BatteryMode.DISCHARGE));
-        messages.clear();
+        return assertChangeTo(BatteryMode.DISCHARGE);
     }
 
-    public void switchToIdle() {
+    public double switchToIdle() throws InterruptedException {
         connection.sendMessage(new BatteryControlParametersImpl(BatteryMode.IDLE));
-        messages.clear();
+        return assertChangeTo(BatteryMode.IDLE);
+    }
+
+    private double assertChangeTo(BatteryMode expectedMode) throws InterruptedException {
+        BatteryState state = getState();
+        for (int i = 0; i < 5 && state.getCurrentMode() != expectedMode; i++) {
+            state = getState();
+        }
+        Assert.assertEquals(expectedMode, state.getCurrentMode());
+        return state.getStateOfCharge();
     }
 }

@@ -45,9 +45,10 @@ import aQute.bnd.annotation.metatype.Meta;
  *
  */
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
-public class BatterySimulation extends AbstractResourceDriver<BatteryState, BatteryControlParameters> implements
-                                                                                                     BatteryDriver,
-                                                                                                     Runnable {
+public class BatterySimulation
+    extends AbstractResourceDriver<BatteryState, BatteryControlParameters>
+    implements BatteryDriver, Runnable {
+
     interface Config {
         @Meta.AD(deflt = "5", description = "Interval between state updates [s]")
         long updateInterval();
