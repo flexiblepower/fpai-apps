@@ -176,7 +176,7 @@ public class DishwasherSimulationImpl
     }
 
     @Override
-    public void handleControlParameters(final DishwasherControlParameters resourceControlParameters) {
+    public synchronized void handleControlParameters(final DishwasherControlParameters resourceControlParameters) {
         log.debug("Handle controlParameters: {}", resourceControlParameters);
         if (resourceControlParameters.getProgram().equals(currentState.getProgram())) {
             Measurable<Duration> diff = TimeUtil.difference(timeService.getTime(),
@@ -198,13 +198,13 @@ public class DishwasherSimulationImpl
     }
 
     @Override
-    public void setIdle() {
+    public synchronized void setIdle() {
         cancelJob();
         update(new State(true, null, null, null));
     }
 
     @Override
-    public void setProgram(final String program, final Date latestStartTime) {
+    public synchronized void setProgram(final String program, final Date latestStartTime) {
         cancelJob();
 
         final Measurable<Duration> diff = TimeUtil.difference(timeService.getTime(), latestStartTime);
