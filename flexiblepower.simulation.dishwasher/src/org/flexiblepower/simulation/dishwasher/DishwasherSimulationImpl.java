@@ -44,6 +44,20 @@ public class DishwasherSimulationImpl
 
     private static final Logger log = LoggerFactory.getLogger(DishwasherSimulationImpl.State.class);
 
+    private final class RunProgram implements Runnable {
+        private final String program;
+
+        private RunProgram(String program) {
+            this.program = program;
+        }
+
+        @Override
+        public void run() {
+            update(new State(true, timeService.getTime(), timeService.getTime(), program));
+            future = null;
+        }
+    }
+
     @Meta.OCD
     interface Config {
         String resource_id();
@@ -96,6 +110,17 @@ public class DishwasherSimulationImpl
                                    .electricity(Measure.valueOf(1000, SI.WATT)).next().build();
         }
 
+        @Override
+        public String toString() {
+            return "State [isConnected=" + isConnected
+                   + ", startTime="
+                   + startTime
+                   + ", latestStartTime="
+                   + latestStartTime
+                   + ", program="
+                   + program
+                   + "]";
+        }
     }
 
     private ScheduledExecutorService scheduler;
@@ -159,17 +184,9 @@ public class DishwasherSimulationImpl
 
             cancelJob();
 
-            final Date latestStartTime = currentState.getLatestStartTime();
             final String program = currentState.getProgram();
-            Runnable runnable = new Runnable() {
-                @Override
-                public void run() {
-                    log.debug("Started by manager");
-                    update(new State(true, timeService.getTime(), latestStartTime, program));
-                }
-            };
             log.debug("Scheduling start over {}", diff);
-            future = scheduler.schedule(runnable,
+            future = scheduler.schedule(new RunProgram(program),
                                         diff.longValue(SI.SECOND),
                                         TimeUnit.SECONDS);
 
@@ -191,13 +208,7 @@ public class DishwasherSimulationImpl
         cancelJob();
 
         final Measurable<Duration> diff = TimeUtil.difference(timeService.getTime(), latestStartTime);
-        future = scheduler.schedule(new Runnable() {
-            @Override
-            public void run() {
-                update(new State(true, timeService.getTime(), latestStartTime, program));
-                future = null;
-            }
-        }, diff.longValue(SI.SECOND), TimeUnit.SECONDS);
+        future = scheduler.schedule(new RunProgram(program), diff.longValue(SI.SECOND), TimeUnit.SECONDS);
         update(new State(true, null, latestStartTime, program));
     }
 

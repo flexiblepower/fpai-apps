@@ -191,8 +191,12 @@ public class DishwasherSimulationTest extends SimulationTest {
         create();
         dishwasherSimulation.setProgram("Test Program",
                                         TimeUtil.add(simulation.getTime(), Measure.valueOf(1, SI.SECOND)));
-        expectFutureUpdate();
-        expectFutureUpdate();
+        TimeShifterUpdate updateBefore = expectFutureUpdate();
+        log.debug("Update before: {}", updateBefore);
+        TimeShifterUpdate updateAfter = expectFutureUpdate();
+        log.debug("Update  after: {}", updateAfter);
+
+        assertNotSame(updateBefore, updateAfter);
         assertNotNull(dishwasherSimulation.getLatestState().getStartTime()); // Started!
     }
 
@@ -200,7 +204,7 @@ public class DishwasherSimulationTest extends SimulationTest {
         create();
 
         dishwasherSimulation.setProgram("Sensor Wash",
-                                        TimeUtil.add(simulation.getTime(), Measure.valueOf(2, NonSI.HOUR)));
+                                        TimeUtil.add(simulation.getTime(), Measure.valueOf(2, NonSI.YEAR)));
 
         log.debug("requesting registration");
         TimeShifterRegistration timeshifterRegistration = energyapp.getTimeshifterRegistration();
