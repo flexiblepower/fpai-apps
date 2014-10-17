@@ -1,20 +1,34 @@
 <configuration>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    	<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>WARN</level>
+		</filter>
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} %-5level %-36.36logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
+    <appender name="TRACE-FILE" class="ch.qos.logback.core.FileAppender">
+    	<append>false</append>
+        <file>output.log</file>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %-36.36thread{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
     <logger name="org.flexiblepower.runtime.ui" level="ERROR" />
-    <logger name="org.flexiblepower" level="DEBUG" />
     <logger name="org.flexiblepower.battery" level="ERROR" />
     <logger name="net.powermatcher" level="ERROR" />
-    <logger name="org.flexiblepower.miele.dishwasher.manager" level="DEBUG" />
     <logger name="org.eclipse.jetty" level="ERROR" />
+
+	<logger name="org.flexiblepower.runtime.messaging" level="TRACE" additivity="false">
+		<appender-ref ref="TRACE-FILE" />
+	</logger>
+	<logger name="org.flexiblepower.simulation" level="TRACE" additivity="false">
+		<appender-ref ref="TRACE-FILE" />
+	</logger>
     
-    
-    <root level="DEBUG">
+    <root level="WARN">
+		<appender-ref ref="TRACE-FILE" />
         <appender-ref ref="STDOUT" />
     </root>
-    
 </configuration>
-
