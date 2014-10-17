@@ -56,7 +56,7 @@ public class BatterySimulation
         @Meta.AD(deflt = "1", description = "Total capacity [kWh]")
         double totalCapacity();
 
-        @Meta.AD(deflt = "0.5", description = "Initial state of charge (% from 0 to 1)")
+        @Meta.AD(deflt = "0.5", description = "Initial state of charge (from 0 to 1)")
         double initialStateOfCharge();
 
         @Meta.AD(deflt = "1500", description = "Charge power [W]")
@@ -65,10 +65,10 @@ public class BatterySimulation
         @Meta.AD(deflt = "1500", description = "Discharge power [W]")
         long dischargePower();
 
-        @Meta.AD(deflt = "0.9", description = "Charge efficiency (% from 0 to 1)")
+        @Meta.AD(deflt = "0.9", description = "Charge efficiency (from 0 to 1)")
         double chargeEfficiency();
 
-        @Meta.AD(deflt = "0.9", description = "Discharge efficiency (% from 0 to 1)")
+        @Meta.AD(deflt = "0.9", description = "Discharge efficiency (from 0 to 1)")
         double dischargeEfficiency();
 
         @Meta.AD(deflt = "50", description = "Self discharge power [W]")
@@ -273,7 +273,7 @@ public class BatterySimulation
             // always also self discharge
             double changeInW = amountOfChargeInWatt - selfDischargeSpeedInWatt.doubleValue(WATT);
             double changeInWS = changeInW * durationSinceLastUpdate;
-            double changeinKWH = changeInWS / 1000.0 / 3600.0;
+            double changeinKWH = changeInWS / (1000.0 * 3600.0);
 
             double newStateOfCharge = stateOfCharge + (changeinKWH / totalCapacityInKWh.doubleValue(KWH));
 
@@ -289,12 +289,6 @@ public class BatterySimulation
                     mode = BatteryMode.IDLE;
                 }
             }
-
-            log.debug(" Old stateOfCharge=" + stateOfCharge
-                      + " deltaT =" + durationSinceLastUpdate
-                      + " changeInW=" + changeInW
-                      + " newStateOfChargeInJoulesValue="
-                      + newStateOfCharge);
 
             State state = new State(newStateOfCharge, mode);
             logger.debug("Publishing state {}", state);
