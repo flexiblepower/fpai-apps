@@ -207,12 +207,13 @@ public class DishwasherSimulationImpl
     public synchronized void setProgram(final String program, final Date latestStartTime) {
         cancelJob();
 
+        update(new State(true, null, latestStartTime, program));
         final Measurable<Duration> diff = TimeUtil.difference(timeService.getTime(), latestStartTime);
         future = scheduler.schedule(new RunProgram(program), diff.longValue(SI.SECOND), TimeUnit.SECONDS);
-        update(new State(true, null, latestStartTime, program));
     }
 
     private void update(State state) {
+        log.trace("Updating state to: {}", state);
         currentState = state;
         publishState(state);
     }
