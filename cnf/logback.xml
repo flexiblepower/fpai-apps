@@ -1,8 +1,5 @@
 <configuration>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-    	<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-			<level>WARN</level>
-		</filter>
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} %-5level %-36.36logger{36} - %msg%n</pattern>
         </encoder>
@@ -23,11 +20,8 @@
 	<logger name="org.flexiblepower.runtime.messaging" level="TRACE" additivity="false">
 		<appender-ref ref="TRACE-FILE" />
 	</logger>
-	<logger name="org.flexiblepower.simulation" level="TRACE" additivity="false">
-		<appender-ref ref="TRACE-FILE" />
-	</logger>
     
-    <root level="WARN">
+    <root level="DEBUG">
 		<appender-ref ref="TRACE-FILE" />
         <appender-ref ref="STDOUT" />
     </root>
