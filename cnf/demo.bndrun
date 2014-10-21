@@ -7,23 +7,19 @@
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.http.whiteboard)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.webconsole)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.webconsole.plugins.ds)',\
-	osgi.identity;filter:='(osgi.identity=org.slf4j.osgi-over-slf4j)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.runtime)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.ui)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.ui.resourceinfo)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.battery.manager)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.felix.webconsole.plugins)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.miele.dishwasher.manager)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.miele.protocol)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.ip.onlinecheck)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.felix.webconsole.plugins)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.runtime)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.battery)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.dishwasher)',\
-	osgi.identity;filter:='(osgi.identity=org.apache.felix.http.jetty)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.pvpanel)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.battery)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.ui)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.ui.resourceinfo)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.uncontrolled.manager)',\
-	osgi.identity;filter:='(osgi.identity=org.slf4j.osgi-over-slf4j)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.battery)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.battery.manager)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.dummy.energyapp)'
+	osgi.identity;filter:='(osgi.identity=org.apache.felix.http.jetty)',\
+	osgi.identity;filter:='(osgi.identity=org.slf4j.osgi-over-slf4j)'
 -runbundles:  \
 	biz.aQute.bnd.annotation;version='[2.4.0,2.4.1)',\
 	ch.qos.logback.classic;version='[1.1.2,1.1.3)',\
@@ -33,9 +29,7 @@
 	flexiblepower.api.efi;version='[1.0.0,1.0.1)',\
 	flexiblepower.api.ext;version='[2.0.0,2.0.1)',\
 	flexiblepower.battery.manager;version=latest,\
-	flexiblepower.dummy.energyapp;version=latest,\
 	flexiblepower.felix.webconsole.plugins;version='[1.1.0,1.1.1)',\
-	flexiblepower.ip.onlinecheck;version=latest,\
 	flexiblepower.miele.dishwasher.manager;version=latest,\
 	flexiblepower.miele.protocol;version=latest,\
 	flexiblepower.runtime;version='[2.0.0,2.0.1)',\
@@ -45,7 +39,6 @@
 	flexiblepower.ui;version='[1.0.0,1.0.1)',\
 	flexiblepower.ui.resourceinfo;version='[1.1.0,1.1.1)',\
 	flexiblepower.uncontrolled.manager;version=latest,\
-	org.apache.commons.io;version='[2.4.0,2.4.1)',\
 	org.apache.felix.configadmin;version='[1.8.0,1.8.1)',\
 	org.apache.felix.eventadmin;version='[1.3.2,1.3.3)',\
 	org.apache.felix.http.api;version='[2.3.0,2.3.1)',\
@@ -60,3 +53,4 @@
 	osgi.cmpn;version='[4.3.1,4.3.2)',\
 	slf4j.api;version='[1.7.7,1.7.8)'
 -resolve: auto
+-runproperties: logback.configurationFile=../cnf/logback.xml
