@@ -1,6 +1,8 @@
 package nl.tno.fpai.demo.scenario.impl;
 
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -47,14 +49,14 @@ import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
 @Component(immediate = true,
-           provide = { ScenarioManager.class },
-           designate = ScenarioManagerImpl.Config.class,
-           configurationPolicy = ConfigurationPolicy.optional)
+provide = { ScenarioManager.class },
+designate = ScenarioManagerImpl.Config.class,
+configurationPolicy = ConfigurationPolicy.optional)
 public class ScenarioManagerImpl implements ScenarioManager {
     public interface Config {
         @Meta.AD(deflt = "scenarios.xml",
-                 description = "The file that should be loaded during activation.",
-                 required = false)
+                description = "The file that should be loaded during activation.",
+                required = false)
         String filename();
     }
 
@@ -82,12 +84,19 @@ public class ScenarioManagerImpl implements ScenarioManager {
         Config config = Configurable.createConfigurable(Config.class, properties);
         String filename = config.filename();
 
-        InputStream is = getClass().getClassLoader().getResourceAsStream(filename);
-        if (is == null) {
-            is = new FileInputStream(filename);
+        File file = new File(filename);
+        InputStream is = null;
+        if (file.exists() && file.isFile() && file.canRead()) {
+            is = new FileInputStream(file);
+        } else {
+            is = getClass().getClassLoader().getResourceAsStream(filename);
         }
 
         try {
+            if (is == null) {
+                throw new FileNotFoundException("Can not find the file with name: " + filename);
+            }
+
             scenarios = ScenarioReader.readScenarios(new InputStreamReader(is));
 
             if (log.isDebugEnabled()) {
