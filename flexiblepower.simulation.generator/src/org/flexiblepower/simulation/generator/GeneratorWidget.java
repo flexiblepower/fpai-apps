@@ -24,14 +24,12 @@ public class GeneratorWidget implements Widget {
     }
 
     public Update update() {
-        GeneratorLevel generatorLevel = simulation.getGeneratorLevel();
-        int intLevel = generatorLevel.getIntLevel();
-        System.out.println("widget updating to level " + intLevel);
-        return new Update(String.format("%2.1f W", intLevel));
+        String level = Integer.toString(simulation.getGeneratorLevel().getIntLevel());
+        return new Update(level);
     }
 
     @Override
     public String getTitle(Locale locale) {
-        return "Uncontrolled Simulation";
+        return "Generator Simulation";
     }
 }

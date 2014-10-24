@@ -3,6 +3,5 @@ $(window).load(function() {
 		$("#loading").detach();
 		$("p").show();
 		$("#level").text(data.level);
-		console.log("Updated widget");
 	});
 });
