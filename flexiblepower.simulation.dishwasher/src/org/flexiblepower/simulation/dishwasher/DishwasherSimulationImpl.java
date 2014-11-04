@@ -39,8 +39,10 @@ import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = { Endpoint.class, DishwasherSimulation.class }, immediate = true)
 public class DishwasherSimulationImpl
-    extends AbstractResourceDriver<DishwasherState, DishwasherControlParameters>
-    implements DishwasherDriver, DishwasherSimulation {
+                                     extends AbstractResourceDriver<DishwasherState, DishwasherControlParameters>
+                                                                                                                 implements
+                                                                                                                 DishwasherDriver,
+                                                                                                                 DishwasherSimulation {
 
     private static final Logger log = LoggerFactory.getLogger(DishwasherSimulationImpl.State.class);
 
@@ -60,7 +62,7 @@ public class DishwasherSimulationImpl
 
     @Meta.OCD
     interface Config {
-        String resource_id();
+        String resourceId();
     }
 
     public static final class State implements DishwasherState {
