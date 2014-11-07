@@ -28,6 +28,7 @@ import nl.tno.fpai.demo.scenario.data.Scenario;
 import nl.tno.fpai.demo.scenario.data.ScenarioConfiguration;
 import nl.tno.fpai.demo.scenario.data.ScenarioConfiguration.Type;
 
+import org.flexiblepower.messaging.ConnectionManager;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
@@ -74,6 +75,13 @@ public class ScenarioManagerImpl implements ScenarioManager {
     @Reference
     public void setMetatype(MetaTypeService metatype) {
         this.metatype = metatype;
+    }
+
+    public ConnectionManager connectionManager;
+
+    @Reference
+    public void setConnectionManager(ConnectionManager connectionManager) {
+        this.connectionManager = connectionManager;
     }
 
     private final Set<Configuration> configurations = Collections.synchronizedSet(new HashSet<Configuration>());
@@ -131,6 +139,7 @@ public class ScenarioManagerImpl implements ScenarioManager {
         if (scenario != null) {
             purgeAll();
             startScenario(scenario);
+            connectionManager.autoConnect();
             setStatus("Loaded scenario [" + name + "]");
         }
     }
