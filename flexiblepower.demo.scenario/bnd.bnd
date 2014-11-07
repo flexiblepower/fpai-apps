@@ -3,5 +3,7 @@ Service-Component: *
 Export-Package: nl.tno.fpai.demo.scenario
 Private-Package: nl.tno.fpai.demo.scenario.*
 
--buildpath: ${default-buildpath},\
-	org.apache.felix.metatype
+-buildpath:  \
+	${default-buildpath},\
+	org.apache.felix.metatype,\
+	org.apache.felix.http.servlet-api
