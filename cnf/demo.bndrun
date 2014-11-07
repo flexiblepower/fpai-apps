@@ -21,7 +21,8 @@
 	osgi.identity;filter:='(osgi.identity=org.slf4j.osgi-over-slf4j)',\
 	osgi.identity;filter:='(osgi.identity=net.powermatcher.core.agent.auctioneer)',\
 	osgi.identity;filter:='(osgi.identity=net.powermatcher.fpai.controller)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.demo.scenario)'
+	osgi.identity;filter:='(osgi.identity=flexiblepower.demo.scenario)',\
+	osgi.identity;filter:='(osgi.identity=net.powermatcher.fpai.auctioneer)'
 -runbundles:  \
 	biz.aQute.bnd.annotation;version='[2.4.0,2.4.1)',\
 	ch.qos.logback.classic;version='[1.1.2,1.1.3)',\
@@ -53,8 +54,8 @@
 	net.powermatcher.core.messaging.mqttv3;version='[0.9.0,0.9.1)',\
 	net.powermatcher.core.messaging.protocol.adapter;version='[0.9.0,0.9.1)',\
 	net.powermatcher.core.scheduler.service;version='[0.9.0,0.9.1)',\
+	net.powermatcher.fpai.auctioneer;version='[1.0.1,1.0.2)',\
 	net.powermatcher.fpai.controller;version='[1.0.1,1.0.2)',\
-	org.apache.commons.io;version='[2.4.0,2.4.1)',\
 	org.apache.felix.configadmin;version='[1.8.0,1.8.1)',\
 	org.apache.felix.eventadmin;version='[1.3.2,1.3.3)',\
 	org.apache.felix.http.api;version='[2.3.0,2.3.1)',\
