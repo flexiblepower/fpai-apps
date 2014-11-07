@@ -2,8 +2,8 @@ package nl.tno.fpai.demo.scenario.impl;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -45,7 +45,7 @@ public class ScenarioReader extends DefaultHandler {
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         if (result == null) {
             expect("scenarios", qName);
-            result = new HashMap<String, Scenario>();
+            result = new TreeMap<String, Scenario>();
         } else if (currentScenario == null) {
             expect("scenario", qName);
             currentScenario = new Scenario.Builder();
