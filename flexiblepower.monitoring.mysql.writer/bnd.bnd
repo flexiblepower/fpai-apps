@@ -1,0 +1,10 @@
+Bundle-Version: 1.0.0.${qualifier}
+Private-Package: org.flexiblepower.monitoring.mysql.*
+Service-Component: org.flexiblepower.monitoring.mysql.*
+
+-buildpath: flexiblepower.api,\
+	biz.aQute.bnd.annotation,\
+	osgi.cmpn;version='[4.3,5.0)',\
+	flexiblepower.api.ext,\
+	slf4j.api
+	
