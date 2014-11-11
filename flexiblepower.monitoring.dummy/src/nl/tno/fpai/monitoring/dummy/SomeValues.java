@@ -1,4 +1,4 @@
-package nl.tno.fpai.monitoring.test;
+package nl.tno.fpai.monitoring.dummy;
 
 import javax.measure.Measurable;
 import javax.measure.quantity.Power;

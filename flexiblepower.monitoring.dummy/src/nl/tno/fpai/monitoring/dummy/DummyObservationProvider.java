@@ -1,4 +1,4 @@
-package nl.tno.fpai.monitoring.test;
+package nl.tno.fpai.monitoring.dummy;
 
 import java.util.Date;
 
@@ -20,7 +20,7 @@ import aQute.bnd.annotation.component.Deactivate;
  */
 @Component(immediate = true, designateFactory = DummyObservationProvider.Config.class)
 public class DummyObservationProvider extends AbstractObservationProvider<SomeValues> {
-    private interface Config {
+    public interface Config {
     }
 
     private final String by = "some-observer-" + ((int) (Math.random() * 10000));

@@ -1,4 +1,4 @@
-Private-Package: nl.tno.fpai.monitoring.test
+Private-Package: nl.tno.fpai.monitoring.dummy
 Service-Component: *
 -buildpath: biz.aQute.bnd.annotation,\
 	osgi.cmpn,\
