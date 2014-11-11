@@ -6,10 +6,10 @@
     </appender>
     
 	<appender name="stash" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
-		<remoteHost>fpaimonitoring.sensorlab.tno.nl</remoteHost>
+		<remoteHost>localhost</remoteHost>
 		<port>4560</port>
 		<encoder class="net.logstash.logback.encoder.LogstashEncoder">
-			<customFields>{"project":"ESC"}</customFields>
+			<customFields>{"project":"test-project"}</customFields>
 		</encoder>
 	</appender>
     
