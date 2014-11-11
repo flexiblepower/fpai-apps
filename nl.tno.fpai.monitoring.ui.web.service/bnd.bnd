@@ -2,10 +2,10 @@ Service-Component: *
 
 Private-Package: nl.tno.fpai.monitoring.ui.web.service
 
--buildpath: \
-	osgi.core;version="[4.3,5.0)",\
-	osgi.cmpn;version="[4.3,5.0)",\
+-buildpath:  \
+	osgi.core;version='[4.3,5.0)',\
+	osgi.cmpn;version='[4.3,5.0)',\
 	com.google.gson,\
-	org.apache.felix.http.jetty,\
 	biz.aQute.bnd.annotation,\
-	com.mysql.jdbc
+	com.mysql.jdbc,\
+	org.apache.felix.http.servlet-api
