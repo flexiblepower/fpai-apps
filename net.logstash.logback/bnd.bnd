@@ -1,0 +1,11 @@
+Bundle-Version: 3.5.0.${qualifier}
+Private-Package: net.logstash.logback*
+Fragment-Host: ch.qos.logback.classic
+
+-buildpath:  \
+	ch.qos.logback.classic,\
+	ch.qos.logback.core,\
+	com.google.gson,\
+	junit.osgi,\
+	org.apache.commons.io,\
+	org.mockito.mockito-all
