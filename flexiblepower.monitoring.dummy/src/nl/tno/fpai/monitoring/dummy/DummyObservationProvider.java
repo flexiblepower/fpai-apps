@@ -1,6 +1,7 @@
 package nl.tno.fpai.monitoring.dummy;
 
 import java.util.Date;
+import java.util.Map;
 
 import javax.measure.Measurable;
 import javax.measure.Measure;
@@ -10,10 +11,12 @@ import javax.measure.unit.SI;
 import org.flexiblepower.observation.Observation;
 import org.flexiblepower.observation.ext.AbstractObservationProvider;
 import org.flexiblepower.observation.ext.ObservationProviderRegistrationHelper;
+import org.osgi.framework.ServiceRegistration;
 
 import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Deactivate;
+import aQute.bnd.annotation.metatype.Configurable;
 
 /**
  * Observation Provider with some dummy values ...
@@ -21,18 +24,22 @@ import aQute.bnd.annotation.component.Deactivate;
 @Component(immediate = true, designateFactory = DummyObservationProvider.Config.class)
 public class DummyObservationProvider extends AbstractObservationProvider<SomeValues> {
     public interface Config {
+        String identifier();
     }
 
-    private final String by = "some-observer-" + ((int) (Math.random() * 10000));
-    private final String of = "something-" + ((int) (Math.random() * 10000));
     private Thread thread;
+    private ServiceRegistration<?> serviceRegistration;
 
     @Activate
-    public void activate() {
-        new ObservationProviderRegistrationHelper(this).observationOf(of)
-                                                       .observedBy(by)
-                                                       .observationType(SomeValues.class)
-                                                       .register();
+    public void activate(Map<String, Object> properties) {
+        Config config = Configurable.createConfigurable(Config.class, properties);
+        int randomId = (int) (Math.random() * 10000);
+        String by = "observer-" + config.identifier() + "-" + randomId;
+        String of = "somthing-" + randomId;
+        serviceRegistration = new ObservationProviderRegistrationHelper(this).observationOf(of)
+                                                                             .observedBy(by)
+                                                                             .observationType(SomeValues.class)
+                                                                             .register();
 
         thread = new Thread("thread-for-observation-provider-" + by) {
             @Override
@@ -70,6 +77,8 @@ public class DummyObservationProvider extends AbstractObservationProvider<SomeVa
 
     @Deactivate
     public void deactivate() {
+        serviceRegistration.unregister();
+
         try {
             thread.interrupt();
             thread.join();
