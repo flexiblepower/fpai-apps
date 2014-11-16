@@ -58,6 +58,7 @@ public class ObservationWriter implements ObservationConsumer {
             put("long", "BIGINT");
             put("float", "FLOAT");
             put("double", "DOUBLE");
+            put("string", "TEXT");
             put(Boolean.class.getName(), "BIT");
             put(Integer.class.getName(), "INTEGER");
             put(Long.class.getName(), "BIGINT");
