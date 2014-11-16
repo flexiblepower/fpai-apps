@@ -43,8 +43,6 @@ abstract class LogstashAbstractFormatter<EventType extends DeferredProcessingAwa
      */
     public static final String IGNORE_FIELD_INDICATOR = "[ignore]";
 
-    protected static final DateFormatter ISO_DATETIME_TIME_ZONE_FORMAT_WITH_MILLIS = new DateFormatter();
-
     /**
      * The jsonFactory provided by {@link #jsonFactoryProvider}. This will only non-null when the formatter is started.
      */

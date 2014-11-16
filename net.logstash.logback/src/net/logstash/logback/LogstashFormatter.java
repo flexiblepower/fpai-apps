@@ -136,7 +136,7 @@ public class LogstashFormatter extends LogstashAbstractFormatter<ILoggingEvent, 
     private void writeLogstashFields(JsonGenerator generator, ILoggingEvent event) throws IOException {
         writeStringField(generator,
                          fieldNames.getTimestamp(),
-                         ISO_DATETIME_TIME_ZONE_FORMAT_WITH_MILLIS.format(event.getTimeStamp()));
+                         DateFormatter.format(event.getTimeStamp()));
         writeNumberField(generator, fieldNames.getVersion(), 1);
         writeStringField(generator, fieldNames.getMessage(), event.getFormattedMessage());
     }
