@@ -10,47 +10,48 @@ import org.osgi.service.http.HttpContext;
 import org.osgi.service.http.HttpService;
 import org.osgi.service.http.NamespaceException;
 
+/** Activator for the monitoring web UI. It ensures that the /web folder is registured under the /ui path. */
 public class Activator implements BundleActivator {
-	private HttpService http;
+    private HttpService http;
 
-	@Override
-	public void start(final BundleContext context) throws Exception {
-		ServiceReference<HttpService> httpRef = context
-				.getServiceReference(HttpService.class);
-		if (httpRef != null) {
-			http = context.getService(httpRef);
-			registerResources(http);
-		}
+    @Override
+    public void start(final BundleContext context) throws Exception {
+        ServiceReference<HttpService> httpRef = context
+                                                       .getServiceReference(HttpService.class);
+        if (httpRef != null) {
+            http = context.getService(httpRef);
+            registerResources(http);
+        }
 
-		ServiceListener listener = new ServiceListener() {
-			@Override
-			public void serviceChanged(ServiceEvent event) {
-				switch (event.getType()) {
-				case ServiceEvent.REGISTERED:
-					ServiceReference<?> httpRef = event.getServiceReference();
-					http = (HttpService) context.getService(httpRef);
-					registerResources(http);
-					break;
-				}
-			}
-		};
-		
-		context.addServiceListener(listener, String.format("(%s=%s)",
-				Constants.OBJECTCLASS, HttpService.class.getName()));
-	}
+        ServiceListener listener = new ServiceListener() {
+            @Override
+            public void serviceChanged(ServiceEvent event) {
+                switch (event.getType()) {
+                case ServiceEvent.REGISTERED:
+                    ServiceReference<?> httpRef = event.getServiceReference();
+                    http = (HttpService) context.getService(httpRef);
+                    registerResources(http);
+                    break;
+                }
+            }
+        };
 
-	@Override
-	public void stop(BundleContext context) throws Exception {
-		http.unregister("/ui");
-	}
+        context.addServiceListener(listener, String.format("(%s=%s)",
+                                                           Constants.OBJECTCLASS, HttpService.class.getName()));
+    }
 
-	private void registerResources(HttpService http) {
-		HttpContext httpContext = http.createDefaultHttpContext();
+    @Override
+    public void stop(BundleContext context) throws Exception {
+        http.unregister("/ui");
+    }
 
-		try {
-			http.registerResources("/ui", "/web", httpContext);
-		} catch (NamespaceException e) {
-			e.printStackTrace();
-		}
-	}
+    private void registerResources(HttpService http) {
+        HttpContext httpContext = http.createDefaultHttpContext();
+
+        try {
+            http.registerResources("/ui", "/web", httpContext);
+        } catch (NamespaceException e) {
+            e.printStackTrace();
+        }
+    }
 }

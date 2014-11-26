@@ -9,4 +9,5 @@ Private-Package: nl.tno.fpai.monitoring.ui.web.*
 	com.google.gson,\
 	biz.aQute.bnd.annotation,\
 	com.mysql.jdbc,\
-	org.apache.felix.http.servlet-api
+	org.apache.felix.http.servlet-api,\
+	slf4j.api

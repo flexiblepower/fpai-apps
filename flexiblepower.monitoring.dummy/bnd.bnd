@@ -1,8 +1,10 @@
 Bundle-Version: 1.0.0.${qualifier}
 Private-Package: nl.tno.fpai.monitoring.dummy
 Service-Component: *
--buildpath: biz.aQute.bnd.annotation,\
+-buildpath:  \
+	biz.aQute.bnd.annotation,\
 	osgi.cmpn,\
 	osgi.core,\
 	flexiblepower.api,\
-	flexiblepower.api.ext
+	flexiblepower.api.ext,\
+	slf4j.api

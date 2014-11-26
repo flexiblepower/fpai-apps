@@ -3,24 +3,27 @@ package org.flexiblepower.monitoring.mysql.writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import javax.measure.Measurable;
 import javax.measure.Measure;
+import javax.measure.quantity.Dimensionless;
+import javax.measure.unit.Unit;
 import javax.sql.DataSource;
 
 import org.flexiblepower.observation.Observation;
@@ -42,23 +45,16 @@ public class ObservationWriter implements ObservationConsumer {
     /** The prefix of fact tables used in the database. */
     private static final String FACT_PREFIX = "fact_";
 
-    /**
-     * The prefix of keys in the observation provider's properties which indicate fields as part of the observations
-     * (meta data).
-     */
-    private static final String FIELD_PREFIX = ObservationProviderRegistrationHelper.KEY_OBSERVATION_TYPE + ".";
-
     /** A map of of java classes to the SQL types to use. */
     @SuppressWarnings("serial")
     private static final Map<String, String> SQL_TYPE_MAP = Collections.unmodifiableMap(new HashMap<String, String>() {
         {
             // numbers
             put("boolean", "BIT");
-            put("int", "INTEGER");
+            put("integer", "INTEGER");
             put("long", "BIGINT");
             put("float", "FLOAT");
             put("double", "DOUBLE");
-            put("string", "TEXT");
             put(Boolean.class.getName(), "BIT");
             put(Integer.class.getName(), "INTEGER");
             put(Long.class.getName(), "BIGINT");
@@ -67,9 +63,12 @@ public class ObservationWriter implements ObservationConsumer {
             put(BigInteger.class.getName(), "BIGINT");
             put(BigDecimal.class.getName(), "DOUBLE"); // DECIMAL?
             put(Measurable.class.getName(), "DOUBLE"); // DECIMAL?
+
             // strings of bytes and chars
             put(byte[].class.getName(), "BLOB");
             put(String.class.getName(), "TEXT");
+            put("string", "TEXT");
+
             // time and date
             put(java.util.Date.class.getName(), "TIMESTAMP");
             put(java.sql.Timestamp.class.getName(), "TIMESTAMP");
@@ -77,6 +76,12 @@ public class ObservationWriter implements ObservationConsumer {
             put(java.sql.Date.class.getName(), "DATE");
         }
     });
+
+    /** The default SQL type to use */
+    private static final String DEFAULT_SQL_TYPE = "TEXT";
+
+    /** The index of the column with table names from {@link DatabaseMetaData#getTables}. */
+    private static final int TABLE_NAME_COLUMN_IDX = 3;
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -108,13 +113,19 @@ public class ObservationWriter implements ObservationConsumer {
 
     /**
      * Set the data source to use for writing observations.
+     *
+     * @param dataSource
+     *            The data source to use.
      */
     public void setDataSource(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
     /**
-     * Set the executor to perform the inserts on
+     * Set the executor to perform the inserts on.
+     *
+     * @param executor
+     *            The executor to use.
      */
     public void setExecutor(Executor executor) {
         this.executor = executor;
@@ -125,6 +136,9 @@ public class ObservationWriter implements ObservationConsumer {
      * provider).
      *
      * @param properties
+     *            The configuration of the provider to attach to.
+     * @param provider
+     *            The provider to attach to.
      */
     public void setProvider(Map<String, Object> properties, ObservationProvider provider) {
         this.provider = provider;
@@ -156,7 +170,7 @@ public class ObservationWriter implements ObservationConsumer {
             // subscribe to observations from the observation provider
             provider.subscribe(this);
         } catch (Throwable t) {
-            logger.error("Couldn't activate an observation provider", t);
+            logger.error("Couldn't activate an observation writer", t);
             // deactivate on failure
             deactivate();
         }
@@ -181,7 +195,7 @@ public class ObservationWriter implements ObservationConsumer {
      * Checks if the fact table for storing the observations exists, and if not, creates the fact table.
      */
     private void ensureTableExists(Connection con) throws SQLException {
-        if (doesFactTableExist(con, getFactTableName()) == false) {
+        if (!doesFactTableExist(con, getFactTableName())) {
             createFactTable(con);
         }
 
@@ -200,7 +214,7 @@ public class ObservationWriter implements ObservationConsumer {
         // loop over the tables listed
         while (tables.next()) {
             // return true of found (column three contains the table names)
-            if (tables.getString(3).equals(factTableName)) {
+            if (tables.getString(TABLE_NAME_COLUMN_IDX).equals(factTableName)) {
                 return true;
             }
         }
@@ -222,26 +236,21 @@ public class ObservationWriter implements ObservationConsumer {
 
         // with the default fields
         create.append("  `observerId` bigint(20) NOT NULL,\n");
-        create.append("  `timestamp` timestamp(3) NOT NULL DEFAULT 0,\n");
+        create.append("  `observedAt` timestamp(3) NOT NULL DEFAULT 0,\n");
         create.append("  `dateId` date NOT NULL,\n");
         create.append("  `timeId` time NOT NULL,\n");
 
         // and the fields specific to the observation provider
-        for (Map.Entry<String, Object> entry : getObservationTypeFields()) {
+        for (String fieldName : getFieldNames()) {
             create.append("  `");
-            create.append(entry.getKey());
+            create.append(getSQLColumnName(fieldName));
             create.append("` ");
-            create.append(getSQLType((String) entry.getValue()));
+            create.append(getSQLType((String) providerProperties.get(ObservationProviderFieldsFilter.FIELD_PREFIX + fieldName)));
             create.append(",\n");
         }
 
         // set the primary key
-        create.append("  PRIMARY KEY (`observerId`,`timestamp`),\n");
-
-        // index the observer id
-        create.append("  KEY `");
-        create.append(getFactTableName());
-        create.append(".observer_idx` (`observerId`),\n");
+        create.append("  PRIMARY KEY (`observerId`, `observedAt`),\n");
 
         // index the date id
         create.append("  KEY `");
@@ -281,105 +290,20 @@ public class ObservationWriter implements ObservationConsumer {
     }
 
     /**
-     * Provides an iterator over the fields in the meta-data of the observation provider which start with
-     * {@value #FIELD_PREFIX}.
+     * Provides an iterator over the fields in the meta-data of the observation provider which indicate a field.
      */
     private Iterable<Entry<String, Object>> getObservationTypeFields() {
-        // wrap all this in an Iterable
-        return new Iterable<Entry<String, Object>>() {
-            @Override
-            public Iterator<Entry<String, Object>> iterator() {
-                // create an Iterator over all properties
-                // (which are to be filtered)
-                final Iterator<Entry<String, Object>> entries = providerProperties.entrySet()
-                                                                                  .iterator();
-
-                // create an Iterator which works on the Iterator above and filters
-                return new Iterator<Map.Entry<String, Object>>() {
-                    Entry<String, Object> next = null;
-
-                    @Override
-                    public boolean hasNext() {
-                        if (next != null) {
-                            // if we already determined that there is a next field
-                            return true;
-                        } else {
-                            // otherwise try and determine this and memorize the result
-                            next = next1();
-                            return next != null;
-                        }
-                    }
-
-                    @Override
-                    public Entry<String, Object> next() {
-                        try {
-                            if (next == null) {
-                                // try to get the next field
-                                next = next1();
-                            }
-
-                            if (next == null) {
-                                // if no next field, we're at the end
-                                throw new NoSuchElementException();
-                            } else {
-                                // return an entry with FIELD_PREFIX stripped
-                                return new Entry<String, Object>() {
-                                    String key = next.getKey().substring(FIELD_PREFIX.length());
-                                    Object value = next.getValue();
-
-                                    @Override
-                                    public Object getValue() {
-                                        return value;
-                                    }
-
-                                    @Override
-                                    public String getKey() {
-                                        return key;
-                                    }
-
-                                    @Override
-                                    public Object setValue(Object value) {
-                                        throw new UnsupportedOperationException();
-                                    }
-                                };
-                            }
-                        } finally {
-                            // if we return, always loose the precomputed result
-                            next = null;
-                        }
-                    }
-
-                    private Entry<String, Object> next1() {
-                        // loop over then entries Iterator until we find
-                        // an entry of which the key starts with FIELD_PREFIX
-                        while (entries.hasNext()) {
-                            Entry<String, Object> e = entries.next();
-                            if (e.getKey().startsWith(FIELD_PREFIX)) {
-                                return e;
-                            }
-                        }
-
-                        // return null if we're at the end
-                        return null;
-                    }
-
-                    @Override
-                    public void remove() {
-                        throw new UnsupportedOperationException();
-                    }
-                };
-            }
-        };
+        return new ObservationProviderFieldsFilter(providerProperties);
     }
 
     /**
-     * Computes the SQL data type for a class name using {@link #SQL_TYPE_MAP}.
+     * Computes the SQL data type for a class name using {@link #SQL_TYPE_MAP} or {@link #DEFAULT_SQL_TYPE} if no
+     * specific type is available.
      */
     private String getSQLType(String className) {
         String sqlType = SQL_TYPE_MAP.get(className);
         if (sqlType == null) {
-            // TODO implemented back-up strategy
-            throw new IllegalArgumentException("Type not supported: " + className);
+            return DEFAULT_SQL_TYPE;
         }
 
         return sqlType;
@@ -395,9 +319,10 @@ public class ObservationWriter implements ObservationConsumer {
                                                         Statement.RETURN_GENERATED_KEYS);
 
         try {
-            insert.setString(1, getObservedBy());
-            insert.setString(2, getObservationOf());
-            insert.setString(3, getObservationType());
+            int idx = 1;
+            insert.setString(idx++, getObservedBy());
+            insert.setString(idx++, getObservationOf());
+            insert.setString(idx++, Arrays.toString(getObservationTypes()));
 
             int updateCount = insert.executeUpdate();
             assert updateCount == 1;
@@ -429,14 +354,15 @@ public class ObservationWriter implements ObservationConsumer {
             select.setString(2, getObservationOf());
 
             ResultSet observerIds = select.executeQuery();
-            if (observerIds.next() == false) {
+            if (!observerIds.next()) {
                 // return null if there isn't an observer registered
                 // with the given 'observed by' and 'observation of'
                 return null;
             }
 
             // return the observer id
-            return observerId = observerIds.getLong(1);
+            observerId = observerIds.getLong(1);
+            return observerId;
         } finally {
             select.close();
         }
@@ -450,9 +376,16 @@ public class ObservationWriter implements ObservationConsumer {
         return (String) providerProperties.get(ObservationProviderRegistrationHelper.KEY_OBSERVED_BY);
     }
 
-    private String getObservationType() {
-        String[] type = (String[]) providerProperties.get(ObservationProviderRegistrationHelper.KEY_OBSERVATION_TYPE);
-        return type[0];
+    private String[] getObservationTypes() {
+        Object type = providerProperties.get("org.flexiblepower.monitoring.type");
+
+        if (type instanceof String[]) {
+            return (String[]) type;
+        } else if (type instanceof String) {
+            return new String[] { (String) type };
+        } else {
+            throw new IllegalArgumentException("The observation type: " + type + " is not supported.");
+        }
     }
 
     /**
@@ -465,17 +398,37 @@ public class ObservationWriter implements ObservationConsumer {
             return factTableName;
         }
 
-        String name = getObservationType();
-        name = name.replaceAll("(\\w)\\w*[\\.$]", "$1.");
-        name = name.toLowerCase();
-        return FACT_PREFIX + name;
+        StringBuilder name = new StringBuilder(FACT_PREFIX);
+
+        String[] types = getObservationTypes();
+        for (int i = 0; i < types.length; i++) {
+            String type = types[i];
+
+            int lastDotIdx = Math.max(type.lastIndexOf('.'), type.lastIndexOf('$'));
+
+            // prefix with fact_, concatenate first letters of all packages, add _ and class name (in lower case)
+            // name.append(type.substring(0, lastDotIdx + 1).replaceAll("(\\w)\\w*[\\.\\$$]", "$1").toLowerCase());
+            // name.append("_");
+            name.append(type.substring(lastDotIdx + 1).toLowerCase());
+
+            if (i < types.length - 1) {
+                name.append("_");
+            }
+        }
+
+        return name.toString();
     }
 
-    /**
+    /** @return The field name transformed into a SQL compatible column name. */
+    private String getSQLColumnName(String fieldName) {
+        return fieldName.replace('.', '_');
+    }
+
+    /*
      * Consumes an observation and writes it to the database.
-     *
+     * 
      * @see org.flexiblepower.observation.ObservationConsumer#consume(org.flexiblepower
-     *      .observation.ObservationProvider, org.flexiblepower.observation.Observation)
+     * .observation.ObservationProvider, org.flexiblepower.observation.Observation)
      */
     @Override
     public void consume(ObservationProvider source, Observation observation) {
@@ -516,8 +469,6 @@ public class ObservationWriter implements ObservationConsumer {
             Connection con = dataSource.getConnection();
 
             try {
-                // TODO write in small batches?
-                // TODO re-use the prepared statement?
                 String sql = getInsertQuery();
                 PreparedStatement insert = con.prepareStatement(sql);
 
@@ -531,22 +482,17 @@ public class ObservationWriter implements ObservationConsumer {
                         insert.setLong(idx++, lookupObserverId(con));
 
                         // set the time stamp, date and time fields
-                        long observedAt = observation.getObservedAt().getTime();
-                        insert.setTimestamp(idx++, new java.sql.Timestamp(observedAt));
-                        insert.setDate(idx++, new java.sql.Date(observedAt));
-                        insert.setTime(idx++, new java.sql.Time(observedAt / 1000 / 60 * 1000 * 60));
+                        long observedAtMillis = observation.getObservedAt().getTime();
+                        long observedAtMinutes = TimeUnit.MINUTES.toMillis(TimeUnit.MILLISECONDS.toMinutes(observedAtMillis));
+                        insert.setTimestamp(idx++, new java.sql.Timestamp(observedAtMillis));
+                        insert.setDate(idx++, new java.sql.Date(observedAtMillis));
+                        insert.setTime(idx++, new java.sql.Time(observedAtMinutes));
 
                         // for each field in the observer meta-data add the value
                         // from the observation or null if it didn't exist
                         Map<String, Object> values = observation.getValueMap();
                         for (String fieldName : getFieldNames()) {
-                            Object value = values.get(fieldName);
-                            if (value instanceof Measure) {
-                                Measure measure = (Measure) value;
-                                insert.setObject(idx++, measure.doubleValue(measure.getUnit()));
-                            } else {
-                                insert.setObject(idx++, value);
-                            }
+                            insertValue(insert, idx++, values.get(fieldName));
                         }
 
                         // add to batch
@@ -567,6 +513,39 @@ public class ObservationWriter implements ObservationConsumer {
         }
     }
 
+    private void insertValue(PreparedStatement insert, int idx, Object value) throws SQLException {
+        if (value != null) {
+            // process measures into doubles
+            if (value instanceof Measure) {
+                Measure measure = (Measure) value;
+                Unit unit = measure.getUnit();
+                // TODO consider: unit = unit.getStandardUnit();
+                value = measure.doubleValue(unit);
+            } else if (value instanceof Measurable && ((Measurable) value).doubleValue(Dimensionless.UNIT) == 0.0) {
+                value = 0.0d;
+            }
+
+            // process NaN's into null
+            if (value instanceof Float && ((Float) value).isNaN()) {
+                value = null;
+            } else if (value instanceof Double && ((Double) value).isNaN()) {
+                value = null;
+            }
+        }
+
+        // let JDBC convert if supported type
+        // if not supported, insert as string
+        if (value == null) {
+            insert.setObject(idx, null);
+        } else if (SQL_TYPE_MAP.containsKey(value.getClass().getName())) {
+            insert.setObject(idx, value);
+        } else if (value.getClass().isArray()) {
+            insert.setString(idx, Arrays.toString((Object[]) value));
+        } else {
+            insert.setString(idx, String.valueOf(value));
+        }
+    }
+
     /**
      * @return The names of the fields as per the meta-data of the observation provider ({@link #providerProperties}).
      */
@@ -578,14 +557,23 @@ public class ObservationWriter implements ObservationConsumer {
         }
 
         // keep all fields in a list (the order is important ...)
-        List<String> fieldNames = new ArrayList<String>();
+        List<String> names = new ArrayList<String>();
         for (Entry<String, Object> field : getObservationTypeFields()) {
-            fieldNames.add(field.getKey());
+            String fieldName = field.getKey();
+
+            if ("observerId".equals(fieldName) || "observedAt".equals(fieldName)
+                || "dateId".equals(fieldName)
+                || "timeId".equals(fieldName)) {
+                logger.warn("Ignoring field with name {}, it's a reserved name", fieldName);
+            } else {
+                names.add(fieldName);
+            }
         }
 
-        Collections.sort(fieldNames);
+        Collections.sort(names);
 
-        return this.fieldNames = fieldNames;
+        fieldNames = names;
+        return fieldNames;
     }
 
     /**
@@ -604,14 +592,14 @@ public class ObservationWriter implements ObservationConsumer {
 
         // add default fields
         insert.append("`observerId`,");
-        insert.append("`timestamp`,");
+        insert.append("`observedAt`,");
         insert.append("`dateId`,");
         insert.append("`timeId`,");
 
         // add all field names
-        for (String field : getFieldNames()) {
+        for (String fieldName : getFieldNames()) {
             insert.append(" `");
-            insert.append(field);
+            insert.append(getSQLColumnName(fieldName));
             insert.append("`,");
         }
 
@@ -638,6 +626,7 @@ public class ObservationWriter implements ObservationConsumer {
         // and close the query
         insert.append(")");
 
-        return insertQuery = insert.toString();
+        insertQuery = insert.toString();
+        return insertQuery;
     }
 }

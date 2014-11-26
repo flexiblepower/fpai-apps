@@ -1,12 +1,18 @@
 package nl.tno.fpai.monitoring.dummy;
 
-import javax.measure.Measurable;
-import javax.measure.quantity.Power;
 
+/** Specification of some dummy values. */
 public interface SomeValues {
+    /** @return Some other values. */
+    SomeOtherValues getSomeOtherValues();
+
+    /** @return Some dummy value. */
     double getValue1();
 
-    String getValue2();
+    /** @return Some dummy value. */
+    long getTimestamp();
 
-    Measurable<Power> getValue3();
+    /** @return Some dummy value. */
+    String getObserverId();
+
 }
