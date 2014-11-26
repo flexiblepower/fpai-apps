@@ -1,0 +1,195 @@
+<queries>
+
+<!--
+<query name="average of value1 per minute (ntfmt_somevalues)">
+select
+	date_format(observedAt, "%Y-%m-%d %H:%i:00.0"),
+	avg(value1)
+from
+	fact_ntfmt_somevalues
+	join dim_time on timeId = time
+	join dim_date on dateId = date
+group by
+	DATE_FORMAT(observedAt , "%Y-%m-%d %H:%i:00")
+</query>
+ -->
+	
+	
+<query name="generation last 5 minutes of one resource (fact_ofr_resourcestate)">
+select
+	observedAt,
+	-1*demand as generation
+from
+	fact_ofr_resourcestate as f
+where
+	observerId = (select id from dim_observer where type = "org.flexiblepower.ral.ResourceState" limit 1)
+	and observedAt > now() - interval 5 minute
+order by
+	observedAt
+</query>
+	
+	
+	
+<query name="state of charge of one resource for last 5 minutes (fact_ofrdb_batterystate)">
+select
+	observedAt,
+	state_of_charge
+from
+	fact_ofrdb_batterystate as f
+where
+	observerId = (select id from dim_observer where type = "org.flexiblepower.ral.drivers.battery.BatteryState" limit 1)
+	and observedAt > now() - interval 5 minute
+order by
+	observedAt
+</query>
+
+
+
+<query name="average demand per second (fact_ofr_resourcestate)">
+select
+	date_format(observedAt, "%Y-%m-%d %H:%i:%s.0") as t,
+	-1*avg(demand) as v
+from
+	fact_ofr_resourcestate as f
+	join dim_time on timeId = dim_time.time
+	join dim_date on dateId = dim_date.date
+where
+	observedAt > now() - interval 5 minute
+group by
+	DATE_FORMAT(observedAt , "%Y-%m-%d %H:%i:%s")
+</query>
+	
+	
+	
+<query name="prices for 10 minutes (fact_npfaa_price)">
+select
+	observedAt,
+	price
+from
+	fact_npfaa_price as f
+where
+	observedAt > now() - interval 10 minute
+</query>
+	
+	
+	
+<query name="average price per minute for last hour (fact_npfaa_price)">
+select
+	date_format(observedAt, "%Y-%m-%d %H:%i:00.0") as t,
+	avg(price)
+from
+	fact_npfaa_price as f
+	join dim_time on timeId = dim_time.time
+	join dim_date on dateId = dim_date.date
+where
+	observedAt > now() - interval 1 hour
+group by
+	DATE_FORMAT(observedAt , "%Y-%m-%d %H:%i:0")
+</query>
+	
+	
+	
+<query name="price histogram (fact_npfaa_price)">
+select
+	round(price, 2),
+	count(price)
+from
+	fact_npfaa_price as f
+where
+	observedAt > now() - interval 1 hour
+group by
+	round(price, 2)
+</query>
+	
+	
+	
+<query name="price histogram on average per minute (fact_npfaa_price)">
+select
+	round(price, 1),
+	count(price)
+from (
+	select
+		avg(price) as price
+	from
+		fact_npfaa_price as f
+		join dim_time on timeId = dim_time.time
+		join dim_date on dateId = dim_date.date
+	group by
+		date, hour, minute
+	) as f
+group by
+	round(price, 1)
+</query>
+
+
+
+	
+<query name="VIOS - microchp">
+select
+	observedAt,
+	actual_power_watt,
+	target_temp,
+	boiler_temperature,
+	dhw_temperature,
+	dhw_nominal_setpoint,
+	room_temp,
+	release_d_h_wcharging,
+	dhw_reduced_setpoint
+from
+	fact_ofr_resourcestate_ofirdi_inrgmicrochpstate as f
+where
+	observerId = (select id from dim_observer where observationOf = "microchp")
+</query>	
+
+
+
+<query name="query joining two observers">
+select
+	date_format(observedAt, "%Y-%m-%d %H:%i:%s.0") as observedAt,
+	avg(a) as asdf,
+	avg(b) as zxcv
+from (
+
+	select observedAt, demand*-1 as a, null as b
+	from fact_ofr_resourcestate_ofrdu_uncontrolledstate
+	where observerId = (select id from dim_observer where observationOf = "asdf")
+	and observedAt > now() - interval 5 minute
+
+union all
+
+	select observedAt, null as a, demand*-1 as b
+	from fact_ofr_resourcestate_ofrdu_uncontrolledstate
+	where observerId = (select id from dim_observer where observationOf = "zxcv")
+	and observedAt > now() - interval 5 minute
+
+) as vals
+group by date_format(observedAt, "%Y-%m-%d %H:%i:%s.0")
+order by date_format(observedAt, "%Y-%m-%d %H:%i:%s.0");
+</query>
+	
+	
+	
+	<!-- 
+select
+	day_of_week,
+	avg(temperature),
+	std(temperature)
+from
+	`fact_nl.tno.fpai.logging.example.heatpump`
+	join dim_date on dateId = dim_date.id
+where 
+	month = 1
+group by day_of_week;
+
+
+select
+	observedAt,
+	temperature
+from
+	`fact_nl.tno.fpai.logging.example.heatpump`
+	join dim_date on dateId = dim_date.id
+where 
+	day_of_year = 1;
+	-->
+	
+</queries>
