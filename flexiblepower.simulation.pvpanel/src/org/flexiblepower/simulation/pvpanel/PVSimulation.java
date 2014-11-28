@@ -32,7 +32,9 @@ import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceControlParameters>
-    implements UncontrollableDriver, Runnable {
+                                                                                               implements
+                                                                                               UncontrollableDriver,
+                                                                                               Runnable {
 
     public final static class PowerStateImpl implements PowerState {
         private final Measurable<Power> demand;
@@ -77,6 +79,8 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
         @Meta.AD(deflt = "1500", description = "Generated Power when sunny weather")
         int powerWhenSunny();
 
+        @Meta.AD(deflt = "pvpanel", description = "Resource identifier")
+        String resourceId();
     }
 
     private double demand = -0.01;
@@ -87,9 +91,9 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
 
     private PVWidget widget;
     private ScheduledFuture<?> scheduledFuture;
-    private ServiceRegistration<?> observationProviderRegistration;
     private ServiceRegistration<Widget> widgetRegistration;
     private Config config;
+    private PVObservationProvider pvObservationProvider;
 
     @Activate
     public void activate(BundleContext bundleContext, Map<String, Object> properties) {
@@ -99,6 +103,7 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
             cloudy = config.powerWhenCloudy();
             sunny = config.powerWhenSunny();
 
+            pvObservationProvider = new PVObservationProvider(bundleContext, config.resourceId(), timeService);
             scheduledFuture = schedulerService.scheduleAtFixedRate(this, 0, updateDelay, TimeUnit.SECONDS);
             widget = new PVWidget(this);
             widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
@@ -111,13 +116,13 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
 
     @Deactivate
     public void deactivate() {
+        if (pvObservationProvider != null) {
+            pvObservationProvider.close();
+            pvObservationProvider = null;
+        }
         if (widgetRegistration != null) {
             widgetRegistration.unregister();
             widgetRegistration = null;
-        }
-        if (observationProviderRegistration != null) {
-            observationProviderRegistration.unregister();
-            observationProviderRegistration = null;
         }
         if (scheduledFuture != null) {
             scheduledFuture.cancel(false);
