@@ -5,8 +5,11 @@ import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Dictionary;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletException;
@@ -14,6 +17,10 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.flexiblepower.messaging.ConnectionManager;
+import org.flexiblepower.messaging.ConnectionManager.EndpointPort;
+import org.flexiblepower.messaging.ConnectionManager.ManagedEndpoint;
+import org.flexiblepower.messaging.ConnectionManager.PotentialConnection;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.cm.Configuration;
@@ -32,13 +39,20 @@ public class CurrentConfigurationServlet extends HttpServlet {
     private static final Set<String> blacklist = new HashSet<String>(Arrays.asList("service.pid",
                                                                                    "service.factoryPid",
                                                                                    "component.id",
-            "component.name"));
+                                                                                   "component.name"));
 
     private ConfigurationAdmin configAdmin;
 
     @Reference
     public void setConfigAdmin(ConfigurationAdmin configAdmin) {
         this.configAdmin = configAdmin;
+    }
+
+    private ConnectionManager connectionManager;
+
+    @Reference
+    public void setConnectionManager(ConnectionManager connectionManager) {
+        this.connectionManager = connectionManager;
     }
 
     private BundleContext context;
@@ -55,6 +69,10 @@ public class CurrentConfigurationServlet extends HttpServlet {
             w.println("<html>");
             w.println("<head><style type=\"text/css\">p { font-family: \"Lucida Console\", monospace; font-size: 9pt; margin: 0.4em; }</style></head>");
             w.println("<body>");
+
+            AtomicInteger idGenerator = new AtomicInteger();
+            Map<String, String> refs = new HashMap<String, String>();
+
             Configuration[] configurations = configAdmin.listConfigurations(null);
             if (configurations != null) {
                 for (Configuration configuration : configurations) {
@@ -81,6 +99,15 @@ public class CurrentConfigurationServlet extends HttpServlet {
                         w.print(configuration.getPid());
                         w.print("\"");
                     }
+
+                    if (connectionManager.getEndpoint(configuration.getPid()) != null) {
+                        String ref = generateRef(configuration.getPid(), idGenerator);
+                        refs.put(configuration.getPid(), ref);
+                        w.print(" ref=\"");
+                        w.print(ref);
+                        w.print("\"");
+                    }
+
                     w.println("&gt;</p>");
 
                     Dictionary<String, Object> properties = configuration.getProperties();
@@ -101,11 +128,50 @@ public class CurrentConfigurationServlet extends HttpServlet {
 
                     w.println("<p>&lt;/config&gt;</p><br />");
                 }
+
+                Set<PotentialConnection> connections = new HashSet<ConnectionManager.PotentialConnection>();
+                for (ManagedEndpoint managedEndpoint : connectionManager.getEndpoints().values()) {
+                    for (EndpointPort port : managedEndpoint.getPorts().values()) {
+                        for (PotentialConnection connection : port.getPotentialConnections().values()) {
+                            if (connection.isConnected()) {
+                                connections.add(connection);
+                            }
+                        }
+                    }
+                }
+
+                for (PotentialConnection connection : connections) {
+                    w.print("<p>&lt;connection from=&quot;");
+                    EndpointPort from = connection.getEitherEnd();
+                    String fromRef = refs.get(from.getEndpoint().getPid());
+                    if (fromRef == null) {
+                        fromRef = from.getEndpoint().getPid();
+                    }
+                    w.print(fromRef + ":" + from.getName());
+                    w.print("&quot; to=&quot;");
+                    EndpointPort to = connection.getOtherEnd(from);
+                    String toRef = refs.get(to.getEndpoint().getPid());
+                    if (toRef == null) {
+                        toRef = to.getEndpoint().getPid();
+                    }
+                    w.print(toRef + ":" + to.getName());
+                    w.print("&quot; /&gt;</p>");
+                }
             }
             w.println("</body>");
             w.println("</html>");
         } catch (Exception ex) {
             logger.warn("Error while generating scenario XML: " + ex.getMessage(), ex);
         }
+    }
+
+    private String generateRef(String pid, AtomicInteger id) {
+        String[] parts = pid.split("\\.");
+        for (int ix = parts.length - 1; ix >= 0; ix--) {
+            if (parts[ix].matches("^[A-Za-z]+$")) {
+                return parts[ix].toLowerCase() + "-" + id.incrementAndGet();
+            }
+        }
+        return pid;
     }
 }

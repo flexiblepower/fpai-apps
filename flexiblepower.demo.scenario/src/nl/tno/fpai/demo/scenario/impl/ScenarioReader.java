@@ -9,6 +9,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import nl.tno.fpai.demo.scenario.data.Connection;
 import nl.tno.fpai.demo.scenario.data.IdSet;
 import nl.tno.fpai.demo.scenario.data.Scenario;
 import nl.tno.fpai.demo.scenario.data.ScenarioConfiguration;
@@ -60,11 +61,11 @@ public class ScenarioReader extends DefaultHandler {
                 int count = optional(attributes, "count", 1);
                 IdSet idSet = new IdSet(name, count);
                 currentScenario.addIdSet(idSet);
-            } else {
-                expect("config", qName);
+            } else if ("config".equals(qName)) {
                 String bundleId = expect(attributes, "bundleId");
                 String serviceId = attributes.getValue("serviceId");
                 String factoryId = attributes.getValue("factoryId");
+                String reference = attributes.getValue("ref");
                 if ((serviceId == null) == (factoryId == null)) {
                     throw error("We need either a serviceId or a factoryId for a config element");
                 }
@@ -78,8 +79,23 @@ public class ScenarioReader extends DefaultHandler {
                 } else if (factoryId != null) {
                     currentConfig.setFactoryId(factoryId);
                 }
+                if (reference != null) {
+                    currentConfig.setReference(reference);
+                }
                 currentConfig.setIdRef(idRef);
                 currentConfig.setType(type);
+            } else if ("connection".equals(qName)) {
+                String to = expect(attributes, "to");
+                String from = expect(attributes, "from");
+
+                String[] toParts = to.split(":");
+                String[] fromParts = from.split(":");
+                if (toParts.length != 2 || fromParts.length != 2) {
+                    throw error("Illegal format for a connection element");
+                }
+
+                Connection connection = new Connection(fromParts[0], toParts[0], fromParts[1], toParts[1]);
+                currentScenario.addConnection(connection);
             }
         } else if (configKey == null) {
             configKey = qName;
@@ -149,7 +165,7 @@ public class ScenarioReader extends DefaultHandler {
             expect("config", qName);
             currentScenario.addConfiguration(currentConfig.build());
             currentConfig = null;
-        } else if ("idSet".equals(qName)) {
+        } else if ("idSet".equals(qName) || "connection".equals(qName)) {
             // OK, nothing to reset
         } else if ("scenario".equals(qName)) {
             Scenario scenario = currentScenario.build();
