@@ -155,6 +155,7 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
             }
 
             publishState(getCurrentState());
+            pvObservationProvider.publish(getCurrentState());
         } catch (Exception e) {
             logger.error("Error while running PVSimulation", e);
         }
