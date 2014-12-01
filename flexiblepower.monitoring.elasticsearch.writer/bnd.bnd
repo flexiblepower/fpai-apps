@@ -1,0 +1,7 @@
+-buildpath: ${default-buildpath},\
+	org.apache.httpcomponents.httpclient,\
+	org.apache.httpcomponents.httpcore,\
+	com.google.gson
+Bundle-Version: 1.0.0.${qualifier}
+Private-Package:  org.flexiblepower.monitoring.elasticsearch
+Service-Component:  *
