@@ -1,4 +1,4 @@
-package nl.tno.fpai.monitoring.ui.web.service;
+package org.flexiblepower.monitoring.ui.web.service;
 
 import java.io.IOException;
 import java.io.PrintWriter;

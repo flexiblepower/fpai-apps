@@ -1,7 +1,7 @@
 Bundle-Version: 1.0.0.${qualifier}
 Service-Component: *
-Bundle-Activator: nl.tno.fpai.monitoring.ui.web.client.Activator
-Private-Package: nl.tno.fpai.monitoring.ui.web.*
+Bundle-Activator: org.flexiblepower.monitoring.ui.web.client.Activator
+Private-Package: org.flexiblepower.monitoring.ui.web.*
 
 -buildpath:  \
 	osgi.core;version='[4.3,5.0)',\

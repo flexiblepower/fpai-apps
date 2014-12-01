@@ -1,0 +1,7 @@
+Bundle-Version: 1.0.0.${qualifier}
+Service-Component: *
+Private-Package: org.flexiblepower.monitoring.mqtt
+-buildpath:  \
+	${default-buildpath},\
+	org.eclipse.paho.client.mqttv3,\
+	com.google.gson

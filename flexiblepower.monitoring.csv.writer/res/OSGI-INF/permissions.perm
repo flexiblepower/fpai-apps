@@ -1,0 +1,3 @@
+(org.osgi.framework.ServicePermission "org.flexiblepower.observation.ObservationConsumer" "GET")
+(org.osgi.framework.PackagePermission "org.flexiblepower.*" "import")
+(org.osgi.framework.PackagePermission "aQute.bnd.annotation.*" "import")

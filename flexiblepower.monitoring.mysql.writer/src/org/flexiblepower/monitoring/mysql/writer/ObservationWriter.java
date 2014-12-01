@@ -51,7 +51,7 @@ public class ObservationWriter implements ObservationConsumer {
         {
             // numbers
             put("boolean", "BIT");
-            put("integer", "INTEGER");
+            put("int", "INTEGER");
             put("long", "BIGINT");
             put("float", "FLOAT");
             put("double", "DOUBLE");
@@ -426,7 +426,7 @@ public class ObservationWriter implements ObservationConsumer {
 
     /*
      * Consumes an observation and writes it to the database.
-     * 
+     *
      * @see org.flexiblepower.observation.ObservationConsumer#consume(org.flexiblepower
      * .observation.ObservationProvider, org.flexiblepower.observation.Observation)
      */

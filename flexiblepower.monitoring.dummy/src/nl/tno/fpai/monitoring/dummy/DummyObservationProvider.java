@@ -1,6 +1,7 @@
 package nl.tno.fpai.monitoring.dummy;
 
 import java.util.Date;
+import java.util.Map;
 
 import javax.measure.Measurable;
 import javax.measure.Measure;
@@ -18,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Deactivate;
+import aQute.bnd.annotation.metatype.Configurable;
 
 /**
  * Observation Provider with some dummy values ...
@@ -28,28 +30,28 @@ public class DummyObservationProvider extends AbstractObservationProvider<SomeVa
 
     /** Configuration specification of the component. */
     public interface Config {
-        /** @return Some dummy value. */
-        String dummyValue();
+        String identifier();
     }
-
-    private final String by = "some-observer-" + ((int) (Math.random() * Integer.MAX_VALUE));
-    private final String of = "something-" + ((int) (Math.random() * Integer.MAX_VALUE));
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private Thread thread;
-    private ServiceRegistration<?> registration;
+    private ServiceRegistration<?> serviceRegistration;
 
     /**
      * Activates the component: registers an {@link ObservationProvider} and starts a thread which publishes every so
      * often.
      */
     @Activate
-    public void activate() {
-        registration = new ObservationProviderRegistrationHelper(this).observationOf(of)
-                                                                      .observedBy(by)
-                                                                      .observationType(SomeValues.class)
-                                                                      .register();
+    public void activate(Map<String, Object> properties) {
+        Config config = Configurable.createConfigurable(Config.class, properties);
+        int randomId = (int) (Math.random() * 10000);
+        String by = "observer-" + config.identifier() + "-" + randomId;
+        String of = "something-" + randomId;
+        serviceRegistration = new ObservationProviderRegistrationHelper(this).observationOf(of)
+                                                                             .observedBy(by)
+                                                                             .observationType(SomeValues.class)
+                                                                             .register();
 
         thread = new Thread("thread-for-observation-provider-" + by) {
             @Override
@@ -111,7 +113,7 @@ public class DummyObservationProvider extends AbstractObservationProvider<SomeVa
     @Deactivate
     public void deactivate() {
         try {
-            registration.unregister();
+            serviceRegistration.unregister();
         } catch (Exception e) {
             logger.warn("An exception occurred while unregistering the Observation Provider", e);
         }

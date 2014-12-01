@@ -1,4 +1,4 @@
-package nl.tno.fpai.monitoring.ui.web.client;
+package org.flexiblepower.monitoring.ui.web.client;
 
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
