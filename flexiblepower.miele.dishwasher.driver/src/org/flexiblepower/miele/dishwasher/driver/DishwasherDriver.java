@@ -46,6 +46,8 @@ public class DishwasherDriver extends MieleResourceDriver<DishwasherState, Dishw
             isConnected = true;
             this.startTime = startTime;
             this.program = program;
+
+            // test jenkings
         }
 
         State() {
