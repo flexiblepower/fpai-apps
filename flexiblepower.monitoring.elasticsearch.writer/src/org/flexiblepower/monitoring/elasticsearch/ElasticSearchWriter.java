@@ -24,19 +24,47 @@ public class ElasticSearchWriter implements Runnable {
     private final ScheduledFuture<?> schedule;
     private final Queue<Data> observationsToWrite;
     private final String indexName;
+    private final String baseUrl;
     private final CloseableHttpClient httpClient;
 
     public ElasticSearchWriter(ScheduledExecutorService scheduler, int delay) {
         schedule = scheduler.scheduleWithFixedDelay(this, delay / 2, delay, TimeUnit.SECONDS);
         observationsToWrite = new ConcurrentLinkedQueue<Data>();
         indexName = "observations";
+        baseUrl = "http://localhost:9200";
         httpClient = HttpClientBuilder.create().build();
+
+        try {
+            createIndex();
+        } catch (IOException ex) {
+            logger.warn("I/O error while creating index", ex);
+        }
+    }
+
+    private void createIndex() throws IOException {
+        StringWriter sw = new StringWriter();
+        DataWriter w = new DataWriter(sw);
+
+        w.beginObject().name("mappings").beginObject();
+        w.name("_default_").beginObject();
+        w.name("properties").beginObject();
+        w.name("@timestamp").beginObject();
+        w.write("type", "date");
+        w.write("format", "dateOptionalTime");
+        w.endObject().endObject().endObject().endObject().endObject();
+
+        w.close();
+
+        String url = baseUrl + "/" + indexName + "/";
+        HttpPut put = new HttpPut(url);
+        put.setEntity(new StringEntity(sw.toString()));
+
+        httpClient.execute(put).close();
+        put.completed();
     }
 
     public void close() {
         schedule.cancel(false);
-
-        run();
 
         try {
             httpClient.close();
@@ -49,9 +77,9 @@ public class ElasticSearchWriter implements Runnable {
     }
 
     @Override
-    public synchronized void run() {
+    public void run() {
         if (!observationsToWrite.isEmpty()) {
-            String url = "http://localhost:9200/_bulk";
+            String url = baseUrl + "/_bulk";
             HttpPut httpPut = new HttpPut(url);
             String json = generateContent();
             httpPut.setEntity(new StringEntity(json, ContentType.APPLICATION_JSON));
@@ -65,9 +93,13 @@ public class ElasticSearchWriter implements Runnable {
                     throw new IOException("Statuscode: " + statusCode);
                 }
                 jsonToSend = null;
+                response.close();
             } catch (IOException ex) {
                 logger.warn("I/O error while writing to ElasticSearch: " + ex.getMessage(), ex);
             }
+            httpPut.completed();
+        } else {
+            logger.debug("No observations to write");
         }
     }
 
@@ -91,7 +123,7 @@ public class ElasticSearchWriter implements Runnable {
                 sw.append('\n');
 
                 w.beginObject();
-                w.name("_timestamp").value(data.getObservation().getObservedAt());
+                w.name("@timestamp").value(data.getObservation().getObservedAt());
                 for (Entry<String, Object> entry : data.getObservation().getValueMap().entrySet()) {
                     w.write(entry.getKey(), entry.getValue());
                 }
