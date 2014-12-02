@@ -5,7 +5,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import org.flexiblepower.ral.ResourceDriver;
+import org.flexiblepower.messaging.Endpoint;
+import org.flexiblepower.messaging.Port;
 import org.flexiblepower.ral.ext.AbstractResourceDriver;
 import org.flexiblepower.simulation.generator.GeneratorSimulation.Config;
 import org.flexiblepower.time.TimeService;
@@ -23,7 +24,8 @@ import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
-@Component(designateFactory = Config.class, provide = ResourceDriver.class, immediate = true)
+@Port(name = "manager", accepts = GeneratorControlParameters.class, sends = GeneratorState.class)
+@Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 public class GeneratorSimulation extends AbstractResourceDriver<GeneratorState, GeneratorControlParameters> implements
                                                                                                            Runnable {
     private static final Logger log = LoggerFactory.getLogger(GeneratorSimulation.class);
@@ -119,7 +121,7 @@ public class GeneratorSimulation extends AbstractResourceDriver<GeneratorState, 
 
     @Override
     public void run() {
-        State state = new State(generatorLevel);
+        GeneratorState state = new State(generatorLevel);
         log.debug("Publishing state {}", state);
         // System.out.println("ping");
         publishState(state);

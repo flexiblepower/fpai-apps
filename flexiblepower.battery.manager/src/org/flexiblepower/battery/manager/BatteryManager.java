@@ -96,7 +96,7 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
     private BufferRegistration<Energy> batteryBufferRegistration;
 
     /**
-     * Handle the start of the registration request
+     * Handle the start of the registration request.
      */
     @Override
     protected List<? extends ResourceMessage> startRegistration(BatteryState batteryState) {
@@ -153,7 +153,7 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
     }
 
     /**
-     * Handle the update state request
+     * Handle the update state request.
      */
     @SuppressWarnings("unchecked")
     @Override
@@ -187,7 +187,7 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
     }
 
     /**
-     * Handle a received allocation from the energy app
+     * Handle a received allocation from the energy app.
      */
     @Override
     protected BatteryControlParameters receivedAllocation(ResourceMessage message) {

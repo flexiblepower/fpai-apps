@@ -133,7 +133,6 @@ public class UncontrolledManager extends
     @Override
     protected List<? extends ResourceMessage> updatedState(PowerState state) {
         return Arrays.asList(createUncontrolledUpdate(state));
-
     }
 
     @Override
