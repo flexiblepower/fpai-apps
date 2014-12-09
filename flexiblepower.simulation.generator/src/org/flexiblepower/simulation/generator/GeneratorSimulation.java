@@ -10,9 +10,7 @@ import org.flexiblepower.messaging.Port;
 import org.flexiblepower.ral.ext.AbstractResourceDriver;
 import org.flexiblepower.simulation.generator.GeneratorSimulation.Config;
 import org.flexiblepower.time.TimeService;
-import org.flexiblepower.ui.Widget;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceRegistration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,19 +28,19 @@ public class GeneratorSimulation extends AbstractResourceDriver<GeneratorState, 
                                                                                                            Runnable {
     private static final Logger log = LoggerFactory.getLogger(GeneratorSimulation.class);
 
+    private java.util.NavigableSet<Integer> powerValues;
+
     @Meta.OCD
     interface Config {
         @Meta.AD(deflt = "generator", description = "Resource identifier")
         String resourceId();
 
-        @Meta.AD(deflt = "5", description = "Frequency in which updates will be send out in seconds")
+        @Meta.AD(deflt = "5", description = "Frequency with which updates will be sent out in seconds")
         int updateFrequency();
     }
 
-    private GeneratorWidget widget;
     private ScheduledFuture<?> scheduledFuture;
     private ScheduledExecutorService schedulerService;
-    private ServiceRegistration<Widget> widgetRegistration;
     private Config config;
     private GeneratorLevel generatorLevel = new GeneratorLevel();
 
@@ -71,9 +69,6 @@ public class GeneratorSimulation extends AbstractResourceDriver<GeneratorState, 
             config = Configurable.createConfigurable(Config.class, properties);
 
             scheduledFuture = schedulerService.scheduleAtFixedRate(this, 0, config.updateFrequency(), TimeUnit.SECONDS);
-            widget = new GeneratorWidget(this);
-            widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
-
             generatorLevel.setLevel(0);
 
         } catch (RuntimeException ex) {
@@ -97,10 +92,6 @@ public class GeneratorSimulation extends AbstractResourceDriver<GeneratorState, 
 
     @Deactivate
     public void deactivate() {
-        if (widgetRegistration != null) {
-            widgetRegistration.unregister();
-            widgetRegistration = null;
-        }
         if (scheduledFuture != null) {
             scheduledFuture.cancel(false);
             scheduledFuture = null;

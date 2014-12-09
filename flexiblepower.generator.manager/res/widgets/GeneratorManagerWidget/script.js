@@ -4,4 +4,8 @@ $(window).load(function() {
 		$("p").show();
 		$("#level").text(data.level);
 	});
+	
+	$("#icon").click(function() {
+		w.call("changeLevel", {}, w.callback);
+	});
 });
