@@ -7,7 +7,7 @@ import java.util.List;
 import org.flexiblepower.protocol.mielegateway.xml.Device;
 import org.flexiblepower.protocol.mielegateway.xml.XMLUtil;
 
-public class DeviceParserTest {
+public class TestingDeviceParser {
     public static void main(String[] args) throws MalformedURLException {
         List<Device> devices = Device.parseDevices(XMLUtil.get()
                                                           .parseXml(new URL("http://miele-gateway.labsgn.tno.nl/homebus"))
