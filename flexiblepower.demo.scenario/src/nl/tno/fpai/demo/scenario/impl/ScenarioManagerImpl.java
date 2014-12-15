@@ -23,12 +23,16 @@ import java.util.Vector;
 import java.util.concurrent.atomic.AtomicLong;
 
 import nl.tno.fpai.demo.scenario.ScenarioManager;
+import nl.tno.fpai.demo.scenario.data.Connection;
 import nl.tno.fpai.demo.scenario.data.IdSet;
 import nl.tno.fpai.demo.scenario.data.Scenario;
 import nl.tno.fpai.demo.scenario.data.ScenarioConfiguration;
 import nl.tno.fpai.demo.scenario.data.ScenarioConfiguration.Type;
 
 import org.flexiblepower.messaging.ConnectionManager;
+import org.flexiblepower.messaging.ConnectionManager.EndpointPort;
+import org.flexiblepower.messaging.ConnectionManager.ManagedEndpoint;
+import org.flexiblepower.messaging.ConnectionManager.PotentialConnection;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
@@ -50,14 +54,14 @@ import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
 @Component(immediate = true,
-provide = { ScenarioManager.class },
-designate = ScenarioManagerImpl.Config.class,
-configurationPolicy = ConfigurationPolicy.optional)
+           provide = { ScenarioManager.class },
+           designate = ScenarioManagerImpl.Config.class,
+           configurationPolicy = ConfigurationPolicy.optional)
 public class ScenarioManagerImpl implements ScenarioManager {
     public interface Config {
         @Meta.AD(deflt = "scenarios.xml",
-                description = "The file that should be loaded during activation.",
-                required = false)
+                 description = "The file that should be loaded during activation.",
+                 required = false)
         String filename();
     }
 
@@ -85,6 +89,7 @@ public class ScenarioManagerImpl implements ScenarioManager {
     }
 
     private final Set<Configuration> configurations = Collections.synchronizedSet(new HashSet<Configuration>());
+    private final Set<PotentialConnection> activeConnections = Collections.synchronizedSet(new HashSet<PotentialConnection>());
     private Map<String, Scenario> scenarios;
 
     @Activate
@@ -139,7 +144,6 @@ public class ScenarioManagerImpl implements ScenarioManager {
         if (scenario != null) {
             purgeAll();
             startScenario(scenario);
-            connectionManager.autoConnect();
             setStatus("Loaded scenario [" + name + "]");
         }
     }
@@ -188,7 +192,14 @@ public class ScenarioManagerImpl implements ScenarioManager {
                 log.warn("Could not delete configuration " + configuration, e);
             }
         }
+
+        for (PotentialConnection conn : activeConnections) {
+            conn.disconnect();
+        }
+
         configurations.clear();
+        activeConnections.clear();
+
         setStatus("Loaded scenario's, nothing started");
     }
 
@@ -208,25 +219,69 @@ public class ScenarioManagerImpl implements ScenarioManager {
             idMap.put(idSet.getName(), ids);
         }
 
+        Map<String, List<String>> refs = new HashMap<String, List<String>>();
         int count = 0;
         for (ScenarioConfiguration config : scenario.getConfigurations()) {
-            startConfiguration(config, idMap);
+            List<String> pids = startConfiguration(config, idMap);
+            String ref = config.getReference();
+            if (ref != null && !pids.isEmpty()) {
+                refs.put(ref, pids);
+            }
+
             setStatus(++count);
+        }
+
+        for (Connection connection : scenario.getConnections()) {
+            List<String> fromPids = refs.get(connection.getFromRef());
+            List<String> toPids = refs.get(connection.getToRef());
+
+            for (String fromPid : fromPids) {
+                for (String toPid : toPids) {
+                    EndpointPort fromPort = findPort(fromPid, connection.getFromPort());
+                    EndpointPort toPort = findPort(toPid, connection.getToPort());
+                    if (fromPort != null && toPort != null) {
+                        PotentialConnection conn = fromPort.getPotentialConnection(toPort);
+                        if (conn != null) {
+                            conn.connect();
+                            activeConnections.add(conn);
+                        }
+                    }
+                }
+            }
         }
     }
 
-    private void startConfiguration(ScenarioConfiguration config, Map<String, Set<String>> idMap) {
+    private EndpointPort findPort(String pid, String portName) {
+        ManagedEndpoint endpoint = connectionManager.getEndpoint(pid);
+        if (endpoint == null) {
+            synchronized (connectionManager) {
+                try {
+                    connectionManager.wait(1000);
+                } catch (InterruptedException e) {
+                }
+                endpoint = connectionManager.getEndpoint(pid);
+                if (endpoint == null) {
+                    return null;
+                }
+            }
+        }
+
+        return endpoint.getPort(portName);
+    }
+
+    private List<String> startConfiguration(ScenarioConfiguration config, Map<String, Set<String>> idMap) {
+        List<String> pids = new ArrayList<String>();
         try {
             Bundle bundle = getBundle(config.getBundleId());
             if (bundle != null) {
                 Set<String> ids = idMap.get(config.getIdRef());
                 if (ids != null) {
                     for (String id : ids) {
-                        startConfiguration(config, bundle, id, idMap);
+                        pids.add(startConfiguration(config, bundle, id, idMap));
                     }
                 } else {
                     String id = UUID.randomUUID().toString();
-                    startConfiguration(config, bundle, id, idMap);
+                    pids.add(startConfiguration(config, bundle, id, idMap));
                 }
             } else {
                 log.info("Ignoring configuration, the given bundle can not be found\n" + config);
@@ -234,12 +289,13 @@ public class ScenarioManagerImpl implements ScenarioManager {
         } catch (Exception ex) {
             log.error("Could not create configuration", ex);
         }
+        return pids;
     }
 
-    private void startConfiguration(ScenarioConfiguration config,
-                                    Bundle bundle,
-                                    String id,
-                                    Map<String, Set<String>> idMap) throws IOException {
+    private String startConfiguration(ScenarioConfiguration config,
+                                      Bundle bundle,
+                                      String id,
+                                      Map<String, Set<String>> idMap) throws IOException {
         Dictionary<String, String[]> properties = translateProperties(config.getProperties(), id, idMap);
         MetaTypeInformation metaTypeInformation = metatype.getMetaTypeInformation(bundle);
         ObjectClassDefinition objectClassDefinition = metaTypeInformation.getObjectClassDefinition(config.getId(), null);
@@ -253,6 +309,7 @@ public class ScenarioManagerImpl implements ScenarioManager {
         }
         configuration.update(transformedProperties);
         configurations.add(configuration);
+        return configuration.getPid();
     }
 
     private Dictionary<String, String[]> translateProperties(Map<String, String> properties,
@@ -310,6 +367,10 @@ public class ScenarioManagerImpl implements ScenarioManager {
             String[] current = properties.get(key);
             if (current == null) {
                 current = attributeDefinition.getDefaultValue();
+                if (current == null) {
+                    log.warn("Missing property for key [{}] on {}", key, objectClassDefinition.getName());
+                    current = new String[] { "" };
+                }
             }
 
             if (attributeDefinition.getCardinality() < 0) {

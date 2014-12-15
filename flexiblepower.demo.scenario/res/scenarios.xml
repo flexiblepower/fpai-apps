@@ -3,209 +3,207 @@
 	</scenario>
 	
 	<scenario name="2. PV">
-		<config bundleId="flexiblepower.simulation.pvpanel" factoryId="org.flexiblepower.simulation.pvpanel.PVSimulation">
-			<updateDelay>5</updateDelay>
-			<powerWhenStandBy>0.01</powerWhenStandBy>
-			<powerWhenCloudy>2500</powerWhenCloudy>
-			<powerWhenSunny>5000</powerWhenSunny>
+		<config bundleId="net.powermatcher.core" factoryId="net.powermatcher.core.auctioneer.Auctioneer">
+		    <bidTimeout>600</bidTimeout>
+		    <clusterId>DefaultCluster</clusterId>
+		    <currency>EUR</currency>
+		    <priceSteps>100</priceSteps>
+		    <agentId>auctioneer</agentId>
+		    <maximumPrice>1.0</maximumPrice>
+		    <commodity>electricity</commodity>
+		    <priceUpdateRate>30</priceUpdateRate>
+		    <minimumPrice>0.0</minimumPrice>
 		</config>
 		
-		<config bundleId="flexiblepower.uncontrolled.manager" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager">
-			<resourceId>pvpanel</resourceId>
-			<expirationTime>10</expirationTime>
-			<showWidget>false</showWidget>
+		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.controller.PowerMatcherController" ref="powermatchercontroller-1">
+		    <agentId.prefix>fpai-agent-</agentId.prefix>
+		    <matcher.target></matcher.target>
+		    <small.widget>false</small.widget>
 		</config>
 		
-		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.controller.PowerMatcherController">
-			<cluster.id>ExampleCluster</cluster.id>
-			<location.id>ExampleLocation</location.id>
-			<messaging.protocol>INTERNAL_V1</messaging.protocol>
-			<bid.topic.suffix>UpdateBid</bid.topic.suffix>
-			<price.info.topic.suffix>UpdatePriceInfo</price.info.topic.suffix>
-			<broker.uri></broker.uri>
-			<update.interval>1</update.interval>
-			<actioneer.id>actioneer1</actioneer.id>
-			<small.widget>false</small.widget>
+		<config bundleId="flexiblepower.uncontrolled.manager" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager" ref="uncontrolledmanager-2">
+		    <expirationTime>10</expirationTime>
+		    <showWidget>false</showWidget>
+		    <resourceId>pvpanel</resourceId>
 		</config>
 		
-		<config bundleId="net.powermatcher.fpai.auctioneer" serviceId="net.powermatcher.fpai.auctioneer.AuctioneerManager">
-			<cluster.id>ExampleCluster</cluster.id>
-			<location.id>ExampleLocation</location.id>
-			<update.interval>3</update.interval>
-			<auctioneer.id>auctioneer1</auctioneer.id>
-			<minimum.price>0</minimum.price>
-			<maximum.price>100</maximum.price>
-			<matcher.price.log.level>FULL_LOGGING</matcher.price.log.level>
-			<significance>3</significance>
+		<config bundleId="flexiblepower.simulation.pvpanel" factoryId="org.flexiblepower.simulation.pvpanel.PVSimulation" ref="pvsimulation-3">
+		    <powerWhenStandBy>0.01</powerWhenStandBy>
+		    <updateDelay>5</updateDelay>
+		    <powerWhenCloudy>2500</powerWhenCloudy>
+		    <powerWhenSunny>5000</powerWhenSunny>
+		    <resourceId>pvpanel</resourceId>
 		</config>
+		
+		<connection from="powermatchercontroller-1:uncontrolled" to="uncontrolledmanager-2:controller" />
+		<connection from="pvsimulation-3:manager" to="uncontrolledmanager-2:driver" />
 	</scenario>
 	
 	<scenario name="3. PV + Timeshifter">
-		
-		<config bundleId="flexiblepower.simulation.pvpanel" factoryId="org.flexiblepower.simulation.pvpanel.PVSimulation">
-			<updateDelay>5</updateDelay>
-			<powerWhenStandBy>0.01</powerWhenStandBy>
-			<powerWhenCloudy>2500</powerWhenCloudy>
-			<powerWhenSunny>5000</powerWhenSunny>
+		<config bundleId="flexiblepower.simulation.pvpanel" factoryId="org.flexiblepower.simulation.pvpanel.PVSimulation" ref="pvsimulation-1">
+		    <powerWhenStandBy>0.0</powerWhenStandBy>
+		    <updateDelay>5</updateDelay>
+		    <powerWhenCloudy>200</powerWhenCloudy>
+		    <powerWhenSunny>1500</powerWhenSunny>
+		    <resourceId>pvpanel</resourceId>
 		</config>
 		
-		<config bundleId="flexiblepower.uncontrolled.manager" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager">
-			<resourceId>pvpanel</resourceId>
-			<expirationTime>10</expirationTime>
-			<showWidget>false</showWidget>
+		<config bundleId="flexiblepower.simulation.dishwasher" factoryId="org.flexiblepower.simulation.dishwasher.DishwasherSimulationImpl" ref="dishwashersimulationimpl-2">
+		    <resourceId>dishwasher</resourceId>
 		</config>
 		
-		<config bundleId="flexiblepower.simulation.dishwasher" factoryId="org.flexiblepower.simulation.dishwasher.DishwasherSimulationImpl">
-			<resourceId>dishwasher</resourceId>
+		<config bundleId="flexiblepower.uncontrolled.manager" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager" ref="uncontrolledmanager-3">
+		    <expirationTime>20</expirationTime>
+		    <showWidget>false</showWidget>
+		    <resourceId>uncontrolled</resourceId>
 		</config>
 		
-		<config bundleId="flexiblepower.miele.dishwasher.manager" factoryId="org.flexiblepower.miele.dishwasher.manager.MieleDishwasherManager">
-			<resourceId>dishwasher</resourceId>
-			<showWidget>true</showWidget>
+		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.controller.PowerMatcherController" ref="powermatchercontroller-4">
+		    <agentId.prefix>fpai-agent-</agentId.prefix>
+		    <matcher.target></matcher.target>
+		    <small.widget>true</small.widget>
 		</config>
 		
-		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.controller.PowerMatcherController">
-			<cluster.id>ExampleCluster</cluster.id>
-			<location.id>ExampleLocation</location.id>
-			<messaging.protocol>INTERNAL_V1</messaging.protocol>
-			<bid.topic.suffix>UpdateBid</bid.topic.suffix>
-			<price.info.topic.suffix>UpdatePriceInfo</price.info.topic.suffix>
-			<broker.uri></broker.uri>
-			<update.interval>1</update.interval>
-			<actioneer.id>actioneer1</actioneer.id>
-			<small.widget>false</small.widget>
+		<config bundleId="flexiblepower.miele.dishwasher.manager" factoryId="org.flexiblepower.miele.dishwasher.manager.MieleDishwasherManager" ref="mieledishwashermanager-5">
+		    <showWidget>false</showWidget>
+		    <resourceId>dishwasher</resourceId>
 		</config>
 		
-		<config bundleId="net.powermatcher.fpai.auctioneer" serviceId="net.powermatcher.fpai.auctioneer.AuctioneerManager">
-			<cluster.id>ExampleCluster</cluster.id>
-			<location.id>ExampleLocation</location.id>
-			<update.interval>3</update.interval>
-			<auctioneer.id>auctioneer1</auctioneer.id>
-			<minimum.price>0</minimum.price>
-			<maximum.price>100</maximum.price>
-			<matcher.price.log.level>FULL_LOGGING</matcher.price.log.level>
-			<significance>3</significance>
+		<config bundleId="net.powermatcher.core" factoryId="net.powermatcher.core.auctioneer.Auctioneer">
+		    <bidTimeout>600</bidTimeout>
+		    <clusterId>DefaultCluster</clusterId>
+		    <currency>EUR</currency>
+		    <priceSteps>100</priceSteps>
+		    <agentId>auctioneer</agentId>
+		    <maximumPrice>1.0</maximumPrice>
+		    <commodity>electricity</commodity>
+		    <priceUpdateRate>5</priceUpdateRate>
+		    <minimumPrice>0.0</minimumPrice>
 		</config>
-	
+		
+		<connection from="powermatchercontroller-4:uncontrolled" to="uncontrolledmanager-3:controller" />
+		<connection from="powermatchercontroller-4:timeshifter" to="mieledishwashermanager-5:controller" />
+		<connection from="mieledishwashermanager-5:driver" to="dishwashersimulationimpl-2:manager" />
+		<connection from="pvsimulation-1:manager" to="uncontrolledmanager-3:driver" />
 	</scenario>
 	
 	<scenario name="4. PV + Battery">
-		
-		<config bundleId="flexiblepower.simulation.pvpanel" factoryId="org.flexiblepower.simulation.pvpanel.PVSimulation">
-			<updateDelay>5</updateDelay>
-			<powerWhenStandBy>0.01</powerWhenStandBy>
-			<powerWhenCloudy>2500</powerWhenCloudy>
-			<powerWhenSunny>5000</powerWhenSunny>
+		<config bundleId="flexiblepower.battery.manager" factoryId="org.flexiblepower.battery.manager.BatteryManager" ref="batterymanager-1">
+		    <resourceId>battery</resourceId>
 		</config>
 		
-		<config bundleId="flexiblepower.uncontrolled.manager" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager">
-			<resourceId>pvpanel</resourceId>
-			<expirationTime>10</expirationTime>
-			<showWidget>false</showWidget>
+		<config bundleId="flexiblepower.simulation.pvpanel" factoryId="org.flexiblepower.simulation.pvpanel.PVSimulation" ref="pvsimulation-2">
+		    <powerWhenStandBy>0.0</powerWhenStandBy>
+		    <updateDelay>5</updateDelay>
+		    <powerWhenCloudy>200</powerWhenCloudy>
+		    <powerWhenSunny>1500</powerWhenSunny>
+		    <resourceId>pvpanel</resourceId>
 		</config>
 		
-		<config bundleId="flexiblepower.simulation.battery" factoryId="org.flexiblepower.simulation.battery.BatterySimulation">
-			<updateInterval>5</updateInterval>
-			<totalCapacity>1</totalCapacity>
-			<initialStateOfCharge>0.5</initialStateOfCharge>
-			<chargePower>1500</chargePower>
-			<dischargePower>1500</dischargePower>
-			<chargeEfficiency>0.9</chargeEfficiency>
-			<dischargeEfficiency>0.9</dischargeEfficiency>
-			<selfDischargePower>50</selfDischargePower>
+		<config bundleId="flexiblepower.simulation.battery" factoryId="org.flexiblepower.simulation.battery.BatterySimulation" ref="batterysimulation-3">
+		    <selfDischargePower>50</selfDischargePower>
+		    <totalCapacity>1.0</totalCapacity>
+		    <updateInterval>5</updateInterval>
+		    <chargeEfficiency>0.9</chargeEfficiency>
+		    <dischargeEfficiency>0.9</dischargeEfficiency>
+		    <initialStateOfCharge>0.5</initialStateOfCharge>
+		    <dischargePower>1500</dischargePower>
+		    <chargePower>1500</chargePower>
 		</config>
 		
-		<config bundleId="flexiblepower.battery.manager" factoryId="org.flexiblepower.battery.manager.BatteryManager">
-			<resourceId>dishwasher</resourceId>
+		<config bundleId="flexiblepower.uncontrolled.manager" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager" ref="uncontrolledmanager-4">
+		    <expirationTime>20</expirationTime>
+		    <showWidget>false</showWidget>
+		    <resourceId>uncontrolled</resourceId>
 		</config>
 		
-		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.controller.PowerMatcherController">
-			<cluster.id>ExampleCluster</cluster.id>
-			<location.id>ExampleLocation</location.id>
-			<messaging.protocol>INTERNAL_V1</messaging.protocol>
-			<bid.topic.suffix>UpdateBid</bid.topic.suffix>
-			<price.info.topic.suffix>UpdatePriceInfo</price.info.topic.suffix>
-			<broker.uri></broker.uri>
-			<update.interval>1</update.interval>
-			<actioneer.id>actioneer1</actioneer.id>
-			<small.widget>false</small.widget>
+		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.controller.PowerMatcherController" ref="powermatchercontroller-5">
+		    <agentId.prefix>fpai-agent-</agentId.prefix>
+		    <matcher.target></matcher.target>
+		    <small.widget>true</small.widget>
 		</config>
 		
-		<config bundleId="net.powermatcher.fpai.auctioneer" serviceId="net.powermatcher.fpai.auctioneer.AuctioneerManager">
-			<cluster.id>ExampleCluster</cluster.id>
-			<location.id>ExampleLocation</location.id>
-			<update.interval>3</update.interval>
-			<auctioneer.id>auctioneer1</auctioneer.id>
-			<minimum.price>0</minimum.price>
-			<maximum.price>100</maximum.price>
-			<matcher.price.log.level>FULL_LOGGING</matcher.price.log.level>
-			<significance>3</significance>
+		<config bundleId="net.powermatcher.core" factoryId="net.powermatcher.core.auctioneer.Auctioneer">
+		    <bidTimeout>600</bidTimeout>
+		    <clusterId>DefaultCluster</clusterId>
+		    <currency>EUR</currency>
+		    <priceSteps>100</priceSteps>
+		    <agentId>auctioneer</agentId>
+		    <maximumPrice>1.0</maximumPrice>
+		    <commodity>electricity</commodity>
+		    <priceUpdateRate>5</priceUpdateRate>
+		    <minimumPrice>0.0</minimumPrice>
 		</config>
-	
+		
+		<connection from="powermatchercontroller-5:uncontrolled" to="uncontrolledmanager-4:controller" />
+		<connection from="powermatchercontroller-5:buffer" to="batterymanager-1:controller" />
+		<connection from="pvsimulation-2:manager" to="uncontrolledmanager-4:driver" />
+		<connection from="batterymanager-1:driver" to="batterysimulation-3:manager" />
 	</scenario>
 	
 	<scenario name="5. PV + Battery + Timeshifter">
-		
-		<config bundleId="flexiblepower.simulation.dishwasher" factoryId="org.flexiblepower.simulation.dishwasher.DishwasherSimulationImpl">
-			<resourceId>dishwasher</resourceId>
+		<config bundleId="flexiblepower.battery.manager" factoryId="org.flexiblepower.battery.manager.BatteryManager" ref="batterymanager-1">
+		    <resourceId>battery</resourceId>
 		</config>
 		
-		<config bundleId="flexiblepower.miele.dishwasher.manager" factoryId="org.flexiblepower.miele.dishwasher.manager.MieleDishwasherManager">
-			<resourceId>dishwasher</resourceId>
-			<showWidget>true</showWidget>
+		<config bundleId="flexiblepower.simulation.pvpanel" factoryId="org.flexiblepower.simulation.pvpanel.PVSimulation" ref="pvsimulation-2">
+		    <powerWhenStandBy>0.0</powerWhenStandBy>
+		    <updateDelay>5</updateDelay>
+		    <powerWhenCloudy>200</powerWhenCloudy>
+		    <powerWhenSunny>1500</powerWhenSunny>
+		    <resourceId>pvpanel</resourceId>
 		</config>
 		
-		<config bundleId="flexiblepower.simulation.pvpanel" factoryId="org.flexiblepower.simulation.pvpanel.PVSimulation">
-			<updateDelay>5</updateDelay>
-			<powerWhenStandBy>0.01</powerWhenStandBy>
-			<powerWhenCloudy>2500</powerWhenCloudy>
-			<powerWhenSunny>5000</powerWhenSunny>
+		<config bundleId="flexiblepower.simulation.dishwasher" factoryId="org.flexiblepower.simulation.dishwasher.DishwasherSimulationImpl" ref="dishwashersimulationimpl-3">
+		    <resourceId>dishwasher</resourceId>
 		</config>
 		
-		<config bundleId="flexiblepower.uncontrolled.manager" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager">
-			<resourceId>pvpanel</resourceId>
-			<expirationTime>10</expirationTime>
-			<showWidget>false</showWidget>
+		<config bundleId="flexiblepower.simulation.battery" factoryId="org.flexiblepower.simulation.battery.BatterySimulation" ref="batterysimulation-4">
+		    <selfDischargePower>50</selfDischargePower>
+		    <totalCapacity>1.0</totalCapacity>
+		    <updateInterval>5</updateInterval>
+		    <chargeEfficiency>0.9</chargeEfficiency>
+		    <dischargeEfficiency>0.9</dischargeEfficiency>
+		    <initialStateOfCharge>0.5</initialStateOfCharge>
+		    <dischargePower>1500</dischargePower>
+		    <chargePower>1500</chargePower>
 		</config>
 		
-		<config bundleId="flexiblepower.simulation.battery" factoryId="org.flexiblepower.simulation.battery.BatterySimulation">
-			<updateInterval>5</updateInterval>
-			<totalCapacity>1</totalCapacity>
-			<initialStateOfCharge>0.5</initialStateOfCharge>
-			<chargePower>1500</chargePower>
-			<dischargePower>1500</dischargePower>
-			<chargeEfficiency>0.9</chargeEfficiency>
-			<dischargeEfficiency>0.9</dischargeEfficiency>
-			<selfDischargePower>50</selfDischargePower>
+		<config bundleId="flexiblepower.uncontrolled.manager" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager" ref="uncontrolledmanager-5">
+		    <expirationTime>20</expirationTime>
+		    <showWidget>false</showWidget>
+		    <resourceId>uncontrolled</resourceId>
 		</config>
 		
-		<config bundleId="flexiblepower.battery.manager" factoryId="org.flexiblepower.battery.manager.BatteryManager">
-			<resourceId>dishwasher</resourceId>
+		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.controller.PowerMatcherController" ref="powermatchercontroller-6">
+		    <agentId.prefix>fpai-agent-</agentId.prefix>
+		    <matcher.target></matcher.target>
+		    <small.widget>true</small.widget>
 		</config>
 		
-		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.controller.PowerMatcherController">
-			<cluster.id>ExampleCluster</cluster.id>
-			<location.id>ExampleLocation</location.id>
-			<messaging.protocol>INTERNAL_V1</messaging.protocol>
-			<bid.topic.suffix>UpdateBid</bid.topic.suffix>
-			<price.info.topic.suffix>UpdatePriceInfo</price.info.topic.suffix>
-			<broker.uri></broker.uri>
-			<update.interval>1</update.interval>
-			<actioneer.id>actioneer1</actioneer.id>
-			<small.widget>false</small.widget>
+		<config bundleId="flexiblepower.miele.dishwasher.manager" factoryId="org.flexiblepower.miele.dishwasher.manager.MieleDishwasherManager" ref="mieledishwashermanager-7">
+		    <showWidget>false</showWidget>
+		    <resourceId>dishwasher</resourceId>
 		</config>
 		
-		<config bundleId="net.powermatcher.fpai.auctioneer" serviceId="net.powermatcher.fpai.auctioneer.AuctioneerManager">
-			<cluster.id>ExampleCluster</cluster.id>
-			<location.id>ExampleLocation</location.id>
-			<update.interval>3</update.interval>
-			<auctioneer.id>auctioneer1</auctioneer.id>
-			<minimum.price>0</minimum.price>
-			<maximum.price>100</maximum.price>
-			<matcher.price.log.level>FULL_LOGGING</matcher.price.log.level>
-			<significance>3</significance>
+		<config bundleId="net.powermatcher.core" factoryId="net.powermatcher.core.auctioneer.Auctioneer">
+		    <bidTimeout>600</bidTimeout>
+		    <clusterId>DefaultCluster</clusterId>
+		    <currency>EUR</currency>
+		    <priceSteps>100</priceSteps>
+		    <agentId>auctioneer</agentId>
+		    <maximumPrice>1.0</maximumPrice>
+		    <commodity>electricity</commodity>
+		    <priceUpdateRate>5</priceUpdateRate>
+		    <minimumPrice>0.0</minimumPrice>
 		</config>
-	
+		
+		<connection from="powermatchercontroller-6:uncontrolled" to="uncontrolledmanager-5:controller" />
+		<connection from="powermatchercontroller-6:buffer" to="batterymanager-1:controller" />
+		<connection from="powermatchercontroller-6:timeshifter" to="mieledishwashermanager-7:controller" />
+		<connection from="mieledishwashermanager-7:driver" to="dishwashersimulationimpl-3:manager" />
+		<connection from="pvsimulation-2:manager" to="uncontrolledmanager-5:driver" />
+		<connection from="batterymanager-1:driver" to="batterysimulation-4:manager" />
 	</scenario>
-	
+
 </scenarios>

@@ -7,7 +7,7 @@ import java.util.Map.Entry;
 
 public class ScenarioConfiguration {
     public static class Builder {
-        private String bundleId, id;
+        private String bundleId, id, reference;
         private String idRef;
         private ScenarioConfiguration.Type type;
         private final Map<String, String> properties;
@@ -49,8 +49,13 @@ public class ScenarioConfiguration {
             return this;
         }
 
+        public Builder setReference(String reference) {
+            this.reference = reference;
+            return this;
+        }
+
         public ScenarioConfiguration build() {
-            return new ScenarioConfiguration(bundleId, id, idRef, type, properties);
+            return new ScenarioConfiguration(bundleId, id, reference, idRef, type, properties);
         }
     }
 
@@ -58,12 +63,17 @@ public class ScenarioConfiguration {
         SINGLE, MULTIPLE
     }
 
-    private final String bundleId, id;
+    private final String bundleId, id, reference;
     private final String idRef;
     private final Map<String, String> properties;
     private final Type type;
 
-    ScenarioConfiguration(String bundleId, String id, String idRef, Type type, Map<String, String> properties) {
+    ScenarioConfiguration(String bundleId,
+                          String id,
+                          String reference,
+                          String idRef,
+                          Type type,
+                          Map<String, String> properties) {
         if (bundleId == null || id == null || type == null || properties == null) {
             throw new IllegalArgumentException("Missing information for scenario: bundleId=" + bundleId
                                                + ", id="
@@ -74,6 +84,7 @@ public class ScenarioConfiguration {
 
         this.bundleId = bundleId;
         this.id = id;
+        this.reference = reference;
         this.idRef = idRef;
         this.type = type;
         this.properties = Collections.unmodifiableMap(new HashMap<String, String>(properties));
@@ -89,6 +100,10 @@ public class ScenarioConfiguration {
 
     public String getIdRef() {
         return idRef;
+    }
+
+    public String getReference() {
+        return reference;
     }
 
     public Type getType() {
@@ -117,6 +132,9 @@ public class ScenarioConfiguration {
         sb.append(id).append("\"");
         if (idRef != null) {
             sb.append(" idRef=\"").append(idRef).append("\"");
+        }
+        if (reference != null) {
+            sb.append(" ref=\"").append(reference).append("\"");
         }
         sb.append(">\n");
         for (Entry<String, String> entry : properties.entrySet()) {

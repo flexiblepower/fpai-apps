@@ -25,3 +25,10 @@ p label, select {
 #scenarios {
 	height: 2em;
 }
+
+#current {
+	position: absolute;
+	right: 0;
+	bottom: 1em;
+	font-size: 70%;
+}
