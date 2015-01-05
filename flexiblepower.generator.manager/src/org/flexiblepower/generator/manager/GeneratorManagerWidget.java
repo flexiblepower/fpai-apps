@@ -30,6 +30,10 @@ public class GeneratorManagerWidget implements Widget {
     }
 
     public Update changeLevel() {
+        if (manager.getMostRecentState() == null)
+        {
+            return null;
+        }
         int oldLevel = manager.getMostRecentState().getGeneratorLevel().getIntLevel();
         int newLevel = oldLevel;
 
@@ -49,5 +53,4 @@ public class GeneratorManagerWidget implements Widget {
     public String getTitle(Locale locale) {
         return "Generator Simulation";
     }
-
 }

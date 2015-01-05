@@ -11,7 +11,14 @@
 <body class="widget">
 	<img id="icon" src="generator.jpg" alt="Generator" />
 	<img id="loading" src="/img/loading.gif" alt="Loading..." />
-
-	<p><label>Power output</label> <span id="level">...</span> W</p>
+	<!-- Information tooltip -->	
+	<a class='tooltip lefttooltip'>
+		<img src='i.png' class='i'>
+		<span>
+			The generator converts fuel to electricity. It can be produce at different power levels. Click on the device in order to manually toggle between running modes. Note that any connected Energy App may be quick to send its commands to the generator, thereby overriding your manual actions.
+		</span>
+	</a>
+	
+	<p><span id="powervalue"><span id="level">1000</span> W</span></p>
 </body>
 </html>
