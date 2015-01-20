@@ -38,7 +38,7 @@ public class PooledDataSource implements DataSource, ConnectionEventListener {
     private static final int POOL_SIZE = 16;
 
     public interface Config {
-        @AD(deflt = "jdbc:mysql://localhost:3306/fpai_monitoring")
+        @AD(deflt = "jdbc:mysql://fpaimonitoring.sensorlab.tno.nl:3306/vios_test")
         String jdbcURL();
 
         @AD(deflt = "fpai")
@@ -119,6 +119,7 @@ public class PooledDataSource implements DataSource, ConnectionEventListener {
                     // interrupted
                     Thread.currentThread().interrupt();
                     // and try to return a connection again
+                    logger.warn("No mysql connection available in pool");
                     continue;
                 }
             }
@@ -156,6 +157,7 @@ public class PooledDataSource implements DataSource, ConnectionEventListener {
                 con.close();
             } catch (SQLException e1) {
                 // ignore
+                logger.warn("Mysql connection can not be closed");
             } finally {
                 active.decrementAndGet();
                 assert active.get() <= POOL_SIZE;
@@ -176,6 +178,7 @@ public class PooledDataSource implements DataSource, ConnectionEventListener {
             con.close();
         } catch (SQLException e) {
             // ignore
+            logger.warn("Mysql connection can not be closed");
         } finally {
             active.decrementAndGet();
             assert active.get() <= POOL_SIZE;

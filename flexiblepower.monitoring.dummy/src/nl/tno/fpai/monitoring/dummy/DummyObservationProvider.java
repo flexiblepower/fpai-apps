@@ -58,7 +58,7 @@ public class DummyObservationProvider extends AbstractObservationProvider<SomeVa
             public void run() {
                 while (true) {
                     try {
-                        Thread.sleep((long) (TIMEOUT + Math.random() * TIMEOUT));
+                        Thread.sleep(500); // (long) (TIMEOUT + Math.random() * TIMEOUT));
                     } catch (InterruptedException e) {
                         // stop at interrupt
                         break;
