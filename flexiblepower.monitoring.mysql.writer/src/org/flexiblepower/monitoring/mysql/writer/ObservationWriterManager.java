@@ -67,7 +67,7 @@ public class ObservationWriterManager {
     private final Map<ObservationProvider, ObservationWriter> writers = new ConcurrentHashMap<ObservationProvider, ObservationWriter>();
 
     /** The thread pool for executing the inserts */
-    private final Executor executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    private final Executor executor = Executors.newSingleThreadExecutor();
 
     /**
      * Activates the ObservationWriterManager. Make sure a dataSource is configured (see

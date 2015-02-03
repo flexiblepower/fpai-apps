@@ -426,7 +426,7 @@ public class ObservationWriter implements ObservationConsumer {
 
     /*
      * Consumes an observation and writes it to the database.
-     * 
+     *
      * @see org.flexiblepower.observation.ObservationConsumer#consume(org.flexiblepower
      * .observation.ObservationProvider, org.flexiblepower.observation.Observation)
      */
@@ -452,7 +452,6 @@ public class ObservationWriter implements ObservationConsumer {
     }
 
     private void insert() {
-        logger.info("insert started " + Thread.currentThread().getName());
         // if the queue is empty, return
         if (queue.size() == 0) {
             return;
@@ -513,7 +512,6 @@ public class ObservationWriter implements ObservationConsumer {
         } catch (Exception e) {
             logger.error("Couldn't write an obsevation to the database", e);
         }
-        logger.info("insert finished " + Thread.currentThread().getName());
     }
 
     private void insertValue(PreparedStatement insert, int idx, Object value) throws SQLException {
