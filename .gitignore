@@ -6,3 +6,4 @@ bin_test
 generated
 *playground
 RemoteSystemsTempFiles
+.recommenders/
