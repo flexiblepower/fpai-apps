@@ -24,7 +24,7 @@ public class ElasticSearchConsumer implements ObservationConsumer<Object> {
 
     public ScheduledExecutorService scheduler;
 
-    @Meta.OCD(description = "This configures the ObservationConsumer that sends all Observations to an MQTT bus")
+    @Meta.OCD(description = "This configures the ObservationConsumer that sends all Observations to Elastic Search")
     public static interface Config {
         @Meta.AD(deflt = "projectname", description = "URL to the MQTT broker")
         public String elasticSearchIndexName();
