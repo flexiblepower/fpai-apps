@@ -26,7 +26,7 @@ import aQute.bnd.annotation.metatype.Configurable;
  */
 @Component(immediate = true, designateFactory = DummyObservationProvider.Config.class)
 public class DummyObservationProvider extends AbstractObservationProvider<SomeValues> {
-    private static final int TIMEOUT = 10;
+    private static final int TIMEOUT = 5000;
 
     /** Configuration specification of the component. */
     public interface Config {

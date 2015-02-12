@@ -27,11 +27,11 @@ public class ElasticSearchWriter implements Runnable {
     private final String baseUrl;
     private final CloseableHttpClient httpClient;
 
-    public ElasticSearchWriter(ScheduledExecutorService scheduler, int delay) {
+    public ElasticSearchWriter(ScheduledExecutorService scheduler, int delay, String indexName, String baseUrl) {
         schedule = scheduler.scheduleWithFixedDelay(this, delay / 2, delay, TimeUnit.SECONDS);
         observationsToWrite = new ConcurrentLinkedQueue<Data>();
-        indexName = "observations";
-        baseUrl = "http://localhost:9200";
+        this.indexName = indexName; // "observations";
+        this.baseUrl = baseUrl; // "http://192.168.1.60:9200";
         httpClient = HttpClientBuilder.create().build();
 
         try {

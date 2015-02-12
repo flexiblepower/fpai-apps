@@ -4,21 +4,34 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 
+import org.flexiblepower.monitoring.elasticsearch.ElasticSearchConsumer.Config;
 import org.flexiblepower.observation.Observation;
 import org.flexiblepower.observation.ObservationConsumer;
 import org.flexiblepower.observation.ObservationProvider;
+import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 
 import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Deactivate;
 import aQute.bnd.annotation.component.Reference;
+import aQute.bnd.annotation.metatype.Configurable;
+import aQute.bnd.annotation.metatype.Meta;
 
-@Component(immediate = true, provide = {})
+@Component(immediate = true, provide = {}, designateFactory = Config.class)
 public class ElasticSearchConsumer implements ObservationConsumer<Object> {
     private static final String KEY_OBSERVATION_ID = "org.flexiblepower.monitoring.observationOf";
 
     public ScheduledExecutorService scheduler;
+
+    @Meta.OCD(description = "This configures the ObservationConsumer that sends all Observations to an MQTT bus")
+    public static interface Config {
+        @Meta.AD(deflt = "projectName", description = "URL to the MQTT broker")
+        public String elasticSearchIndexName();
+
+        @Meta.AD(deflt = "http://localhost:9200", description = "URL to the MQTT broker")
+        public String elasticSearchServerURL();
+    }
 
     @Reference
     public void setScheduler(ScheduledExecutorService scheduler) {
@@ -51,10 +64,15 @@ public class ElasticSearchConsumer implements ObservationConsumer<Object> {
     }
 
     private ElasticSearchWriter writer;
+    private Config config;
 
     @Activate
-    public void activate() {
-        writer = new ElasticSearchWriter(scheduler, 30);
+    public void activate(BundleContext context, Map<String, Object> properties) {
+        config = Configurable.createConfigurable(Config.class, properties);
+        writer = new ElasticSearchWriter(scheduler,
+                                         30,
+                                         config.elasticSearchIndexName(),
+                                         config.elasticSearchServerURL());
     }
 
     @Deactivate
