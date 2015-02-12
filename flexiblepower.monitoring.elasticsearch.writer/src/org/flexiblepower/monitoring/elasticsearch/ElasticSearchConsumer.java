@@ -26,11 +26,14 @@ public class ElasticSearchConsumer implements ObservationConsumer<Object> {
 
     @Meta.OCD(description = "This configures the ObservationConsumer that sends all Observations to an MQTT bus")
     public static interface Config {
-        @Meta.AD(deflt = "projectName", description = "URL to the MQTT broker")
+        @Meta.AD(deflt = "projectname", description = "URL to the MQTT broker")
         public String elasticSearchIndexName();
 
         @Meta.AD(deflt = "http://localhost:9200", description = "URL to the MQTT broker")
         public String elasticSearchServerURL();
+
+        @Meta.AD(deflt = "15", description = "Write every x seconds to database")
+        public int writeDelay();
     }
 
     @Reference
@@ -70,7 +73,7 @@ public class ElasticSearchConsumer implements ObservationConsumer<Object> {
     public void activate(BundleContext context, Map<String, Object> properties) {
         config = Configurable.createConfigurable(Config.class, properties);
         writer = new ElasticSearchWriter(scheduler,
-                                         30,
+                                         config.writeDelay(),
                                          config.elasticSearchIndexName(),
                                          config.elasticSearchServerURL());
     }
