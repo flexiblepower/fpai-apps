@@ -1,0 +1,20 @@
+Bundle-Version: 2.0.0.${qualifier}
+-buildpath:  \
+	${fpai-buildpath},\
+	flexiblepower.ral.efi.utils;version=latest,\
+	flexiblepower.ui;version=latest,\
+	net.powermatcher.api,\
+	net.powermatcher.core
+-testpath: ${test-buildpath}, net.powermatcher.test.helpers
+	
+-includeresource: {OSGI-INF/permissions.perm=permissions.perm}, res
+Service-Component: net.powermatcher.fpai.controller.*
+
+Import-Package: aQute.bnd.annotation.metatype;resolution:=optional,\
+	*
+
+Private-Package:  \
+	net.powermatcher.fpai.agents,\
+	net.powermatcher.fpai.controller,\
+	net.powermatcher.fpai.widget,\
+	net.powermatcher.fpai.smallwidget
