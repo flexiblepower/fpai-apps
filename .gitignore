@@ -1,0 +1,35 @@
+# Generate Java / Eclipse generated stuff
+*.swp
+cnf/db
+cnf/cache
+cnf/release
+.gradle
+bin
+bin_test
+generated
+*playground
+cobertura.ser
+instrumented
+coverage.xml
+RemoteSystemsTempFiles
+reports
+build
+
+# Keep the projects list
+.metadata/*
+!.metadata/.plugins/
+.metadata/.plugins/*
+!.metadata/.plugins/org.eclipse.core.resources/
+.metadata/.plugins/org.eclipse.core.resources/*
+!.metadata/.plugins/org.eclipse.core.resources/.plugins/
+.com_puppetlabs_geppetto_pptp_target
+
+# GWT generated stuff
+.gwt
+gwt-unitCache
+deploy
+*.cache.html
+*.cache.gif
+*.gwt.rpc
+*.nocache.js
+hosted.html
