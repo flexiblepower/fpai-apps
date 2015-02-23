@@ -1,9 +1,4 @@
--buildpath:  \
-	${default-buildpath},\
-	flexiblepower.api.efi
-
-Bundle-Version: 1.0.0.${qualifier}
-
-Service-Component: org.flexiblepower.battery.manager.*
-Export-Package:  \
-	org.flexiblepower.battery.manager
+-buildpath: ${fpai-buildpath}
+Bundle-Version: 1.1.0.${qualifier}
+Service-Component: *
+Export-Package:  org.flexiblepower.battery.manager

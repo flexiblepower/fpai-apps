@@ -7,8 +7,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import javax.measure.Measurable;
 import javax.measure.Measure;
@@ -22,6 +20,7 @@ import javax.measure.unit.SI;
 import javax.measure.unit.Unit;
 
 import org.flexiblepower.battery.manager.BatteryManager.Config;
+import org.flexiblepower.context.FlexiblePowerContext;
 import org.flexiblepower.efi.BufferResourceManager;
 import org.flexiblepower.efi.buffer.Actuator;
 import org.flexiblepower.efi.buffer.ActuatorAllocation;
@@ -41,18 +40,17 @@ import org.flexiblepower.messaging.Cardinality;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.messaging.Port;
 import org.flexiblepower.messaging.Ports;
-import org.flexiblepower.rai.AllocationRevoke;
-import org.flexiblepower.rai.AllocationStatus;
-import org.flexiblepower.rai.AllocationStatusUpdate;
-import org.flexiblepower.rai.ControlSpaceRevoke;
-import org.flexiblepower.rai.ResourceMessage;
-import org.flexiblepower.rai.values.CommodityMeasurables;
-import org.flexiblepower.rai.values.CommoditySet;
 import org.flexiblepower.ral.drivers.battery.BatteryControlParameters;
 import org.flexiblepower.ral.drivers.battery.BatteryMode;
 import org.flexiblepower.ral.drivers.battery.BatteryState;
 import org.flexiblepower.ral.ext.AbstractResourceManager;
-import org.flexiblepower.time.TimeService;
+import org.flexiblepower.ral.messages.AllocationRevoke;
+import org.flexiblepower.ral.messages.AllocationStatus;
+import org.flexiblepower.ral.messages.AllocationStatusUpdate;
+import org.flexiblepower.ral.messages.ControlSpaceRevoke;
+import org.flexiblepower.ral.messages.ResourceMessage;
+import org.flexiblepower.ral.values.CommodityMeasurables;
+import org.flexiblepower.ral.values.CommoditySet;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,7 +74,9 @@ import aQute.bnd.annotation.metatype.Meta;
 public class BatteryManager extends AbstractResourceManager<BatteryState, BatteryControlParameters>
                                                                                                    implements
                                                                                                    BufferResourceManager {
-    private static final Logger log = LoggerFactory.getLogger(BatteryManager.class);
+    private static final Unit<Duration> MS = SI.MILLI(SI.SECOND);
+    private static final Logger logger = LoggerFactory.getLogger(BatteryManager.class);
+
     @SuppressWarnings("unchecked")
     private static final Unit<Energy> WH = (Unit<Energy>) SI.WATT.times(NonSI.HOUR); // Define WattHour (Wh)
     private static final int BATTERY_ACTUATOR_ID = 1; // self chosen id for the actuator
@@ -88,8 +88,7 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
     }
 
     private Config configuration;
-    private TimeService timeService;
-    private ScheduledExecutorService scheduler;
+    private FlexiblePowerContext context;
     private BatteryState currentBatteryState;
     private Date changedStateTimestamp;
     Actuator batteryActuator;
@@ -102,7 +101,7 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
     protected List<? extends ResourceMessage> startRegistration(BatteryState batteryState) {
         // safe current state of the battery
         currentBatteryState = batteryState;
-        changedStateTimestamp = timeService.getTime();
+        changedStateTimestamp = context.currentTime();
 
         // ---- Buffer registration ----
         // create a battery actuator for electricity
@@ -147,7 +146,7 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
                                                                          currentFillLevel,
                                                                          currentRunningMode);
 
-        log.debug("Battery manager start registration completed.");
+        logger.debug("Battery manager start registration completed.");
         // return the three messages
         return Arrays.asList(batteryBufferRegistration, sysDescr, update);
     }
@@ -158,7 +157,7 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
     @SuppressWarnings("unchecked")
     @Override
     protected List<? extends ResourceMessage> updatedState(BatteryState batteryState) {
-        log.debug("Receive battery state update, mode=" + batteryState.getCurrentMode());
+        logger.debug("Receive battery state update, mode=" + batteryState.getCurrentMode());
 
         // Do nothing if there is no useful battery state change request
         if (batteryState.equals(currentBatteryState)) {
@@ -166,7 +165,7 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
         } else { // battery state change request
             // save previous state
             currentBatteryState = batteryState;
-            changedStateTimestamp = timeService.getTime();
+            changedStateTimestamp = context.currentTime();
 
             // this state change is immediately valid
             Date validFrom = changedStateTimestamp;
@@ -194,21 +193,21 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
         // is the message a buffer allocation?
         if (message instanceof BufferAllocation) {
             BufferAllocation bufferAllocation = (BufferAllocation) message;
-            log.debug("Received allocation " + bufferAllocation);
+            logger.debug("Received allocation " + bufferAllocation);
 
             // process all actuator allocations
             Set<ActuatorAllocation> allocations = bufferAllocation.getActuatorAllocations();
             for (ActuatorAllocation allocation : allocations) {
                 // determine battery mode and specified delay.
                 BatteryMode batteryMode = BatteryMode.values()[allocation.getRunningModeId()];
-                long delay = allocation.getStartTime().getTime() - timeService.getCurrentTimeMillis();
+                long delay = allocation.getStartTime().getTime() - context.currentTimeMillis();
                 delay = (delay <= 0 ? 1 : delay);
 
                 // set up the switch to the battery mode after the specified delay
-                scheduleSwitchToBatteryMode(delay, batteryMode);
+                scheduleSwitchToBatteryMode(Measure.valueOf(delay, MS), batteryMode);
 
                 // Send to attached energy app the acceptance of the allocation request
-                allocationStatusUpdate(new AllocationStatusUpdate(timeService.getTime(),
+                allocationStatusUpdate(new AllocationStatusUpdate(context.currentTime(),
                                                                   bufferAllocation,
                                                                   AllocationStatus.ACCEPTED,
                                                                   ""));
@@ -217,8 +216,10 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
             // all battery mode changes are scheduled at time, so nothing to return
             return null;
         } else {
-            log.warn("Unexpected resource (" + message.toString() + ") message type (" + message.getClass().getName()
-                     + ")received");
+            logger.warn("Unexpected resource (" + message.toString()
+                        + ") message type ("
+                        + message.getClass().getName()
+                        + ")received");
             return null;
         }
     }
@@ -231,7 +232,7 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
      * @param newBatteryMode
      *            The battery mode to switch to after the delay
      */
-    private void scheduleSwitchToBatteryMode(final long delay, final BatteryMode newBatteryMode) {
+    private void scheduleSwitchToBatteryMode(final Measurable<Duration> delay, final BatteryMode newBatteryMode) {
         final Runnable allocationHelper = new Runnable() {
             @Override
             public void run() {
@@ -241,17 +242,17 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
                         return newBatteryMode;
                     }
                 });
-                log.debug("Has set up allocation at " + delay + "ms for batteryMode=" + newBatteryMode);
+                logger.debug("Has set up allocation at " + delay + " for batteryMode=" + newBatteryMode);
             }
         };
-        scheduler.schedule(allocationHelper, delay, TimeUnit.MILLISECONDS);
+        context.schedule(allocationHelper, delay);
     }
 
     @Activate
     public void activate(BundleContext bundleContext, Map<String, Object> properties) {
         // create a configuration
         configuration = Configurable.createConfigurable(Config.class, properties);
-        log.debug("BatteryManager Activated");
+        logger.debug("BatteryManager Activated");
     }
 
     @Deactivate
@@ -409,18 +410,12 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
     private Measure<Double, Energy> getCurrentFillLevel(BatteryState batteryState) {
         double stateOfCharge = batteryState.getStateOfCharge();
         Measurable<Energy> totalCapacity = batteryState.getTotalCapacity();
-        return Measure.valueOf(stateOfCharge * totalCapacity.doubleValue(WH),
-                               WH);
+        return Measure.valueOf(stateOfCharge * totalCapacity.doubleValue(WH), WH);
     }
 
     @Reference
-    public void setTimeService(TimeService timeService) {
-        this.timeService = timeService;
-    }
-
-    @Reference
-    public void setScheduledExecutorService(ScheduledExecutorService scheduler) {
-        this.scheduler = scheduler;
+    public void setContext(FlexiblePowerContext context) {
+        this.context = context;
     }
 
     // ---------------- helper conversion methodes ------------------
