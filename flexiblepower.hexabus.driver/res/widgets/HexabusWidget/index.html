@@ -1,0 +1,21 @@
+<!doctype html>
+<html ng-app="hexabusApp">
+<head>
+	<link rel="stylesheet" href="/css/widget.css" />
+	<link rel="stylesheet" href="style.css" />
+	<script type="text/javascript" src="/js/vendor/jquery.min.js"></script>
+	<script type="text/javascript" src="/js/widget.js"></script>
+	<script type="text/javascript" src="angular.min.js"></script>
+	<script type="text/javascript" src="script.js"></script>
+	<title>Miele@Home Dishwasher</title>
+</head>
+<body class="widget" ng-controller="HexabusCtrl">
+	<img id="icon" src="hexabus.png" alt="Hexabus plug" />
+
+	<div ng-repeat="device in devices">
+		<p><label>Id</label>{{device.deviceName}}</p>
+		<p><label>Current Power</label>{{device.power}} Watt</p>
+		<p><label>Is switched on?</label>{{device.switchedOn}}</p>
+	</div>
+</body>
+</html>

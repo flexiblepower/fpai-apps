@@ -1,0 +1,5 @@
+-buildpath: ${default-buildpath}, flexiblepower.miele.protocol;version=project
+
+Bundle-Version: 2.0.0.${qualifier}
+Private-Package: org.flexiblepower.miele.dishwasher.driver
+Service-Component: org.flexiblepower.miele.dishwasher.driver.*
