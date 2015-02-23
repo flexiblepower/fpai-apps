@@ -11,20 +11,20 @@ import javax.measure.quantity.Duration;
 import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
+import org.flexiblepower.context.FlexiblePowerContext;
 import org.flexiblepower.efi.UncontrolledResourceManager;
 import org.flexiblepower.efi.uncontrolled.UncontrolledMeasurement;
 import org.flexiblepower.efi.uncontrolled.UncontrolledRegistration;
 import org.flexiblepower.efi.uncontrolled.UncontrolledUpdate;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.messaging.Port;
-import org.flexiblepower.rai.ResourceMessage;
-import org.flexiblepower.rai.values.CommodityMeasurables;
-import org.flexiblepower.rai.values.CommoditySet;
-import org.flexiblepower.rai.values.ConstraintListMap;
 import org.flexiblepower.ral.ResourceControlParameters;
 import org.flexiblepower.ral.drivers.uncontrolled.PowerState;
 import org.flexiblepower.ral.ext.AbstractResourceManager;
-import org.flexiblepower.time.TimeService;
+import org.flexiblepower.ral.messages.ResourceMessage;
+import org.flexiblepower.ral.values.CommodityMeasurables;
+import org.flexiblepower.ral.values.CommoditySet;
+import org.flexiblepower.ral.values.ConstraintListMap;
 import org.flexiblepower.ui.Widget;
 import org.flexiblepower.uncontrolled.manager.UncontrolledManager.Config;
 import org.osgi.framework.BundleContext;
@@ -45,7 +45,7 @@ public class UncontrolledManager extends
                                 AbstractResourceManager<PowerState, ResourceControlParameters> implements
                                                                                               UncontrolledResourceManager {
 
-    private static final Logger log = LoggerFactory.getLogger(UncontrolledManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(UncontrolledManager.class);
 
     @Meta.OCD
     interface Config {
@@ -61,22 +61,16 @@ public class UncontrolledManager extends
 
     private Config config;
 
-    public UncontrolledManager() {
-        super();
-        log.debug("Initialized!");
-    }
-
-    private TimeService timeService;
+    private FlexiblePowerContext context;
     private UncontrolledManagerWidget widget;
     private ServiceRegistration<Widget> widgetRegistration;
     private Measurable<Power> lastDemand;
-    private PowerState currentState;
     private Date changedState;
     private Measure<Integer, Duration> allocationDelay;
 
     @Reference
-    public void setTimeService(TimeService timeService) {
-        this.timeService = timeService;
+    public void setContext(FlexiblePowerContext context) {
+        this.context = context;
     }
 
     @Activate
@@ -86,6 +80,8 @@ public class UncontrolledManager extends
             widget = new UncontrolledManagerWidget(this);
             widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
         }
+
+        logger.debug("Activated");
     };
 
     @Deactivate
@@ -94,6 +90,8 @@ public class UncontrolledManager extends
             widgetRegistration.unregister();
             widgetRegistration = null;
         }
+
+        logger.debug("Deactivated");
     }
 
     public Measurable<Power> getLastDemand() {
@@ -106,8 +104,7 @@ public class UncontrolledManager extends
 
     @Override
     protected List<? extends ResourceMessage> startRegistration(PowerState state) {
-        currentState = state;
-        changedState = timeService.getTime();
+        changedState = context.currentTime();
         allocationDelay = Measure.valueOf(5, SI.SECOND);
         ConstraintListMap constraintList = ConstraintListMap.electricity(null); // this version of the uncontrolled
                                                                                 // manager does not support
@@ -125,7 +122,7 @@ public class UncontrolledManager extends
         CommodityMeasurables measurables = CommodityMeasurables.electricity(currentUsage);
         UncontrolledUpdate update = new UncontrolledMeasurement(getResourceId(),
                                                                 changedState,
-                                                                timeService.getTime(),
+                                                                context.currentTime(),
                                                                 measurables);
         return update;
     }
