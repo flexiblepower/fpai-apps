@@ -1,4 +1,4 @@
--buildpath:  ${default-buildpath}
-Bundle-Version: 2.0.0.${qualifier}
+-buildpath:  ${fpai-buildpath}, flexiblepower.ui
+Bundle-Version: 2.1.0.${qualifier}
 Service-Component: *
 Export-Package: org.flexiblepower.simulation.pvpanel
