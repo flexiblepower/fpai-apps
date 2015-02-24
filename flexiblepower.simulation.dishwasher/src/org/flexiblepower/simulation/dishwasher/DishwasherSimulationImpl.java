@@ -5,25 +5,23 @@ import static javax.measure.unit.NonSI.HOUR;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import javax.measure.Measurable;
 import javax.measure.Measure;
 import javax.measure.quantity.Duration;
 import javax.measure.unit.SI;
 
+import org.flexiblepower.context.FlexiblePowerContext;
 import org.flexiblepower.messaging.Connection;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.messaging.MessageHandler;
-import org.flexiblepower.rai.values.CommodityProfile;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherControlParameters;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherState;
 import org.flexiblepower.ral.ext.AbstractResourceDriver;
+import org.flexiblepower.ral.values.CommodityProfile;
 import org.flexiblepower.simulation.api.dishwasher.DishwasherSimulation;
 import org.flexiblepower.simulation.dishwasher.DishwasherSimulationImpl.Config;
-import org.flexiblepower.time.TimeService;
 import org.flexiblepower.time.TimeUtil;
 import org.flexiblepower.ui.Widget;
 import org.osgi.framework.BundleContext;
@@ -44,7 +42,7 @@ public class DishwasherSimulationImpl
                                                                                                                  DishwasherDriver,
                                                                                                                  DishwasherSimulation {
 
-    private static final Logger log = LoggerFactory.getLogger(DishwasherSimulationImpl.State.class);
+    private static final Logger logger = LoggerFactory.getLogger(DishwasherSimulationImpl.State.class);
 
     private final class RunProgram implements Runnable {
         private final String program;
@@ -55,7 +53,7 @@ public class DishwasherSimulationImpl
 
         @Override
         public void run() {
-            update(new State(true, timeService.getTime(), timeService.getTime(), program));
+            update(new State(true, context.currentTime(), context.currentTime(), program));
             future = null;
         }
     }
@@ -125,18 +123,11 @@ public class DishwasherSimulationImpl
         }
     }
 
-    private ScheduledExecutorService scheduler;
+    private FlexiblePowerContext context;
 
     @Reference
-    public void setScheduledExecutorService(ScheduledExecutorService scheduler) {
-        this.scheduler = scheduler;
-    }
-
-    private TimeService timeService;
-
-    @Reference
-    public void setTimeService(TimeService timeService) {
-        this.timeService = timeService;
+    public void setContext(FlexiblePowerContext context) {
+        this.context = context;
     }
 
     private DishwasherWidget widget;
@@ -145,9 +136,9 @@ public class DishwasherSimulationImpl
     @Activate
     public void activate(BundleContext context, Map<String, Object> properties) {
         setIdle();
-        widget = new DishwasherWidget(this, timeService);
+        widget = new DishwasherWidget(this);
         widgetRegistration = context.registerService(Widget.class, widget, null);
-        log.info("Activated");
+        logger.info("Activated");
     }
 
     @Deactivate
@@ -156,7 +147,7 @@ public class DishwasherSimulationImpl
         update(new State(false, null, null, null));
 
         widgetRegistration.unregister();
-        log.info("Deactivated");
+        logger.info("Deactivated");
     }
 
     private volatile State currentState;
@@ -179,21 +170,19 @@ public class DishwasherSimulationImpl
 
     @Override
     public synchronized void handleControlParameters(final DishwasherControlParameters resourceControlParameters) {
-        log.debug("Handle controlParameters: {}", resourceControlParameters);
+        logger.debug("Handle controlParameters: {}", resourceControlParameters);
         if (resourceControlParameters.getProgram().equals(currentState.getProgram())) {
-            Measurable<Duration> diff = TimeUtil.difference(timeService.getTime(),
+            Measurable<Duration> diff = TimeUtil.difference(context.currentTime(),
                                                             resourceControlParameters.getStartTime());
 
             cancelJob();
 
             final String program = currentState.getProgram();
-            log.debug("Scheduling start over {}", diff);
-            future = scheduler.schedule(new RunProgram(program),
-                                        diff.longValue(SI.SECOND),
-                                        TimeUnit.SECONDS);
+            logger.debug("Scheduling start over {}", diff);
+            future = context.schedule(new RunProgram(program), diff);
 
         } else {
-            log.warn("Trying to start a different program (current={}, controlled={})",
+            logger.warn("Trying to start a different program (current={}, controlled={})",
                      currentState.getProgram(),
                      resourceControlParameters.getProgram());
         }
@@ -205,17 +194,21 @@ public class DishwasherSimulationImpl
         update(new State(true, null, null, null));
     }
 
+    public synchronized void setProgram(final String program, final Measurable<Duration> waitTime) {
+        setProgram(program, TimeUtil.add(context.currentTime(), waitTime));
+    }
+
     @Override
     public synchronized void setProgram(final String program, final Date latestStartTime) {
         cancelJob();
 
         update(new State(true, null, latestStartTime, program));
-        final Measurable<Duration> diff = TimeUtil.difference(timeService.getTime(), latestStartTime);
-        future = scheduler.schedule(new RunProgram(program), diff.longValue(SI.SECOND), TimeUnit.SECONDS);
+        final Measurable<Duration> diff = TimeUtil.difference(context.currentTime(), latestStartTime);
+        future = context.schedule(new RunProgram(program), diff);
     }
 
     private void update(State state) {
-        log.trace("Updating state to: {}", state);
+        logger.trace("Updating state to: {}", state);
         currentState = state;
         publishState(state);
     }

@@ -8,8 +8,6 @@ import javax.measure.Measure;
 import javax.measure.unit.NonSI;
 
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherState;
-import org.flexiblepower.time.TimeService;
-import org.flexiblepower.time.TimeUtil;
 import org.flexiblepower.ui.Widget;
 
 public class DishwasherWidget implements Widget {
@@ -36,11 +34,9 @@ public class DishwasherWidget implements Widget {
     }
 
     private final DishwasherSimulationImpl dishwasher;
-    private final TimeService timeService;
 
-    public DishwasherWidget(DishwasherSimulationImpl dishwasher, TimeService timeService) {
+    public DishwasherWidget(DishwasherSimulationImpl dishwasher) {
         this.dishwasher = dishwasher;
-        this.timeService = timeService;
     }
 
     public DishwasherSimulationImpl getDishwasher() {
@@ -59,7 +55,7 @@ public class DishwasherWidget implements Widget {
     }
 
     public Update startProgram(Locale locale) throws IOException {
-        dishwasher.setProgram("Simulated Program", TimeUtil.add(timeService.getTime(), Measure.valueOf(2, NonSI.HOUR)));
+        dishwasher.setProgram("Simulated Program", Measure.valueOf(2, NonSI.HOUR));
         return update(locale);
     }
 
