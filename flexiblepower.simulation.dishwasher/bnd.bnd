@@ -1,4 +1,4 @@
--buildpath: ${fpai-buildpath}, flexiblepower.ui;version=latest, flexiblepower.miele.protocol;version=project
+-buildpath: ${fpai-buildpath}, flexiblepower.ui;version=latest
 
 Bundle-Version: 2.1.0.${qualifier}
 Service-Component: org.flexiblepower.simulation.dishwasher.*
