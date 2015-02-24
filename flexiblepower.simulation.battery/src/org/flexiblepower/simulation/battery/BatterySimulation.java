@@ -5,9 +5,7 @@ import static javax.measure.unit.SI.WATT;
 
 import java.util.Date;
 import java.util.Map;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 import javax.measure.Measurable;
 import javax.measure.Measure;
@@ -16,6 +14,7 @@ import javax.measure.quantity.Energy;
 import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
+import org.flexiblepower.context.FlexiblePowerContext;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.ral.drivers.battery.BatteryControlParameters;
 import org.flexiblepower.ral.drivers.battery.BatteryDriver;
@@ -23,7 +22,6 @@ import org.flexiblepower.ral.drivers.battery.BatteryMode;
 import org.flexiblepower.ral.drivers.battery.BatteryState;
 import org.flexiblepower.ral.ext.AbstractResourceDriver;
 import org.flexiblepower.simulation.battery.BatterySimulation.Config;
-import org.flexiblepower.time.TimeService;
 import org.flexiblepower.ui.Widget;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -46,8 +44,10 @@ import aQute.bnd.annotation.metatype.Meta;
  */
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 public class BatterySimulation
-    extends AbstractResourceDriver<BatteryState, BatteryControlParameters>
-    implements BatteryDriver, Runnable {
+                              extends AbstractResourceDriver<BatteryState, BatteryControlParameters>
+                                                                                                    implements
+                                                                                                    BatteryDriver,
+                                                                                                    Runnable {
 
     interface Config {
         @Meta.AD(deflt = "5", description = "Interval between state updates [s]")
@@ -83,9 +83,7 @@ public class BatterySimulation
             // This is a quick fix. It would be better to throw an exception. This should be done later.
             if (stateOfCharge < 0.0) {
                 stateOfCharge = 0.0;
-            }
-            else if (stateOfCharge > 1.0)
-            {
+            } else if (stateOfCharge > 1.0) {
                 stateOfCharge = 1.0;
             }
 
@@ -154,27 +152,32 @@ public class BatterySimulation
         }
     }
 
-    private static final Logger log = LoggerFactory.getLogger(BatterySimulation.class);
-    // @SuppressWarnings("unchecked")
-    private Measurable<Power> dischargeSpeedInWatt; // Watt
-    private Measurable<Power> chargeSpeedInWatt; // Watt
-    private Measurable<Power> selfDischargeSpeedInWatt; // Watt
-    private Measurable<Energy> totalCapacityInKWh; // KWh
-    private Measurable<Duration> minTimeOn; // seconden
-    private Measurable<Duration> minTimeOff; // seconden
+    private static final Logger logger = LoggerFactory.getLogger(BatterySimulation.class);
+
+    private Measurable<Power> dischargeSpeedInWatt;
+    private Measurable<Power> chargeSpeedInWatt;
+    private Measurable<Power> selfDischargeSpeedInWatt;
+    private Measurable<Energy> totalCapacityInKWh;
+    private Measurable<Duration> minTimeOn;
+    private Measurable<Duration> minTimeOff;
 
     private BatteryMode mode;
     private Date lastUpdatedTime;
     private Config configuration;
     private double stateOfCharge;
 
-    private ScheduledExecutorService scheduler;
-
     private ScheduledFuture<?> scheduledFuture;
 
     private ServiceRegistration<Widget> widgetRegistration;
 
     private BatteryWidget widget;
+
+    private FlexiblePowerContext context;
+
+    @Reference
+    public void setContext(FlexiblePowerContext context) {
+        this.context = context;
+    }
 
     @Activate
     public void activate(BundleContext context, Map<String, Object> properties) throws Exception {
@@ -192,7 +195,10 @@ public class BatterySimulation
 
             publishState(new State(stateOfCharge, mode));
 
-            scheduledFuture = scheduler.scheduleAtFixedRate(this, 0, configuration.updateInterval(), TimeUnit.SECONDS);
+            scheduledFuture = this.context.scheduleAtFixedRate(this,
+                                                               Measure.valueOf(0, SI.SECOND),
+                                                               Measure.valueOf(configuration.updateInterval(),
+                                                                               SI.SECOND));
 
             widget = new BatteryWidget(this);
             widgetRegistration = context.registerService(Widget.class, widget, null);
@@ -235,22 +241,9 @@ public class BatterySimulation
         }
     }
 
-    private TimeService timeService;
-
-    @Reference
-    public void setTimeService(TimeService timeService) {
-        this.timeService = timeService;
-        lastUpdatedTime = timeService.getTime();
-    }
-
-    @Reference
-    public void setScheduledExecutorService(ScheduledExecutorService scheduler) {
-        this.scheduler = scheduler;
-    }
-
     @Override
     public synchronized void run() {
-        Date currentTime = timeService.getTime();
+        Date currentTime = context.currentTime();
         double durationSinceLastUpdate = (currentTime.getTime() - lastUpdatedTime.getTime()) / 1000.0; // in seconds
         lastUpdatedTime = currentTime;
         double amountOfChargeInWatt = 0;
