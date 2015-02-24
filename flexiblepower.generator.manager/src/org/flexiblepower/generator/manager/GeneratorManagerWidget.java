@@ -30,8 +30,7 @@ public class GeneratorManagerWidget implements Widget {
     }
 
     public Update changeLevel() {
-        if (manager.getMostRecentState() == null)
-        {
+        if (manager.getMostRecentState() == null) {
             return null;
         }
         int oldLevel = manager.getMostRecentState().getGeneratorLevel().getIntLevel();
@@ -40,8 +39,7 @@ public class GeneratorManagerWidget implements Widget {
         Integer element = manager.getPowerValues().lower(oldLevel);
         if (element == null) {
             newLevel = manager.getPowerValues().last();
-        }
-        else {
+        } else {
             newLevel = element;
         }
 

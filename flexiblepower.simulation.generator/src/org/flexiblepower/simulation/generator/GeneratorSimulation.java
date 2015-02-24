@@ -5,11 +5,13 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.flexiblepower.driver.generator.GeneratorControlParameters;
+import org.flexiblepower.driver.generator.GeneratorLevel;
+import org.flexiblepower.driver.generator.GeneratorState;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.messaging.Port;
 import org.flexiblepower.ral.ext.AbstractResourceDriver;
 import org.flexiblepower.simulation.generator.GeneratorSimulation.Config;
-import org.flexiblepower.time.TimeService;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,9 +28,7 @@ import aQute.bnd.annotation.metatype.Meta;
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 public class GeneratorSimulation extends AbstractResourceDriver<GeneratorState, GeneratorControlParameters> implements
                                                                                                            Runnable {
-    private static final Logger log = LoggerFactory.getLogger(GeneratorSimulation.class);
-
-    private java.util.NavigableSet<Integer> powerValues;
+    private static final Logger logger = LoggerFactory.getLogger(GeneratorSimulation.class);
 
     @Meta.OCD
     interface Config {
@@ -72,7 +72,7 @@ public class GeneratorSimulation extends AbstractResourceDriver<GeneratorState, 
             generatorLevel.setLevel(0);
 
         } catch (RuntimeException ex) {
-            log.error("Error during initialization of the generator simulation: " + ex.getMessage(), ex);
+            logger.error("Error during initialization of the generator simulation: " + ex.getMessage(), ex);
             deactivate();
             throw ex;
         }
@@ -84,7 +84,7 @@ public class GeneratorSimulation extends AbstractResourceDriver<GeneratorState, 
             config = Configurable.createConfigurable(Config.class, properties);
 
         } catch (RuntimeException ex) {
-            log.error("Error during modification of the generator simulation: " + ex.getMessage(), ex);
+            logger.error("Error during modification of the generator simulation: " + ex.getMessage(), ex);
             deactivate();
             throw ex;
         }
@@ -103,17 +103,10 @@ public class GeneratorSimulation extends AbstractResourceDriver<GeneratorState, 
         this.schedulerService = schedulerService;
     }
 
-    private TimeService timeService;
-
-    @Reference
-    public void setTimeService(TimeService timeService) {
-        this.timeService = timeService;
-    }
-
     @Override
     public void run() {
         GeneratorState state = new State(generatorLevel);
-        log.debug("Publishing state {}", state);
+        logger.debug("Publishing state {}", state);
         // System.out.println("ping");
         publishState(state);
     }

@@ -1,10 +1,6 @@
--buildpath: ${default-buildpath}
-
-
+-buildpath: ${fpai-buildpath}
 Service-Component: *
-Bundle-Version: 1.0.0
-Import-Package: \
-	org.flexiblepower*,\
-	*;resolution:=optional
-Export-Package:  \
-	org.flexiblepower.simulation.generator
+Bundle-Version: 1.0.0.${qualifier}
+Export-Package: org.flexiblepower.driver.generator
+Private-Package:  org.flexiblepower.simulation.generator
+Require-Capability: flexiblepower.context;filter:="(runtime=fpai)"

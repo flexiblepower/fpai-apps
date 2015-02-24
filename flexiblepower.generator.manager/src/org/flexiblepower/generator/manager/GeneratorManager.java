@@ -10,15 +10,18 @@ import java.util.Map;
 import java.util.NavigableSet;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import javax.measure.Measurable;
 import javax.measure.Measure;
 import javax.measure.quantity.Duration;
 import javax.measure.unit.NonSI;
 import javax.measure.unit.SI;
+import javax.measure.unit.Unit;
 
+import org.flexiblepower.context.FlexiblePowerContext;
+import org.flexiblepower.driver.generator.GeneratorControlParameters;
+import org.flexiblepower.driver.generator.GeneratorLevel;
+import org.flexiblepower.driver.generator.GeneratorState;
 import org.flexiblepower.efi.UnconstrainedResourceManager;
 import org.flexiblepower.efi.unconstrained.RunningModeBehaviour;
 import org.flexiblepower.efi.unconstrained.UnconstrainedAllocation;
@@ -33,18 +36,14 @@ import org.flexiblepower.messaging.Cardinality;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.messaging.Port;
 import org.flexiblepower.messaging.Ports;
-import org.flexiblepower.rai.AllocationRevoke;
-import org.flexiblepower.rai.AllocationStatus;
-import org.flexiblepower.rai.AllocationStatusUpdate;
-import org.flexiblepower.rai.ControlSpaceRevoke;
-import org.flexiblepower.rai.ResourceMessage;
-import org.flexiblepower.rai.values.CommodityMeasurables;
-import org.flexiblepower.rai.values.CommoditySet;
 import org.flexiblepower.ral.ext.AbstractResourceManager;
-import org.flexiblepower.simulation.generator.GeneratorControlParameters;
-import org.flexiblepower.simulation.generator.GeneratorLevel;
-import org.flexiblepower.simulation.generator.GeneratorState;
-import org.flexiblepower.time.TimeService;
+import org.flexiblepower.ral.messages.AllocationRevoke;
+import org.flexiblepower.ral.messages.AllocationStatus;
+import org.flexiblepower.ral.messages.AllocationStatusUpdate;
+import org.flexiblepower.ral.messages.ControlSpaceRevoke;
+import org.flexiblepower.ral.messages.ResourceMessage;
+import org.flexiblepower.ral.values.CommodityMeasurables;
+import org.flexiblepower.ral.values.CommoditySet;
 import org.flexiblepower.ui.Widget;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -74,7 +73,8 @@ public class GeneratorManager extends
                              AbstractResourceManager<GeneratorState, GeneratorControlParameters> implements
                                                                                                 UnconstrainedResourceManager {
 
-    private static final Logger log = LoggerFactory.getLogger(GeneratorManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(GeneratorManager.class);
+    private static final Unit<Duration> MS = SI.MILLI(SI.SECOND);
 
     @Meta.OCD
     interface Config {
@@ -104,12 +104,10 @@ public class GeneratorManager extends
     }
 
     private Config config;
-    private GeneratorManagerWidget widget;
     private ServiceRegistration<Widget> widgetRegistration;
     private Date changedStateAt;
-    private TimeService timeService;
+    private FlexiblePowerContext context;
     private Measure<Integer, Duration> allocationDelay;
-    private ScheduledExecutorService scheduler;
     private GeneratorState mostRecentState;
     private NavigableSet<Integer> powerValues;
 
@@ -125,7 +123,7 @@ public class GeneratorManager extends
     public void activate(BundleContext bundleContext, Map<String, Object> properties) {
         config = Configurable.createConfigurable(Config.class, properties);
         if (config.showWidget()) {
-            widget = new GeneratorManagerWidget(this);
+            GeneratorManagerWidget widget = new GeneratorManagerWidget(this);
             widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
         }
     };
@@ -141,7 +139,7 @@ public class GeneratorManager extends
     @Override
     protected List<? extends ResourceMessage> startRegistration(
                                                                 GeneratorState state) {
-        changedStateAt = timeService.getTime();
+        changedStateAt = context.currentTime();
         allocationDelay = Measure.valueOf(5, SI.SECOND);
         // Make the registration.
         UnconstrainedRegistration reg = new UnconstrainedRegistration(getResourceId(),
@@ -201,8 +199,8 @@ public class GeneratorManager extends
 
     private UnconstrainedStateUpdate createUnconstrainedUpdate(GeneratorState state) {
         return new UnconstrainedStateUpdate(getResourceId(),
-                                            timeService.getTime(),
-                                            timeService.getTime(),
+                                            context.currentTime(),
+                                            context.currentTime(),
                                             state.getGeneratorLevel().getIntLevel(),
                                             Collections.<TimerUpdate> emptySet());
     }
@@ -221,31 +219,33 @@ public class GeneratorManager extends
     protected GeneratorControlParameters receivedAllocation(ResourceMessage message) {
         if (message instanceof UnconstrainedAllocation) {
             UnconstrainedAllocation allocation = (UnconstrainedAllocation) message;
-            log.debug("Received allocation " + allocation);
+            logger.debug("Received allocation " + allocation);
             // determine running mode and delay.
-            long delay = allocation.getRunningModeSelectors().iterator().next().getStartTime().getTime() - timeService.getCurrentTimeMillis();
+            long delay = allocation.getRunningModeSelectors().iterator().next().getStartTime().getTime() - context.currentTimeMillis();
             delay = (delay <= 0 ? 1 : delay);
 
             // set up the scheduler switch to the running mode after the specified delay
-            scheduleSwitchToRunningMode(delay, allocation.getRunningModeSelectors()
-                                                         .iterator()
-                                                         .next()
-                                                         .getRunningModeId());
+            scheduleSwitchToRunningMode(Measure.valueOf(delay, MS), allocation.getRunningModeSelectors()
+                                                                              .iterator()
+                                                                              .next()
+                                                                              .getRunningModeId());
             // Send to attached energy app the acceptance of the allocation request
-            allocationStatusUpdate(new AllocationStatusUpdate(timeService.getTime(),
+            allocationStatusUpdate(new AllocationStatusUpdate(context.currentTime(),
                                                               allocation,
                                                               AllocationStatus.ACCEPTED,
                                                               ""));
             // the running mode change is scheduled at time, so nothing to return
             return null;
         } else {
-            log.warn("Unexpected resource (" + message.toString() + ") message type (" + message.getClass().getName()
-                     + ")received");
+            logger.warn("Unexpected resource (" + message.toString()
+                        + ") message type ("
+                        + message.getClass().getName()
+                        + ")received");
             return null;
         }
     }
 
-    private void scheduleSwitchToRunningMode(final long delay, final int runningModePower) {
+    private void scheduleSwitchToRunningMode(final Measurable<Duration> delay, final int runningModePower) {
         final Runnable allocationHelper = new Runnable() {
             @Override
             public void run() {
@@ -257,21 +257,16 @@ public class GeneratorManager extends
                         return level;
                     }
                 });
-                log.debug("Has set up allocation at " + delay
-                          + "ms for running mode with Power value="
-                          + runningModePower);
+                logger.debug("Has set up allocation at " + delay
+                             + " for running mode with Power value="
+                             + runningModePower);
             }
         };
-        scheduler.schedule(allocationHelper, delay, TimeUnit.MILLISECONDS);
+        context.schedule(allocationHelper, delay);
     }
 
     @Reference
-    public void setScheduledExecutorService(ScheduledExecutorService scheduler) {
-        this.scheduler = scheduler;
-    }
-
-    @Reference
-    public void setTimeService(TimeService timeService) {
-        this.timeService = timeService;
+    public void setContext(FlexiblePowerContext context) {
+        this.context = context;
     }
 }

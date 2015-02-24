@@ -1,4 +1,4 @@
-package org.flexiblepower.simulation.generator;
+package org.flexiblepower.driver.generator;
 
 import org.flexiblepower.ral.ResourceState;
 
