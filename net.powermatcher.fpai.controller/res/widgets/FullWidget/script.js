@@ -1,7 +1,6 @@
 $(window).load(function() {
 	w = new widget("update", 2000, function(data) {
 		$(".error").hide();
-		$("#marketprice").text(data.marketPrice.toFixed(2).replace(".", ","));
 		for(var agentId in data) {
 			var div = $("#bid-"+agentId);
 			if(div.size() == 0) {

@@ -7,12 +7,11 @@ import javax.measure.unit.SI;
 import net.powermatcher.api.data.Bid;
 import net.powermatcher.api.data.MarketBasis;
 import net.powermatcher.api.data.Price;
-import net.powermatcher.fpai.controller.AgentTracker;
+import net.powermatcher.fpai.controller.AgentMessageSender;
 
 import org.flexiblepower.efi.uncontrolled.UncontrolledForecast;
 import org.flexiblepower.efi.uncontrolled.UncontrolledMeasurement;
 import org.flexiblepower.efi.uncontrolled.UncontrolledRegistration;
-import org.flexiblepower.messaging.Connection;
 import org.flexiblepower.ral.messages.AllocationStatusUpdate;
 import org.flexiblepower.ral.messages.ControlSpaceRegistration;
 import org.flexiblepower.ral.messages.ControlSpaceRevoke;
@@ -27,18 +26,18 @@ public class UncontrolledAgent extends FpaiAgent {
     private UncontrolledRegistration registration;
     private UncontrolledMeasurement lastUncontrolledMeasurement;
 
-    public UncontrolledAgent(Connection connection, AgentTracker agentTracker, String agentId, String desiredParentId) {
-        super(connection, agentTracker, agentId, desiredParentId);
+    public UncontrolledAgent(AgentMessageSender messageHandler) {
+        super(messageHandler);
     }
 
     @Override
-    protected void handleControlSpaceRegistration(ControlSpaceRegistration message) {
+    public void handleControlSpaceRegistration(ControlSpaceRegistration message) {
         if (message instanceof UncontrolledRegistration) {
             if (registration == null) {
                 registration = (UncontrolledRegistration) message;
                 if (!registration.supportsCommodity(Commodity.ELECTRICITY)) {
                     logger.error("PowerMatcher cannot support appliances which do not support electricity");
-                    disconnected();
+                    messageSender.destroyAgent();
                 }
             } else {
                 logger.error("Received multiple ControlSpaceRegistrations, ignoring...");
@@ -49,7 +48,7 @@ public class UncontrolledAgent extends FpaiAgent {
     }
 
     @Override
-    protected void handleControlSpaceUpdate(ControlSpaceUpdate message) {
+    public void handleControlSpaceUpdate(ControlSpaceUpdate message) {
         if (message instanceof UncontrolledMeasurement) {
             lastUncontrolledMeasurement = (UncontrolledMeasurement) message;
             doBidUpdate();
@@ -61,12 +60,12 @@ public class UncontrolledAgent extends FpaiAgent {
     }
 
     @Override
-    protected void handleAllocationStatusUpdate(AllocationStatusUpdate message) {
+    public void handleAllocationStatusUpdate(AllocationStatusUpdate message) {
         logger.debug("Received AllocationStatusUpdate, ignoring...");
     }
 
     @Override
-    protected void handleControlSpaceRevoke(ControlSpaceRevoke message) {
+    public void handleControlSpaceRevoke(ControlSpaceRevoke message) {
         // We don't support forecasts, so...
     }
 

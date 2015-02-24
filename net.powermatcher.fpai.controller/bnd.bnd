@@ -8,11 +8,8 @@ Bundle-Version: 2.0.0.${qualifier}
 -testpath: ${test-buildpath}, net.powermatcher.test.helpers
 	
 -includeresource: {OSGI-INF/permissions.perm=permissions.perm}, res
-Service-Component: net.powermatcher.fpai.controller.*
-
-Import-Package: aQute.bnd.annotation.metatype;resolution:=optional,\
-	*
-
+Service-Component: *
+Import-Package: aQute.bnd.annotation.metatype;resolution:=optional,*
 Private-Package:  \
 	net.powermatcher.fpai.agents,\
 	net.powermatcher.fpai.controller,\

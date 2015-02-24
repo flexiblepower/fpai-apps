@@ -4,12 +4,8 @@ import net.powermatcher.api.data.Bid;
 import net.powermatcher.api.data.Price;
 import net.powermatcher.api.messages.PriceUpdate;
 import net.powermatcher.core.BaseAgentEndpoint;
-import net.powermatcher.fpai.controller.AgentTracker;
+import net.powermatcher.fpai.controller.AgentMessageSender;
 
-import org.flexiblepower.messaging.Connection;
-import org.flexiblepower.messaging.MessageHandler;
-import org.flexiblepower.ral.messages.Allocation;
-import org.flexiblepower.ral.messages.AllocationRevoke;
 import org.flexiblepower.ral.messages.AllocationStatusUpdate;
 import org.flexiblepower.ral.messages.ControlSpaceRegistration;
 import org.flexiblepower.ral.messages.ControlSpaceRevoke;
@@ -20,64 +16,22 @@ import org.flexiblepower.ral.messages.ControlSpaceUpdate;
  * agents.
  *
  */
-public abstract class FpaiAgent
-    extends BaseAgentEndpoint
-    implements MessageHandler, Comparable<FpaiAgent> {
+public abstract class FpaiAgent extends BaseAgentEndpoint implements Comparable<FpaiAgent> {
 
-    final Connection connection;
-    final AgentTracker agentTracker;
-
-    private final String agentPrefix;
-    private final String desiredParentId;
+    final AgentMessageSender messageSender;
 
     /**
-     * Constructs an FpaiAgent based on the necessary connection, configuration and tracker information.
+     * Constructs an FpaiAgent based on the given messageSender.
      *
-     * @param connection
-     *            The connection to the resource manager.
-     * @param agentTracker
-     *            The tracker of this agent.
-     * @param agentPrefix
-     *            The prefix for the identifier of this agent
-     * @param desiredParentId
-     *            The identifier of the matcher this agent should connect to
+     * @param messageSender
+     *            The {@link AgentMessageSender} that should be used to send messages
      */
-    public FpaiAgent(Connection connection, AgentTracker agentTracker, String agentPrefix, String desiredParentId) {
-        if (connection == null) {
-            throw new NullPointerException("connection");
-        } else if (agentTracker == null) {
-            throw new NullPointerException("agentTracker");
+    public FpaiAgent(AgentMessageSender messageSender) {
+        if (messageSender == null) {
+            throw new NullPointerException("messageHandler");
         }
 
-        this.connection = connection;
-        this.agentTracker = agentTracker;
-
-        this.agentPrefix = agentPrefix;
-        this.desiredParentId = desiredParentId;
-    }
-
-    /**
-     * Handles the reception of the different EFI messages based on the type of message.
-     */
-    @Override
-    public synchronized void handleMessage(Object message) {
-        if (message == null) {
-            LOGGER.error("Received a null message");
-        } else if (message instanceof ControlSpaceRegistration) {
-            ControlSpaceRegistration registration = (ControlSpaceRegistration) message;
-            String agentId = agentPrefix + registration.getResourceId();
-            activate(agentId, desiredParentId);
-
-            handleControlSpaceRegistration(registration);
-        } else if (message instanceof ControlSpaceUpdate) {
-            handleControlSpaceUpdate((ControlSpaceUpdate) message);
-        } else if (message instanceof ControlSpaceRevoke) {
-            handleControlSpaceRevoke((ControlSpaceRevoke) message);
-        } else if (message instanceof AllocationStatusUpdate) {
-            handleAllocationStatusUpdate((AllocationStatusUpdate) message);
-        } else {
-            LOGGER.error("Received unknown type of message: " + message);
-        }
+        this.messageSender = messageSender;
     }
 
     /**
@@ -86,7 +40,7 @@ public abstract class FpaiAgent
      * @param message
      *            The registration message.
      */
-    protected abstract void handleControlSpaceRegistration(ControlSpaceRegistration message);
+    public abstract void handleControlSpaceRegistration(ControlSpaceRegistration message);
 
     /**
      * Processes the ControlSpaceUpdate sent out by the resource manager.
@@ -94,7 +48,7 @@ public abstract class FpaiAgent
      * @param message
      *            The ControlSpaceUpdate message.
      */
-    protected abstract void handleControlSpaceUpdate(ControlSpaceUpdate message);
+    public abstract void handleControlSpaceUpdate(ControlSpaceUpdate message);
 
     /**
      * Processes the control space revoke that the resource manager may send out.
@@ -102,7 +56,7 @@ public abstract class FpaiAgent
      * @param message
      *            The Revoke message.
      */
-    protected abstract void handleControlSpaceRevoke(ControlSpaceRevoke message);
+    public abstract void handleControlSpaceRevoke(ControlSpaceRevoke message);
 
     /**
      * Processes the AllocationStatusUpdate sent by the resource manager.
@@ -110,37 +64,7 @@ public abstract class FpaiAgent
      * @param message
      *            The update of the allocation status.
      */
-    protected abstract void handleAllocationStatusUpdate(AllocationStatusUpdate message);
-
-    /**
-     * Provides the logic of disconnecting the agent with the agent tracker.
-     */
-    @Override
-    public void disconnected() {
-        LOGGER.info("Agent " + getAgentId() + " disconnecting");
-        deactivate();
-        agentTracker.unregisterAgent(this);
-    }
-
-    /**
-     * Sends the allocation to the resource manager.
-     *
-     * @param allocation
-     *            The allocation message.
-     */
-    protected void sendAllocation(Allocation allocation) {
-        connection.sendMessage(allocation);
-    }
-
-    /**
-     * Sends the revoke of an allocation message to the resource manager.
-     *
-     * @param allocationRevoke
-     *            The revoke message of the allocation.
-     */
-    protected void sendAllocationRevoke(AllocationRevoke allocationRevoke) {
-        connection.sendMessage(allocationRevoke);
-    }
+    public abstract void handleAllocationStatusUpdate(AllocationStatusUpdate message);
 
     protected abstract Bid createBid();
 

@@ -15,7 +15,7 @@ import net.powermatcher.api.data.PointBid;
 import net.powermatcher.api.data.Price;
 import net.powermatcher.api.data.PricePoint;
 import net.powermatcher.fpai.agents.BufferBid.BufferBidElement;
-import net.powermatcher.fpai.controller.AgentTracker;
+import net.powermatcher.fpai.controller.AgentMessageSender;
 
 import org.flexiblepower.api.efi.bufferhelper.Buffer;
 import org.flexiblepower.api.efi.bufferhelper.BufferActuator;
@@ -29,7 +29,6 @@ import org.flexiblepower.efi.buffer.BufferUsageForecast;
 import org.flexiblepower.efi.buffer.RunningModeBehaviour;
 import org.flexiblepower.efi.util.FillLevelFunction;
 import org.flexiblepower.efi.util.RunningMode;
-import org.flexiblepower.messaging.Connection;
 import org.flexiblepower.ral.messages.AllocationStatusUpdate;
 import org.flexiblepower.ral.messages.ControlSpaceRegistration;
 import org.flexiblepower.ral.messages.ControlSpaceRevoke;
@@ -51,13 +50,13 @@ public class BufferAgent<Q extends Quantity> extends FpaiAgent {
     private BufferTargetProfileUpdate<Q> lastBufferTargetProfile;
     private BufferSystemDescription lastBufferSystemDescription;
 
-    public BufferAgent(Connection connection, AgentTracker agentTracker, String agentId, String desiredParentId) {
-        super(connection, agentTracker, agentId, desiredParentId);
+    public BufferAgent(AgentMessageSender messageHandler) {
+        super(messageHandler);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    protected void handleControlSpaceRegistration(ControlSpaceRegistration message) {
+    public void handleControlSpaceRegistration(ControlSpaceRegistration message) {
         if (message instanceof BufferRegistration) {
             if (registration == null) {
                 registration = (BufferRegistration<Q>) message;
@@ -72,7 +71,7 @@ public class BufferAgent<Q extends Quantity> extends FpaiAgent {
 
     @SuppressWarnings("unchecked")
     @Override
-    protected void handleControlSpaceUpdate(ControlSpaceUpdate message) {
+    public void handleControlSpaceUpdate(ControlSpaceUpdate message) {
         if (message instanceof BufferSystemDescription) {
             bufferHelper.processSystemDescription((BufferSystemDescription) message);
             lastBufferSystemDescription = (BufferSystemDescription) message;
@@ -92,7 +91,7 @@ public class BufferAgent<Q extends Quantity> extends FpaiAgent {
     }
 
     @Override
-    protected void handleAllocationStatusUpdate(AllocationStatusUpdate message) {
+    public void handleAllocationStatusUpdate(AllocationStatusUpdate message) {
         switch (message.getStatus()) {
         case ACCEPTED:
             // No action
@@ -115,7 +114,7 @@ public class BufferAgent<Q extends Quantity> extends FpaiAgent {
     }
 
     @Override
-    protected void handleControlSpaceRevoke(ControlSpaceRevoke message) {
+    public void handleControlSpaceRevoke(ControlSpaceRevoke message) {
         // TODO Auto-generated method stub
 
     }
@@ -219,7 +218,7 @@ public class BufferAgent<Q extends Quantity> extends FpaiAgent {
                                                                false,
                                                                Collections.singleton(actuatorAllocation));
             LOGGER.info("Sending allocation " + allocation);
-            sendAllocation(allocation);
+            messageSender.sendMessage(allocation);
         } else {
             LOGGER.info("Received price update, but don't have enough info to construct allocation");
         }

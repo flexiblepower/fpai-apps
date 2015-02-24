@@ -1,7 +1,9 @@
 package net.powermatcher.fpai.widget;
 
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.powermatcher.api.data.MarketBasis;
@@ -60,7 +62,14 @@ public class FullWidget implements Widget, AgentObserver {
     }
 
     public Map<String, AgentInfo> update() {
-        return bids;
+        Map<String, AgentInfo> copy = new TreeMap<String, FullWidget.AgentInfo>(bids);
+        for (Iterator<AgentInfo> it = copy.values().iterator(); it.hasNext();) {
+            AgentInfo agentInfo = it.next();
+            if (agentInfo.priceBidNumber == 0 || agentInfo.coordinates.length == 0) {
+                it.remove();
+            }
+        }
+        return copy;
     }
 
     public static class AgentInfo {

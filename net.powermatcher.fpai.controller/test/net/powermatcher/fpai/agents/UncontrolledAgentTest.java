@@ -14,8 +14,7 @@ import junit.framework.TestCase;
 import net.powermatcher.api.data.MarketBasis;
 import net.powermatcher.api.data.Price;
 import net.powermatcher.api.messages.PriceUpdate;
-import net.powermatcher.fpai.test.MockAgentTracker;
-import net.powermatcher.fpai.test.MockConnection;
+import net.powermatcher.fpai.test.MockAgentSender;
 import net.powermatcher.fpai.test.MockSession;
 import net.powermatcher.mock.MockContext;
 
@@ -31,17 +30,20 @@ import org.flexiblepower.ral.values.UncertainMeasure;
 
 public class UncontrolledAgentTest extends TestCase {
 
-    private final MockAgentTracker agentTracker = new MockAgentTracker();
-    private final MockConnection connection = new MockConnection("uncontrolled");
     private final MarketBasis marketBasis = new MarketBasis("electricity", "EUR", 100, 0, 99);
     private final MockSession session = new MockSession(marketBasis);
     private final MockContext context = new MockContext(System.currentTimeMillis());
 
-    private UncontrolledAgent createAgent() {
-        UncontrolledAgent agent = new UncontrolledAgent(connection, agentTracker, "agent-1", "matcher-id");
+    private MockAgentSender<UncontrolledAgent> agentSender;
+    private UncontrolledAgent agent;
+
+    @Override
+    protected void setUp() throws Exception {
+        agentSender = MockAgentSender.create(UncontrolledAgent.class);
+        agent = agentSender.getAgent();
+        agent.activate("agent-1", "matcher");
         agent.setContext(context);
         agent.connectToMatcher(session);
-        return agent;
     }
 
     /**
@@ -50,12 +52,8 @@ public class UncontrolledAgentTest extends TestCase {
      * Expected behavior: Agent does nothing and doesn't break
      */
     public void testNoRegistration() {
-        agentTracker.reset();
-        connection.reset();
-        UncontrolledAgent agent = createAgent();
         agent.handlePriceUpdate(new PriceUpdate(new Price(marketBasis, 50), 1));
-        assertNull(connection.getLastReceivedMessage());
-        assertFalse(agentTracker.hasUnregistered());
+        assertNull(agentSender.getLastMessage());
     }
 
     /**
@@ -64,16 +62,12 @@ public class UncontrolledAgentTest extends TestCase {
      * Expected behavior: Agent does nothing and doesn't break
      */
     public void testNoUpdate() {
-        agentTracker.reset();
-        connection.reset();
-        UncontrolledAgent agent = createAgent();
-        agent.handleMessage(new UncontrolledRegistration("resourceId",
-                                                         new Date(),
-                                                         Measure.zero(SI.SECOND),
-                                                         CommoditySet.onlyElectricity,
-                                                         ConstraintListMap.EMPTY));
+        agentSender.handleMessage(new UncontrolledRegistration("resourceId",
+                                                               new Date(),
+                                                               Measure.zero(SI.SECOND),
+                                                               CommoditySet.onlyElectricity,
+                                                               ConstraintListMap.EMPTY));
         agent.handlePriceUpdate(new PriceUpdate(new Price(marketBasis, 50), 1));
-        assertFalse(agentTracker.hasUnregistered());
     }
 
     /**
@@ -82,15 +76,11 @@ public class UncontrolledAgentTest extends TestCase {
      * Expected behavior: Agent disconnects
      */
     public void testNoElectricityRegistration() {
-        agentTracker.reset();
-        connection.reset();
-        UncontrolledAgent agent = createAgent();
-        agent.handleMessage(new UncontrolledRegistration("resourceId",
-                                                         new Date(),
-                                                         Measure.zero(SI.SECOND),
-                                                         CommoditySet.onlyGas,
-                                                         ConstraintListMap.EMPTY));
-        assertTrue(agentTracker.hasUnregistered());
+        agentSender.handleMessage(new UncontrolledRegistration("resourceId",
+                                                               new Date(),
+                                                               Measure.zero(SI.SECOND),
+                                                               CommoditySet.onlyGas,
+                                                               ConstraintListMap.EMPTY));
     }
 
     /**
@@ -99,23 +89,18 @@ public class UncontrolledAgentTest extends TestCase {
      * Expected behavior: Agent does not break and does not disconnect
      */
     public void testUncontrolledMeasurementWithoutElectricity() {
-        session.reset();
-        agentTracker.reset();
-        connection.reset();
-        UncontrolledAgent agent = createAgent();
-        agent.handleMessage(new UncontrolledRegistration("resourceId",
-                                                         new Date(),
-                                                         Measure.zero(SI.SECOND),
-                                                         CommoditySet.create().addElectricity().addGas().build(),
-                                                         ConstraintListMap.EMPTY));
+        agentSender.handleMessage(new UncontrolledRegistration("resourceId",
+                                                               new Date(),
+                                                               Measure.zero(SI.SECOND),
+                                                               CommoditySet.create().addElectricity().addGas().build(),
+                                                               ConstraintListMap.EMPTY));
 
         Date now = new Date();
         CommodityMeasurables commodityMeasurables = CommodityMeasurables.create()
                                                                         .gas(Measure.valueOf(10,
                                                                                              VolumetricFlowRate.UNIT))
                                                                         .build();
-        agent.handleMessage(new UncontrolledMeasurement("resourceId", now, now, commodityMeasurables));
-        assertFalse(agentTracker.hasUnregistered());
+        agentSender.handleMessage(new UncontrolledMeasurement("resourceId", now, now, commodityMeasurables));
     }
 
     /**
@@ -124,15 +109,11 @@ public class UncontrolledAgentTest extends TestCase {
      * Expected behavior: Agent ignores it; does not break and does not disconnect
      */
     public void testUncontrolledForecast() {
-        session.reset();
-        agentTracker.reset();
-        connection.reset();
-        UncontrolledAgent agent = createAgent();
-        agent.handleMessage(new UncontrolledRegistration("resourceId",
-                                                         new Date(),
-                                                         Measure.zero(SI.SECOND),
-                                                         CommoditySet.create().addElectricity().addGas().build(),
-                                                         ConstraintListMap.EMPTY));
+        agentSender.handleMessage(new UncontrolledRegistration("resourceId",
+                                                               new Date(),
+                                                               Measure.zero(SI.SECOND),
+                                                               CommoditySet.create().addElectricity().addGas().build(),
+                                                               ConstraintListMap.EMPTY));
 
         Date now = new Date();
         CommodityForecast forecast = CommodityForecast.create()
@@ -143,7 +124,6 @@ public class UncontrolledAgentTest extends TestCase {
                                                                                         .build())
                                                       .build();
         agent.handleControlSpaceUpdate(new UncontrolledForecast("resourceId", now, now, forecast));
-        assertFalse(agentTracker.hasUnregistered());
     }
 
     /**
@@ -154,15 +134,11 @@ public class UncontrolledAgentTest extends TestCase {
     public void testLoads() {
         double[] demands = { 0, -100, 500, 200000, 9999999 };
 
-        session.reset();
-        agentTracker.reset();
-        connection.reset();
-        UncontrolledAgent agent = createAgent();
-        agent.handleMessage(new UncontrolledRegistration("resourceId",
-                                                         new Date(),
-                                                         Measure.zero(SI.SECOND),
-                                                         CommoditySet.onlyElectricity,
-                                                         ConstraintListMap.EMPTY));
+        agentSender.handleMessage(new UncontrolledRegistration("resourceId",
+                                                               new Date(),
+                                                               Measure.zero(SI.SECOND),
+                                                               CommoditySet.onlyElectricity,
+                                                               ConstraintListMap.EMPTY));
 
         for (double demand : demands) {
             Date now = new Date();
@@ -172,7 +148,7 @@ public class UncontrolledAgentTest extends TestCase {
                                                                             .gas(Measure.valueOf(10,
                                                                                                  VolumetricFlowRate.UNIT))
                                                                             .build();
-            agent.handleMessage(new UncontrolledMeasurement("resourceId", now, now, commodityMeasurables));
+            agentSender.handleMessage(new UncontrolledMeasurement("resourceId", now, now, commodityMeasurables));
             assertFlatBidWithValue(session.getLastBid().getBid(), Measure.valueOf(demand, SI.WATT));
         }
 

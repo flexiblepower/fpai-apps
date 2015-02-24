@@ -16,8 +16,7 @@ import net.powermatcher.api.data.MarketBasis;
 import net.powermatcher.api.data.Price;
 import net.powermatcher.api.messages.PriceUpdate;
 import net.powermatcher.fpai.test.BidAnalyzer;
-import net.powermatcher.fpai.test.MockAgentTracker;
-import net.powermatcher.fpai.test.MockConnection;
+import net.powermatcher.fpai.test.MockAgentSender;
 import net.powermatcher.fpai.test.MockSession;
 import net.powermatcher.mock.MockContext;
 
@@ -38,17 +37,9 @@ public class UnconstrainedAgentTest extends TestCase {
 
     private final static String RESOURCE_ID = "resourceId3";
 
-    private final MockAgentTracker agentTracker = new MockAgentTracker();
-    private final MockConnection connection = new MockConnection("unconstrained");
     private final MarketBasis marketBasis = new MarketBasis("electricity", "EUR", 100, 0, 99);
     private final MockSession session = new MockSession(marketBasis);
     private final MockContext context = new MockContext(System.currentTimeMillis());
-
-    private void reset() {
-        agentTracker.reset();
-        connection.reset();
-        session.reset();
-    }
 
     private UnconstrainedRegistration unconstrainedRegistration() {
         return new UnconstrainedRegistration(RESOURCE_ID,
@@ -130,11 +121,16 @@ public class UnconstrainedAgentTest extends TestCase {
                                                   runningModes);
     }
 
-    private UnconstrainedAgent createAgent() {
-        UnconstrainedAgent agent = new UnconstrainedAgent(connection, agentTracker, "agent-1", "matcher-id");
+    private MockAgentSender<UnconstrainedAgent> agentSender;
+    private UnconstrainedAgent agent;
+
+    @Override
+    protected void setUp() throws Exception {
+        agentSender = MockAgentSender.create(UnconstrainedAgent.class);
+        agent = agentSender.getAgent();
+        agent.activate("agent-1", "matcher");
         agent.setContext(context);
         agent.connectToMatcher(session);
-        return agent;
     }
 
     /**
@@ -143,11 +139,8 @@ public class UnconstrainedAgentTest extends TestCase {
      * Expected behavior: Agent does nothing and doesn't break
      */
     public void testNoRegistration() {
-        reset();
-        FpaiAgent agent = createAgent();
         agent.handlePriceUpdate(new PriceUpdate(new Price(marketBasis, 50), 1));
-        assertNull(connection.getLastReceivedMessage());
-        assertFalse(agentTracker.hasUnregistered());
+        assertNull(agentSender.getLastMessage());
     }
 
     /**
@@ -156,12 +149,9 @@ public class UnconstrainedAgentTest extends TestCase {
      * Agent should not unregister and should not send an allocation (and should not crash).
      */
     public void testNoSystemDescription() {
-        reset();
-        FpaiAgent agent = createAgent();
         agent.handleControlSpaceRegistration(unconstrainedRegistration());
         agent.handlePriceUpdate(new PriceUpdate(new Price(marketBasis, 50), 1));
-        assertNull(connection.getLastReceivedMessage());
-        assertFalse(agentTracker.hasUnregistered());
+        assertNull(agentSender.getLastMessage());
     }
 
     /**
@@ -170,14 +160,11 @@ public class UnconstrainedAgentTest extends TestCase {
      * Expected behavior: Agent creates a bid without flexibility.
      */
     public void testTimerBlocking() {
-        reset();
-        FpaiAgent agent = createAgent();
-
         UnconstrainedRegistration registration = unconstrainedRegistration();
-        agent.handleMessage(registration);
+        agentSender.handleMessage(registration);
 
         UnconstrainedSystemDescription usd = systemDescription(registration);
-        agent.handleMessage(usd);
+        agentSender.handleMessage(usd);
 
         TimerUpdate minOnTimer = new TimerUpdate(0, new Date(context.currentTimeMillis() + 5000)); // blocking
         UnconstrainedStateUpdate usu = new UnconstrainedStateUpdate(RESOURCE_ID,
@@ -186,7 +173,7 @@ public class UnconstrainedAgentTest extends TestCase {
                                                                     1,
                                                                     Collections.singleton(minOnTimer));
 
-        agent.handleMessage(usu);
+        agentSender.handleMessage(usu);
 
         agent.handlePriceUpdate(new PriceUpdate(new Price(marketBasis, 50), 1));
 
@@ -201,13 +188,10 @@ public class UnconstrainedAgentTest extends TestCase {
      * Expected behavior: Agent creates a bid without flexiblity
      */
     public void testNoTransition() {
-        reset();
-        FpaiAgent agent = createAgent();
-
-        agent.handleMessage(new UnconstrainedRegistration("noreachable",
-                                                          context.currentTime(),
-                                                          Measure.valueOf(0d, SI.SECOND),
-                                                          CommoditySet.onlyElectricity));
+        agentSender.handleMessage(new UnconstrainedRegistration("noreachable",
+                                                                context.currentTime(),
+                                                                Measure.valueOf(0d, SI.SECOND),
+                                                                CommoditySet.onlyElectricity));
 
         Collection<RunningMode<RunningModeBehaviour>> runningModes = new ArrayList<RunningMode<RunningModeBehaviour>>();
         runningModes.add(new RunningMode<RunningModeBehaviour>(1,
@@ -231,16 +215,16 @@ public class UnconstrainedAgentTest extends TestCase {
                                                                                                                                  NonSI.EUR),
                                                                                                                  Measure.valueOf(0d,
                                                                                                                                  SI.SECOND)))));
-        agent.handleMessage(new UnconstrainedSystemDescription("noreachable",
-                                                               context.currentTime(),
-                                                               context.currentTime(),
-                                                               runningModes));
+        agentSender.handleMessage(new UnconstrainedSystemDescription("noreachable",
+                                                                     context.currentTime(),
+                                                                     context.currentTime(),
+                                                                     runningModes));
         // Current Running Mode is 1 (off).
-        agent.handleMessage(new UnconstrainedStateUpdate("noreachable",
-                                                         context.currentTime(),
-                                                         context.currentTime(),
-                                                         1,
-                                                         Collections.<TimerUpdate> emptySet()));
+        agentSender.handleMessage(new UnconstrainedStateUpdate("noreachable",
+                                                               context.currentTime(),
+                                                               context.currentTime(),
+                                                               1,
+                                                               Collections.<TimerUpdate> emptySet()));
 
         agent.handlePriceUpdate(new PriceUpdate(new Price(marketBasis, 50), 1));
 
@@ -255,20 +239,17 @@ public class UnconstrainedAgentTest extends TestCase {
      * Expected behavior: Device may go to either state, so a step bid is constructed.
      */
     public void testBlockingTimerNotSet() {
-        reset();
-        FpaiAgent agent = createAgent();
-
         UnconstrainedRegistration registration = unconstrainedRegistration();
-        agent.handleMessage(registration);
+        agentSender.handleMessage(registration);
 
         UnconstrainedSystemDescription usd = systemDescription(registration);
-        agent.handleMessage(usd);
+        agentSender.handleMessage(usd);
 
-        agent.handleMessage(new UnconstrainedStateUpdate("",
-                                                         context.currentTime(),
-                                                         context.currentTime(),
-                                                         1,
-                                                         Collections.<TimerUpdate> emptySet()));
+        agentSender.handleMessage(new UnconstrainedStateUpdate("",
+                                                               context.currentTime(),
+                                                               context.currentTime(),
+                                                               1,
+                                                               Collections.<TimerUpdate> emptySet()));
 
         agent.handlePriceUpdate(new PriceUpdate(new Price(marketBasis, 50), 1));
 
@@ -285,14 +266,11 @@ public class UnconstrainedAgentTest extends TestCase {
      * transition.
      */
     public void testBlockingTimerFinished() {
-        reset();
-        FpaiAgent agent = createAgent();
-
         UnconstrainedRegistration registration = unconstrainedRegistration();
-        agent.handleMessage(registration);
+        agentSender.handleMessage(registration);
 
         UnconstrainedSystemDescription usd = systemDescription(registration);
-        agent.handleMessage(usd);
+        agentSender.handleMessage(usd);
         Date justBefore = new Date(context.currentTimeMillis() - 1000);
         System.out.println("just before: " + justBefore);
         Date now = context.currentTime();
@@ -304,7 +282,7 @@ public class UnconstrainedAgentTest extends TestCase {
                                                                      now,
                                                                      1,
                                                                      Collections.singleton(expiredMinOnTimer));
-        agent.handleMessage(usu2);
+        agentSender.handleMessage(usu2);
         agent.handlePriceUpdate(new PriceUpdate(new Price(marketBasis, 50), 1));
 
         // Bid should have flexibility
@@ -319,14 +297,11 @@ public class UnconstrainedAgentTest extends TestCase {
      * Outcome should be that the device is going to the must-run running mode.
      */
     public void testBidResponseMustRun() {
-        reset();
-        FpaiAgent agent = createAgent();
-
         UnconstrainedRegistration registration = unconstrainedRegistration();
-        agent.handleMessage(registration);
+        agentSender.handleMessage(registration);
 
         UnconstrainedSystemDescription usd = systemDescription(registration);
-        agent.handleMessage(usd);
+        agentSender.handleMessage(usd);
 
         TimerUpdate minOnTimer = new TimerUpdate(0, new Date(context.currentTimeMillis() + 5000)); // blocking
 
@@ -336,25 +311,25 @@ public class UnconstrainedAgentTest extends TestCase {
                                                                     1,
                                                                     Collections.singleton(minOnTimer));
 
-        agent.handleMessage(usu);
+        agentSender.handleMessage(usu);
 
         agent.handlePriceUpdate(new PriceUpdate(new Price(marketBasis, 50), 1));
 
         Assert.assertEquals(Collections.<RunningModeSelector> singleton(new RunningModeSelector(1,
                                                                                                 context.currentTime())),
-                            (((UnconstrainedAllocation) (connection.getLastReceivedMessage())).getRunningModeSelectors()));
+                            (((UnconstrainedAllocation) (agentSender.getLastMessage())).getRunningModeSelectors()));
 
         agent.handlePriceUpdate(new PriceUpdate(new Price(marketBasis, marketBasis.getMinimumPrice()), 1));
 
         Assert.assertEquals(Collections.<RunningModeSelector> singleton(new RunningModeSelector(1,
                                                                                                 context.currentTime())),
-                            (((UnconstrainedAllocation) (connection.getLastReceivedMessage())).getRunningModeSelectors()));
+                            (((UnconstrainedAllocation) (agentSender.getLastMessage())).getRunningModeSelectors()));
 
         agent.handlePriceUpdate(new PriceUpdate(new Price(marketBasis, marketBasis.getMaximumPrice()), 1));
 
         Assert.assertEquals(Collections.<RunningModeSelector> singleton(new RunningModeSelector(1,
                                                                                                 context.currentTime())),
-                            (((UnconstrainedAllocation) (connection.getLastReceivedMessage())).getRunningModeSelectors()));
+                            (((UnconstrainedAllocation) (agentSender.getLastMessage())).getRunningModeSelectors()));
     }
 
     /**
@@ -363,14 +338,11 @@ public class UnconstrainedAgentTest extends TestCase {
      * Outcome should be that the device is going to be off at maximum price and on at minimum price.
      */
     public void testBidResponseFlexible() {
-        reset();
-        UnconstrainedAgent agent = createAgent();
-
         UnconstrainedRegistration registration = unconstrainedRegistration();
-        agent.handleMessage(registration);
+        agentSender.handleMessage(registration);
 
         UnconstrainedSystemDescription usd = systemDescription(registration);
-        agent.handleMessage(usd);
+        agentSender.handleMessage(usd);
 
         TimerUpdate minOnTimer = new TimerUpdate(0, new Date(context.currentTimeMillis() - 50)); // blocking
 
@@ -380,21 +352,21 @@ public class UnconstrainedAgentTest extends TestCase {
                                                                     1,
                                                                     Collections.singleton(minOnTimer));
 
-        agent.handleMessage(usu);
+        agentSender.handleMessage(usu);
 
         // Upon minimum price it must consume.
         agent.handlePriceUpdate(new PriceUpdate(new Price(marketBasis, marketBasis.getMinimumPrice()), 1));
 
         Assert.assertEquals(Collections.<RunningModeSelector> singleton(new RunningModeSelector(1,
                                                                                                 context.currentTime())),
-                            (((UnconstrainedAllocation) (connection.getLastReceivedMessage())).getRunningModeSelectors()));
+                            (((UnconstrainedAllocation) (agentSender.getLastMessage())).getRunningModeSelectors()));
 
         // Upon maximum price it must go off.
         agent.handlePriceUpdate(new PriceUpdate(new Price(marketBasis, marketBasis.getMaximumPrice()), 1));
 
         Assert.assertEquals(Collections.<RunningModeSelector> singleton(new RunningModeSelector(0,
                                                                                                 context.currentTime())),
-                            (((UnconstrainedAllocation) (connection.getLastReceivedMessage())).getRunningModeSelectors()));
+                            (((UnconstrainedAllocation) (agentSender.getLastMessage())).getRunningModeSelectors()));
 
     }
 
@@ -402,14 +374,11 @@ public class UnconstrainedAgentTest extends TestCase {
      * Test: not implemented yet...
      */
     public void testNewSystemDescription() {
-        reset();
-        FpaiAgent agent = createAgent();
-
         UnconstrainedRegistration registration = unconstrainedRegistration();
-        agent.handleMessage(registration);
+        agentSender.handleMessage(registration);
 
         UnconstrainedSystemDescription usd = systemDescription(registration);
-        agent.handleMessage(usd);
+        agentSender.handleMessage(usd);
 
         TimerUpdate minOnTimer = new TimerUpdate(0, new Date(context.currentTimeMillis() + 5000)); // blocking
 
@@ -419,16 +388,16 @@ public class UnconstrainedAgentTest extends TestCase {
                                                                     1,
                                                                     Collections.singleton(minOnTimer));
 
-        agent.handleMessage(usu);
+        agentSender.handleMessage(usu);
 
-        agent.handleMessage(secondSystemDescription(registration));
+        agentSender.handleMessage(secondSystemDescription(registration));
 
         agent.handlePriceUpdate(new PriceUpdate(new Price(marketBasis, marketBasis.getMinimumPrice()), 1));
 
-        agent.handleMessage(new UnconstrainedStateUpdate(RESOURCE_ID,
-                                                         context.currentTime(),
-                                                         context.currentTime(),
-                                                         2,
-                                                         Collections.<TimerUpdate> emptySet()));
+        agentSender.handleMessage(new UnconstrainedStateUpdate(RESOURCE_ID,
+                                                               context.currentTime(),
+                                                               context.currentTime(),
+                                                               2,
+                                                               Collections.<TimerUpdate> emptySet()));
     }
 }

@@ -12,7 +12,7 @@ import net.powermatcher.api.data.Bid;
 import net.powermatcher.api.data.MarketBasis;
 import net.powermatcher.api.data.Price;
 import net.powermatcher.fpai.agents.BufferBid.BufferBidElement;
-import net.powermatcher.fpai.controller.AgentTracker;
+import net.powermatcher.fpai.controller.AgentMessageSender;
 
 import org.flexiblepower.api.efi.unconstrainedhelper.Unconstrained;
 import org.flexiblepower.efi.unconstrained.RunningModeBehaviour;
@@ -23,7 +23,6 @@ import org.flexiblepower.efi.unconstrained.UnconstrainedStateUpdate;
 import org.flexiblepower.efi.unconstrained.UnconstrainedSystemDescription;
 import org.flexiblepower.efi.unconstrained.UnconstrainedUpdate;
 import org.flexiblepower.efi.util.RunningMode;
-import org.flexiblepower.messaging.Connection;
 import org.flexiblepower.ral.messages.Allocation;
 import org.flexiblepower.ral.messages.AllocationStatusUpdate;
 import org.flexiblepower.ral.messages.ControlSpaceRegistration;
@@ -40,12 +39,12 @@ public class UnconstrainedAgent extends FpaiAgent {
     private BufferBid lastBid;
     private ControlSpaceUpdate lastControlSpaceUpdate;
 
-    public UnconstrainedAgent(Connection connection, AgentTracker agentTracker, String agentId, String desiredParentId) {
-        super(connection, agentTracker, agentId, desiredParentId);
+    public UnconstrainedAgent(AgentMessageSender handler) {
+        super(handler);
     }
 
     @Override
-    protected void handleControlSpaceRegistration(ControlSpaceRegistration message) {
+    public void handleControlSpaceRegistration(ControlSpaceRegistration message) {
         if (message instanceof UnconstrainedRegistration) {
             if (registration == null) {
                 registration = (UnconstrainedRegistration) message;
@@ -59,7 +58,7 @@ public class UnconstrainedAgent extends FpaiAgent {
     }
 
     @Override
-    protected void handleControlSpaceUpdate(ControlSpaceUpdate message) {
+    public void handleControlSpaceUpdate(ControlSpaceUpdate message) {
         if (message instanceof UnconstrainedSystemDescription) {
             unconstrainedHelper.processSystemDescription((UnconstrainedSystemDescription) message);
             lastControlSpaceUpdate = message;
@@ -74,7 +73,7 @@ public class UnconstrainedAgent extends FpaiAgent {
     }
 
     @Override
-    protected void handleAllocationStatusUpdate(AllocationStatusUpdate message) {
+    public void handleAllocationStatusUpdate(AllocationStatusUpdate message) {
         switch (message.getStatus()) {
         case ACCEPTED:
             // No action
@@ -97,7 +96,7 @@ public class UnconstrainedAgent extends FpaiAgent {
     }
 
     @Override
-    protected void handleControlSpaceRevoke(ControlSpaceRevoke message) {
+    public void handleControlSpaceRevoke(ControlSpaceRevoke message) {
         // Return to no-flexibility-state
         lastControlSpaceUpdate = null;
     }
@@ -144,7 +143,7 @@ public class UnconstrainedAgent extends FpaiAgent {
                                                                 false,
                                                                 Collections.singleton(runningModeSelector));
             LOGGER.info("Sending allocation " + allocation);
-            sendAllocation(allocation);
+            messageSender.sendMessage(allocation);
         } else {
             LOGGER.info("Received price update, but there is no previous bid or there is no previous control space update. So no allocation can be constructed.");
         }

@@ -17,14 +17,13 @@ import net.powermatcher.api.data.Bid;
 import net.powermatcher.api.data.MarketBasis;
 import net.powermatcher.api.data.PointBid;
 import net.powermatcher.api.data.Price;
-import net.powermatcher.fpai.controller.AgentTracker;
+import net.powermatcher.fpai.controller.AgentMessageSender;
 
 import org.flexiblepower.efi.timeshifter.SequentialProfile;
 import org.flexiblepower.efi.timeshifter.SequentialProfileAllocation;
 import org.flexiblepower.efi.timeshifter.TimeShifterAllocation;
 import org.flexiblepower.efi.timeshifter.TimeShifterRegistration;
 import org.flexiblepower.efi.timeshifter.TimeShifterUpdate;
-import org.flexiblepower.messaging.Connection;
 import org.flexiblepower.ral.messages.AllocationStatusUpdate;
 import org.flexiblepower.ral.messages.ControlSpaceRegistration;
 import org.flexiblepower.ral.messages.ControlSpaceRevoke;
@@ -52,18 +51,18 @@ public class TimeshifterAgent extends FpaiAgent implements Runnable {
     /** Future for when a automatic bid updates are scheduled */
     private ScheduledFuture<?> scheduledFuture = null;
 
-    public TimeshifterAgent(Connection connection, AgentTracker agentTracker, String agentId, String desiredParentId) {
-        super(connection, agentTracker, agentId, desiredParentId);
+    public TimeshifterAgent(AgentMessageSender messageHandler) {
+        super(messageHandler);
     }
 
     @Override
-    protected void handleControlSpaceRegistration(ControlSpaceRegistration message) {
+    public void handleControlSpaceRegistration(ControlSpaceRegistration message) {
         if (message instanceof TimeShifterRegistration) {
             if (registration == null) {
                 registration = (TimeShifterRegistration) message;
                 if (!registration.getSupportedCommodities().contains(Commodity.ELECTRICITY)) {
                     LOGGER.error("PowerMatcher cannot support appliances which do not support electricity, removing agent");
-                    disconnected();
+                    messageSender.destroyAgent();
                 }
             } else {
                 LOGGER.error("Received multiple ControlSpaceRegistrations, ignoring...");
@@ -76,7 +75,7 @@ public class TimeshifterAgent extends FpaiAgent implements Runnable {
 
     @SuppressWarnings("unchecked")
     @Override
-    protected void handleControlSpaceUpdate(ControlSpaceUpdate message) {
+    public void handleControlSpaceUpdate(ControlSpaceUpdate message) {
         if (message instanceof TimeShifterUpdate) {
             lastTimeshifterUpdate = (TimeShifterUpdate) message;
             List<SequentialProfile> timeShifterProfiles = lastTimeshifterUpdate.getTimeShifterProfiles();
@@ -92,7 +91,7 @@ public class TimeshifterAgent extends FpaiAgent implements Runnable {
     }
 
     @Override
-    protected void handleAllocationStatusUpdate(AllocationStatusUpdate message) {
+    public void handleAllocationStatusUpdate(AllocationStatusUpdate message) {
         switch (message.getStatus()) {
         case ACCEPTED:
             // Great! No action.
@@ -123,7 +122,7 @@ public class TimeshifterAgent extends FpaiAgent implements Runnable {
     }
 
     @Override
-    protected void handleControlSpaceRevoke(ControlSpaceRevoke message) {
+    public void handleControlSpaceRevoke(ControlSpaceRevoke message) {
         goToNoFlexiblityState();
     }
 
@@ -249,7 +248,7 @@ public class TimeshifterAgent extends FpaiAgent implements Runnable {
                                                                              now(),
                                                                              false,
                                                                              seqAllocs);
-                sendAllocation(allocation);
+                messageSender.sendMessage(allocation);
                 // profileStartTime is set in the handleAllocationStatusUpdate method
             }
         }
