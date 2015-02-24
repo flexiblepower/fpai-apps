@@ -9,10 +9,10 @@ import javax.measure.Measure;
 import javax.measure.quantity.Temperature;
 import javax.measure.unit.SI;
 
+import org.flexiblepower.context.FlexiblePowerContext;
 import org.flexiblepower.ral.ResourceControlParameters;
 import org.flexiblepower.ral.ResourceState;
 import org.flexiblepower.ral.ext.AbstractResourceDriver;
-import org.flexiblepower.time.TimeService;
 
 public abstract class MieleResourceDriver<RS extends ResourceState, RCP extends ResourceControlParameters> extends
                                                                                                            AbstractResourceDriver<RS, RCP> {
@@ -38,10 +38,11 @@ public abstract class MieleResourceDriver<RS extends ResourceState, RCP extends 
         return null;
     }
 
-    public static Date parseDate(String value) {
+    public Date parseDate(String value) {
         Integer time = parseTime(value);
         if (time != null) {
             Calendar current = Calendar.getInstance();
+            current.setTimeInMillis(context.currentTimeMillis());
 
             // Clone the current time and set the time from the time string
             Calendar cal = (Calendar) current.clone();
@@ -74,16 +75,19 @@ public abstract class MieleResourceDriver<RS extends ResourceState, RCP extends 
     }
 
     private final ActionPerformer actionPerformer;
-    protected final TimeService timeService;
+    protected final FlexiblePowerContext context;
 
-    public MieleResourceDriver(ActionPerformer actionPerformer, TimeService timeService) {
+    public MieleResourceDriver(ActionPerformer actionPerformer, FlexiblePowerContext context) {
         this.actionPerformer = actionPerformer;
-        this.timeService = timeService;
+        this.context = context;
     }
 
     public abstract void updateState(Map<String, String> information);
 
     public final ActionResult performAction(String action) {
         return actionPerformer.performAction(action);
+    }
+
+    public void close() {
     }
 }

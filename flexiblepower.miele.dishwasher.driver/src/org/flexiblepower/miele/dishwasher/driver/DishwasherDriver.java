@@ -7,21 +7,18 @@ import static javax.measure.unit.SI.WATT;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import javax.measure.Measurable;
 import javax.measure.Measure;
 import javax.measure.quantity.Duration;
-import javax.measure.unit.SI;
 
+import org.flexiblepower.context.FlexiblePowerContext;
 import org.flexiblepower.protocol.mielegateway.api.ActionPerformer;
 import org.flexiblepower.protocol.mielegateway.api.ActionResult;
 import org.flexiblepower.protocol.mielegateway.api.MieleResourceDriver;
-import org.flexiblepower.rai.values.CommodityProfile;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherControlParameters;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherState;
-import org.flexiblepower.time.TimeService;
+import org.flexiblepower.ral.values.CommodityProfile;
 import org.flexiblepower.time.TimeUtil;
 import org.flexiblepower.ui.Widget;
 import org.osgi.framework.BundleContext;
@@ -29,13 +26,9 @@ import org.osgi.framework.ServiceRegistration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import aQute.bnd.annotation.component.Activate;
-import aQute.bnd.annotation.component.Deactivate;
-import aQute.bnd.annotation.component.Reference;
-
 public class DishwasherDriver extends MieleResourceDriver<DishwasherState, DishwasherControlParameters> implements
                                                                                                        org.flexiblepower.ral.drivers.dishwasher.DishwasherDriver {
-    private static final Logger log = LoggerFactory.getLogger(DishwasherDriver.State.class);
+    private static final Logger logger = LoggerFactory.getLogger(DishwasherDriver.State.class);
 
     static final class State implements DishwasherState {
         private final boolean isConnected;
@@ -46,8 +39,6 @@ public class DishwasherDriver extends MieleResourceDriver<DishwasherState, Dishw
             isConnected = true;
             this.startTime = startTime;
             this.program = program;
-
-            // test jenkings
         }
 
         State() {
@@ -84,28 +75,18 @@ public class DishwasherDriver extends MieleResourceDriver<DishwasherState, Dishw
         }
     }
 
-    public DishwasherDriver(ActionPerformer actionPerformer, TimeService timeService) {
-        super(actionPerformer, timeService);
+    private final DishwasherWidget widget;
+    private final ServiceRegistration<Widget> widgetRegistration;
+
+    public DishwasherDriver(ActionPerformer actionPerformer, FlexiblePowerContext context, BundleContext bundleContext) {
+        super(actionPerformer, context);
+        widget = new DishwasherWidget(this);
+        widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
     }
 
-    private ScheduledExecutorService scheduler;
-
-    @Reference
-    public void setScheduledExecutorService(ScheduledExecutorService scheduler) {
-        this.scheduler = scheduler;
-    }
-
-    private DishwasherWidget widget;
-    private ServiceRegistration<Widget> widgetRegistration;
-
-    @Activate
-    public void activate(BundleContext context) {
-        widget = new DishwasherWidget(this, timeService);
-        widgetRegistration = context.registerService(Widget.class, widget, null);
-    }
-
-    @Deactivate
-    public void deactivate() {
+    @Override
+    public void close() {
+        super.close();
         widgetRegistration.unregister();
     }
 
@@ -133,27 +114,31 @@ public class DishwasherDriver extends MieleResourceDriver<DishwasherState, Dishw
         return currentState;
     }
 
+    public void startNow() {
+        ActionResult result = performAction("Start");
+        if (!result.isOk()) {
+            logger.warn("Could not start the dishwasher: {}", result.getMessage());
+        }
+    }
+
     private volatile Future<?> runFuture;
 
     @Override
     public void handleControlParameters(DishwasherControlParameters resourceControlParameters) {
         if (resourceControlParameters.getProgram().equals(currentState.getProgram())) {
-            Measurable<Duration> diff = TimeUtil.difference(timeService.getTime(),
+            Measurable<Duration> diff = TimeUtil.difference(context.currentTime(),
                                                             resourceControlParameters.getStartTime());
 
             if (runFuture != null && !runFuture.isDone()) {
                 runFuture.cancel(false);
             }
 
-            runFuture = scheduler.schedule(new Runnable() {
+            runFuture = context.schedule(new Runnable() {
                 @Override
                 public void run() {
-                    ActionResult result = performAction("Start");
-                    if (!result.isOk()) {
-                        log.warn("Could not start the dishwasher: {}", result.getMessage());
-                    }
+                    startNow();
                 }
-            }, diff.longValue(SI.SECOND), TimeUnit.SECONDS);
+            }, diff);
         }
     }
 }

@@ -1,6 +1,4 @@
--buildpath: ${default-buildpath}, flexiblepower.api.efi
-
-Bundle-Version: 2.0.0.${qualifier}
-Service-Component: org.flexiblepower.miele.dishwasher.manager.*
-Export-Package:  \
-	org.flexiblepower.miele.dishwasher.manager
+-buildpath: ${fpai-buildpath}
+Bundle-Version: 2.1.0.${qualifier}
+Service-Component: *
+Private-Package: org.flexiblepower.miele.dishwasher.manager

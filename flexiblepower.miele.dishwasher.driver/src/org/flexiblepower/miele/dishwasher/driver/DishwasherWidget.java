@@ -4,9 +4,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Locale;
 
-import org.flexiblepower.ral.drivers.dishwasher.DishwasherControlParameters;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherState;
-import org.flexiblepower.time.TimeService;
 import org.flexiblepower.ui.Widget;
 
 public class DishwasherWidget implements Widget {
@@ -34,11 +32,9 @@ public class DishwasherWidget implements Widget {
     }
 
     private final DishwasherDriver dishwasher;
-    private final TimeService timeService;
 
-    public DishwasherWidget(DishwasherDriver dishwasher, TimeService timeService) {
+    public DishwasherWidget(DishwasherDriver dishwasher) {
         this.dishwasher = dishwasher;
-        this.timeService = timeService;
 
     }
 
@@ -58,17 +54,7 @@ public class DishwasherWidget implements Widget {
     }
 
     public Update startProgram(Locale locale) throws IOException {
-        dishwasher.handleControlParameters(new DishwasherControlParameters() {
-            @Override
-            public String getProgram() {
-                return dishwasher.getCurrentState().getProgram();
-            }
-
-            @Override
-            public Date getStartTime() {
-                return timeService.getTime();
-            }
-        });
+        dishwasher.startNow();
         return update(locale);
     }
 

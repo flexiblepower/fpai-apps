@@ -13,6 +13,7 @@ import javax.measure.quantity.Duration;
 import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
+import org.flexiblepower.context.FlexiblePowerContext;
 import org.flexiblepower.efi.TimeShifterResourceManager;
 import org.flexiblepower.efi.timeshifter.SequentialProfile;
 import org.flexiblepower.efi.timeshifter.SequentialProfileAllocation;
@@ -22,26 +23,21 @@ import org.flexiblepower.efi.timeshifter.TimeShifterUpdate;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.messaging.Port;
 import org.flexiblepower.miele.dishwasher.manager.MieleDishwasherManager.Config;
-import org.flexiblepower.rai.AllocationRevoke;
-import org.flexiblepower.rai.ControlSpaceRevoke;
-import org.flexiblepower.rai.ResourceMessage;
-import org.flexiblepower.rai.values.CommodityForecast;
-import org.flexiblepower.rai.values.CommodityForecast.Builder;
-import org.flexiblepower.rai.values.CommoditySet;
-import org.flexiblepower.rai.values.UncertainMeasure;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherControlParameters;
 import org.flexiblepower.ral.drivers.dishwasher.DishwasherState;
 import org.flexiblepower.ral.ext.AbstractResourceManager;
-import org.flexiblepower.time.TimeService;
-import org.flexiblepower.ui.Widget;
+import org.flexiblepower.ral.messages.AllocationRevoke;
+import org.flexiblepower.ral.messages.ControlSpaceRevoke;
+import org.flexiblepower.ral.messages.ResourceMessage;
+import org.flexiblepower.ral.values.CommodityForecast;
+import org.flexiblepower.ral.values.CommoditySet;
+import org.flexiblepower.ral.values.UncertainMeasure;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceRegistration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
-import aQute.bnd.annotation.component.Deactivate;
 import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
@@ -49,10 +45,11 @@ import aQute.bnd.annotation.metatype.Meta;
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 @Port(name = "driver", sends = DishwasherControlParameters.class, accepts = DishwasherState.class)
 public class MieleDishwasherManager
-    extends AbstractResourceManager<DishwasherState, DishwasherControlParameters>
-    implements TimeShifterResourceManager {
+                                   extends AbstractResourceManager<DishwasherState, DishwasherControlParameters>
+                                                                                                                implements
+                                                                                                                TimeShifterResourceManager {
 
-    private static final Logger log = LoggerFactory.getLogger(MieleDishwasherManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(MieleDishwasherManager.class);
 
     private final class DishwasherControlParametersImpl implements DishwasherControlParameters {
         private final Date startTime;
@@ -83,16 +80,13 @@ public class MieleDishwasherManager
     interface Config {
         @Meta.AD(deflt = "MieleDishwasherManager", description = "Unique resourceID")
         String resourceId();
-
-        @Meta.AD(deflt = "true", description = "Whether to show the widget")
-        boolean showWidget();
     }
 
-    private TimeService timeService;
+    private FlexiblePowerContext context;
 
     @Reference
-    public void setTimeService(TimeService timeService) {
-        this.timeService = timeService;
+    public void setContext(FlexiblePowerContext context) {
+        this.context = context;
     }
 
     private DishwasherState currentState;
@@ -100,14 +94,12 @@ public class MieleDishwasherManager
     private TimeShifterUpdate currentUpdate;
     private TimeShifterAllocation currentAllocation;
     private Measure<Integer, Duration> allocationDelay;
-    private ServiceRegistration<Widget> widgetRegistration;
-    private MieleDishwasherWidget widget;
     private Config configuration;
 
     @Override
     protected List<? extends ResourceMessage> startRegistration(DishwasherState state) {
         currentState = state;
-        changedStateTime = timeService.getTime();
+        changedStateTime = context.currentTime();
         allocationDelay = Measure.valueOf(5, SI.SECOND);
 
         TimeShifterRegistration reg = new TimeShifterRegistration(configuration.resourceId(),
@@ -117,7 +109,7 @@ public class MieleDishwasherManager
         ResourceMessage update = createControlSpace(state);
 
         if (update != null) {
-            log.debug("sending timeshifter registration and update");
+            logger.debug("sending timeshifter registration and update");
             return Arrays.asList(reg, update);
         } else {
             return Arrays.asList(reg);
@@ -130,22 +122,22 @@ public class MieleDishwasherManager
             return Collections.emptyList();
         } else {
             currentState = state;
-            changedStateTime = timeService.getTime();
-            log.debug("sending timeshifter update");
+            changedStateTime = context.currentTime();
+            logger.debug("sending timeshifter update");
             return Arrays.asList(createControlSpace(state));
         }
     }
 
     @Override
     protected DishwasherControlParameters receivedAllocation(ResourceMessage message) {
-        log.debug("Allocation received");
+        logger.debug("Allocation received");
         if (message instanceof TimeShifterAllocation) {
-            log.debug("TimeShifterAllocation received");
+            logger.debug("TimeShifterAllocation received");
             currentAllocation = (TimeShifterAllocation) message;
             List<SequentialProfileAllocation> sequentialProfileAllocations = currentAllocation.getSequentialProfileAllocation();
             if (!sequentialProfileAllocations.isEmpty() && currentState != null && currentState.getProgram() != null) {
 
-                log.debug("returning new controlparameters");
+                logger.debug("returning new controlparameters");
                 SequentialProfileAllocation sequentialProfileAllocation = sequentialProfileAllocations.get(0);
 
                 // publishToController(createControlSpace());
@@ -153,17 +145,17 @@ public class MieleDishwasherManager
                     return new DishwasherControlParametersImpl(sequentialProfileAllocation.getStartTime(),
                                                                currentState.getProgram());
                 } else {
-                    log.error("starttime in sequential profileAllocation is null! Ignoring");
+                    logger.error("starttime in sequential profileAllocation is null! Ignoring");
                 }
             }
 
         } else if (message instanceof AllocationRevoke) {
-            log.debug("Revocation message received");
+            logger.debug("Revocation message received");
             if (currentAllocation != null) {
                 return new DishwasherControlParametersImpl(null, null);
             }
         } else {
-            log.warn("Unknown message type received: {}", message.getClass());
+            logger.warn("Unknown message type received: {}", message.getClass());
         }
         return null;
     }
@@ -190,7 +182,7 @@ public class MieleDishwasherManager
         UncertainMeasure<Power> energy3 = null;
         UncertainMeasure<Duration> duration3 = null;
 
-        Builder forecastBuilder = CommodityForecast.create();
+        CommodityForecast.Builder forecastBuilder = CommodityForecast.create();
 
         // Set Energy Profile
         if (program.equalsIgnoreCase("Energy Save")) {
@@ -253,20 +245,7 @@ public class MieleDishwasherManager
 
     @Activate
     public void activate(BundleContext bundleContext, Map<String, Object> properties) {
-
         configuration = Configurable.createConfigurable(Config.class, properties);
-        if (configuration.showWidget()) {
-            log.debug("Adding Miele dishwasher widget");
-            widget = new MieleDishwasherWidget(this);
-            widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
-        }
-        log.debug("Activated");
-    }
-
-    @Deactivate
-    public void deactivate() {
-        if (widgetRegistration != null) {
-            widgetRegistration.unregister();
-        }
+        logger.debug("Activated");
     }
 }
