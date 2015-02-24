@@ -1,5 +1,6 @@
 package net.powermatcher.fpai.controller;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Hashtable;
 
 import net.powermatcher.api.AgentEndpoint;
@@ -81,13 +82,22 @@ public class AgentMessageHandler implements MessageHandler, AgentMessageSender {
                                                                            ObservableAgent.class.getName() },
                                                              agent,
                                                              properties);
-            } catch (ReflectiveOperationException e) {
-                logger.error("Could not create new instance of " + type.getName() + ": " + e.getMessage(), e);
-                destroyAgent();
             } catch (IllegalArgumentException e) {
                 logger.error("Could not create new instance of " + type.getName() + ": " + e.getMessage(), e);
                 destroyAgent();
             } catch (SecurityException e) {
+                logger.error("Could not create new instance of " + type.getName() + ": " + e.getMessage(), e);
+                destroyAgent();
+            } catch (InstantiationException e) {
+                logger.error("Could not create new instance of " + type.getName() + ": " + e.getMessage(), e);
+                destroyAgent();
+            } catch (IllegalAccessException e) {
+                logger.error("Could not create new instance of " + type.getName() + ": " + e.getMessage(), e);
+                destroyAgent();
+            } catch (InvocationTargetException e) {
+                logger.error("Could not create new instance of " + type.getName() + ": " + e.getMessage(), e);
+                destroyAgent();
+            } catch (NoSuchMethodException e) {
                 logger.error("Could not create new instance of " + type.getName() + ": " + e.getMessage(), e);
                 destroyAgent();
             }
@@ -96,7 +106,7 @@ public class AgentMessageHandler implements MessageHandler, AgentMessageSender {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see net.powermatcher.fpai.agents.AgentMessageSender#destroyAgent()
      */
     @Override
@@ -118,7 +128,7 @@ public class AgentMessageHandler implements MessageHandler, AgentMessageSender {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see net.powermatcher.fpai.agents.AgentMessageSender#sendMessage(java.lang.Object)
      */
     @Override
