@@ -1,5 +1,5 @@
--buildpath: ${default-buildpath},\
-	junit.osgi
+-buildpath: ${fpai-buildpath}, flexiblepower.ui;version=latest
+-testpath: ${test-buildpath}
 
 Bundle-Version: 1.0.0-${qualifier}
 Export-Package: nl.tno.hexabus.api
@@ -8,6 +8,7 @@ Private-Package: \
 	nl.tno.hexabus.widget,\
 	nl.tno.hexabus.protocol
 Service-Component: *
+Require-Capability: flexiblepower.context;filter:="(runtime=fpai)"
 
 #Main-Class: nl.tno.hexabus.protocol.Channel
 #Class-Path: slf4j.api-1.7.5.jar ch.qos.logback.classic-1.0.13.jar ch.qos.logback.core-1.0.13.jar
