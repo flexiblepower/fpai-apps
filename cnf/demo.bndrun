@@ -10,7 +10,6 @@
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.webconsole)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.webconsole.plugins.ds)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.felix.webconsole.plugins)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.runtime)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.pvpanel)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.uncontrolled.manager)',\
 	osgi.identity;filter:='(osgi.identity=net.powermatcher.fpai.controller)'
