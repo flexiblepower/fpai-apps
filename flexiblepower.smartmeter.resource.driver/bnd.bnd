@@ -1,6 +1,5 @@
--buildpath: ${default-buildpath}, flexiblepower.protocol.rxtx;version=latest
+-buildpath: ${fpai-buildpath}, flexiblepower.protocol.rxtx;version=latest
 Bundle-Version: 1.0.0.${qualifier}
 Service-Component: *
-Private-Package: org.flexiblepower.smartmeter.parser,\
-	org.flexiblepower.smartmeter.resource.driver
+Private-Package: org.flexiblepower.smartmeter.parser, org.flexiblepower.smartmeter.resource.driver
 Export-Package: org.flexiblepower.smartmeter.driver.interfaces
