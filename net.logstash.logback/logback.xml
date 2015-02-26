@@ -1,0 +1,20 @@
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %-36.36logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    
+	<appender name="stash" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+		<remoteHost>localhost</remoteHost>
+		<port>4560</port>
+		<encoder class="net.logstash.logback.encoder.LogstashEncoder">
+			<customFields>{"project":"test-project"}</customFields>
+		</encoder>
+	</appender>
+    
+    <root level="DEBUG">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="stash" />
+    </root>
+</configuration>

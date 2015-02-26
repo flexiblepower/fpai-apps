@@ -1,0 +1,5 @@
+-buildpath: ${default-buildpath}
+
+Bundle-Version: 0.1.0.${qualifier}
+Private-Package: org.flexiblepower.monitoring.csv.*
+Service-Component: *
