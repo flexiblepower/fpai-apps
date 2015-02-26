@@ -88,11 +88,7 @@
 	</scenario>
 	
 	<scenario name="4. PV + Battery">
-		<config bundleId="flexiblepower.battery.manager" factoryId="org.flexiblepower.battery.manager.BatteryManager" ref="batterymanager-1">
-		    <resourceId>battery</resourceId>
-		</config>
-		
-		<config bundleId="flexiblepower.simulation.pvpanel" factoryId="org.flexiblepower.simulation.pvpanel.PVSimulation" ref="pvsimulation-2">
+		<config bundleId="flexiblepower.simulation.pvpanel" factoryId="org.flexiblepower.simulation.pvpanel.PVSimulation" ref="pvsimulation-1">
 		    <powerWhenStandBy>0.0</powerWhenStandBy>
 		    <updateDelay>5</updateDelay>
 		    <powerWhenCloudy>200</powerWhenCloudy>
@@ -100,27 +96,18 @@
 		    <resourceId>pvpanel</resourceId>
 		</config>
 		
-		<config bundleId="flexiblepower.simulation.battery" factoryId="org.flexiblepower.simulation.battery.BatterySimulation" ref="batterysimulation-3">
-		    <selfDischargePower>50</selfDischargePower>
-		    <totalCapacity>1.0</totalCapacity>
-		    <updateInterval>5</updateInterval>
-		    <chargeEfficiency>0.9</chargeEfficiency>
-		    <dischargeEfficiency>0.9</dischargeEfficiency>
-		    <initialStateOfCharge>0.5</initialStateOfCharge>
-		    <dischargePower>1500</dischargePower>
-		    <chargePower>1500</chargePower>
-		</config>
-		
-		<config bundleId="flexiblepower.uncontrolled.manager" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager" ref="uncontrolledmanager-4">
+		<config bundleId="flexiblepower.manager.uncontrolled" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager" ref="uncontrolledmanager-2">
 		    <expirationTime>20</expirationTime>
 		    <showWidget>false</showWidget>
-		    <resourceId>uncontrolled</resourceId>
+		    <resourceId>pvpanel</resourceId>
 		</config>
 		
-		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.controller.PowerMatcherController" ref="powermatchercontroller-5">
-		    <agentId.prefix>fpai-agent-</agentId.prefix>
-		    <matcher.target></matcher.target>
-		    <small.widget>true</small.widget>
+		<config bundleId="flexiblepower.manager.battery" factoryId="org.flexiblepower.battery.manager.BatteryManager" ref="batterymanager-3">
+		    <resourceId>battery</resourceId>
+		</config>
+		
+		<config bundleId="net.powermatcher.fpai.controller" serviceId="net.powermatcher.fpai.widget.FullWidget">
+		    <agent.target></agent.target>
 		</config>
 		
 		<config bundleId="net.powermatcher.core" factoryId="net.powermatcher.core.auctioneer.Auctioneer">
@@ -135,10 +122,30 @@
 		    <minimumPrice>0.0</minimumPrice>
 		</config>
 		
-		<connection from="powermatchercontroller-5:uncontrolled" to="uncontrolledmanager-4:controller" />
-		<connection from="powermatchercontroller-5:buffer" to="batterymanager-1:controller" />
-		<connection from="pvsimulation-2:manager" to="uncontrolledmanager-4:driver" />
-		<connection from="batterymanager-1:driver" to="batterysimulation-3:manager" />
+		<config bundleId="flexiblepower.simulation.battery" factoryId="org.flexiblepower.simulation.battery.BatterySimulation" ref="batterysimulation-4">
+		    <selfDischargePower>50</selfDischargePower>
+		    <totalCapacity>1.0</totalCapacity>
+		    <updateInterval>5</updateInterval>
+		    <chargeEfficiency>0.9</chargeEfficiency>
+		    <dischargeEfficiency>0.9</dischargeEfficiency>
+		    <initialStateOfCharge>0.5</initialStateOfCharge>
+		    <dischargePower>1500</dischargePower>
+		    <chargePower>1500</chargePower>
+		</config>
+		
+		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.controller.PowerMatcherController" ref="powermatchercontroller-5">
+		    <agentIdPrefix>fpai-agent-</agentIdPrefix>
+		    <desiredParent>auctioneer</desiredParent>
+		</config>
+		
+		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.widget.SmallWidget">
+		    <agent.target></agent.target>
+		</config>
+		
+		<connection from="powermatchercontroller-5:buffer" to="batterymanager-3:controller" />
+		<connection from="pvsimulation-1:manager" to="uncontrolledmanager-2:driver" />
+		<connection from="batterymanager-3:driver" to="batterysimulation-4:manager" />
+		<connection from="powermatchercontroller-5:uncontrolled" to="uncontrolledmanager-2:controller" />
 	</scenario>
 	
 	<scenario name="5. PV + Battery + Timeshifter">
