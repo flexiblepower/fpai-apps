@@ -3,10 +3,9 @@ package org.flexiblepower.smartmeter.resource.driver;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.Date;
 import java.util.Map;
-import java.util.concurrent.ScheduledFuture;
 
-import org.flexiblepower.observation.ext.ObservationProviderRegistrationHelper;
 import org.flexiblepower.protocol.rxtx.Connection;
 import org.flexiblepower.protocol.rxtx.ConnectionFactory;
 import org.flexiblepower.protocol.rxtx.SerialConnectionOptions;
@@ -23,7 +22,6 @@ import org.flexiblepower.smartmeter.parser.DatagramParser;
 import org.flexiblepower.smartmeter.parser.SmartMeterMeasurement;
 import org.flexiblepower.smartmeter.resource.driver.SmartMeterDriverImpl.Config;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceRegistration;
 
 import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
@@ -54,27 +52,34 @@ public class SmartMeterDriverImpl extends AbstractResourceDriver<SmartMeterState
         this.connectionFactory = connectionFactory;
     }
 
-    private ScheduledFuture<?> scheduledFuture;
-    private ServiceRegistration<?> observationProviderRegistration;
+    private Config config;
     private Connection connection;
 
     @Activate
     public void activate(BundleContext bundleContext, Map<String, Object> properties) throws IOException {
-        logger.debug("Smart Meter Activated");
 
-        Config config = Configurable.createConfigurable(Config.class, properties);
+        running = false;
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
-        String applianceId = config.resourceId();
-        observationProviderRegistration = new ObservationProviderRegistrationHelper(this).observationType(SmartMeterMeasurement.class)
-                                                                                         .observationOf(applianceId)
-                                                                                         .observedBy(applianceId)
-                                                                                         .register();
+        try {
 
-        connection = connectionFactory.openSerialConnection(config.port_name(),
-                                                            new SerialConnectionOptions(Baudrate.B9600,
-                                                                                        Databits.D7,
-                                                                                        Stopbits.S1,
-                                                                                        Parity.Even));
+            logger.debug("Smart Meter Activated");
+            config = Configurable.createConfigurable(Config.class, properties);
+            String applianceId = config.resourceId();
+            connection = connectionFactory.openSerialConnection(config.port_name(),
+                                                                new SerialConnectionOptions(Baudrate.B9600,
+                                                                                            Databits.D7,
+                                                                                            Stopbits.S1,
+                                                                                            Parity.Even));
+            running = true;
+        } catch (Exception e) {
+            logger.warn("Exception in activation of Serial Driver", e);
+        }
+
         new Thread("Smart Meter Thread: " + config.resourceId()) {
             @Override
             public void run() {
@@ -88,6 +93,7 @@ public class SmartMeterDriverImpl extends AbstractResourceDriver<SmartMeterState
                         } else if (nextChar == '!') {
                             String datagram = sb.toString();
                             SmartMeterMeasurement measurement = DatagramParser.SINGLETON.parse(datagram);
+                            measurement.setTimestamp(new Date());
                             update(measurement);
                         } else {
                             sb.append((char) nextChar);
@@ -105,8 +111,11 @@ public class SmartMeterDriverImpl extends AbstractResourceDriver<SmartMeterState
     @Deactivate
     public void deactivate() {
         running = false;
-        scheduledFuture.cancel(false);
-        observationProviderRegistration.unregister();
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     public SmartMeterMeasurement getLatestMeasurement() {
@@ -114,7 +123,9 @@ public class SmartMeterDriverImpl extends AbstractResourceDriver<SmartMeterState
     }
 
     void update(SmartMeterMeasurement latestMeasurement) {
+        this.latestMeasurement = latestMeasurement;
         publishState(latestMeasurement);
+
         logger.debug("Updating state to {}", latestMeasurement);
     }
 

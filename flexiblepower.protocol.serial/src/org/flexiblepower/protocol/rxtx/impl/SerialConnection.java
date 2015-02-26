@@ -50,11 +50,11 @@ public class SerialConnection implements Connection, SerialPortEventListener {
 
     @Override
     public void close() {
-        serialPort.close();
         try {
             inputStream.close();
         } catch (IOException e) {
         }
+        serialPort.close();
     }
 
     @Override
