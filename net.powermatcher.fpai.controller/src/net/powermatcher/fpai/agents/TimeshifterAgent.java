@@ -164,11 +164,15 @@ public class TimeshifterAgent extends FpaiAgent implements Runnable {
         long endBefore = lastTimeshifterUpdate.getEndBefore().getTime();
         long startBefore = endBefore - concatenatedCommodityForecast.getTotalDuration().longValue(MS);
         long startWindow = startBefore - startAfter;
+        double initialDemandWatt = getInitialDemand().doubleValue(SI.WATT);
+
+        if (startWindow <= 0) {
+            // It should already start, so send the must-run bid
+            return Bid.flatDemand(marketBasis, initialDemandWatt);
+        }
 
         long timeSinceAllowableStart = context.currentTimeMillis() - startAfter;
         double ratio = Math.pow(timeSinceAllowableStart / startWindow, EAGERNESS);
-
-        double initialDemandWatt = getInitialDemand().doubleValue(SI.WATT);
 
         if (initialDemandWatt < 0) {
             // if the initial demand is supply, the ratio flips
