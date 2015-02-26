@@ -36,7 +36,6 @@ import org.flexiblepower.efi.util.FillLevelFunction;
 import org.flexiblepower.efi.util.RunningMode;
 import org.flexiblepower.efi.util.Timer;
 import org.flexiblepower.efi.util.Transition;
-import org.flexiblepower.messaging.Cardinality;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.messaging.Port;
 import org.flexiblepower.messaging.Ports;
@@ -44,10 +43,8 @@ import org.flexiblepower.ral.drivers.battery.BatteryControlParameters;
 import org.flexiblepower.ral.drivers.battery.BatteryMode;
 import org.flexiblepower.ral.drivers.battery.BatteryState;
 import org.flexiblepower.ral.ext.AbstractResourceManager;
-import org.flexiblepower.ral.messages.AllocationRevoke;
 import org.flexiblepower.ral.messages.AllocationStatus;
 import org.flexiblepower.ral.messages.AllocationStatusUpdate;
-import org.flexiblepower.ral.messages.ControlSpaceRevoke;
 import org.flexiblepower.ral.messages.ResourceMessage;
 import org.flexiblepower.ral.values.CommodityMeasurables;
 import org.flexiblepower.ral.values.CommoditySet;
@@ -63,14 +60,7 @@ import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
-@Ports({ @Port(name = "driver", sends = BatteryControlParameters.class, accepts = BatteryState.class),
-        @Port(name = "controller",
-              accepts = { BufferAllocation.class, AllocationRevoke.class },
-              sends = { BufferRegistration.class,
-                       BufferStateUpdate.class,
-                       AllocationStatusUpdate.class,
-                       ControlSpaceRevoke.class },
-              cardinality = Cardinality.SINGLE) })
+@Ports(@Port(name = "driver", sends = BatteryControlParameters.class, accepts = BatteryState.class))
 public class BatteryManager extends AbstractResourceManager<BatteryState, BatteryControlParameters>
                                                                                                    implements
                                                                                                    BufferResourceManager {
@@ -269,9 +259,9 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
      */
     private ActuatorBehaviour makeBatteryActuatorBehaviour(int actuatorId) {
         // make three transitions holders
-        Transition toChargingTransition = makeTransition(0);
-        Transition toIdleTransition = makeTransition(1);
-        Transition toDisChargingTransition = makeTransition(2);
+        Transition toChargingTransition = makeTransition(BatteryMode.CHARGE.ordinal());
+        Transition toIdleTransition = makeTransition(BatteryMode.IDLE.ordinal());
+        Transition toDisChargingTransition = makeTransition(BatteryMode.DISCHARGE.ordinal());
 
         // create the transition graph, it is fully connected in this case
         Set<Transition> idleTransition = new HashSet<Transition>();
@@ -341,18 +331,15 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
                                                                                                .build();
 
         // Based on the fill level functions and the transitions, create the three running modes
-        RunningMode<FillLevelFunction<RunningModeBehaviour>> chargeRunningMode =
-                                                                                 new RunningMode<FillLevelFunction<RunningModeBehaviour>>(BatteryMode.CHARGE.ordinal(),
+        RunningMode<FillLevelFunction<RunningModeBehaviour>> chargeRunningMode = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(BatteryMode.CHARGE.ordinal(),
                                                                                                                                           "charging",
                                                                                                                                           chargeFillLevelFunctions,
                                                                                                                                           chargeTransition);
-        RunningMode<FillLevelFunction<RunningModeBehaviour>> idleRunningMode =
-                                                                               new RunningMode<FillLevelFunction<RunningModeBehaviour>>(BatteryMode.IDLE.ordinal(),
+        RunningMode<FillLevelFunction<RunningModeBehaviour>> idleRunningMode = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(BatteryMode.IDLE.ordinal(),
                                                                                                                                         "idle",
                                                                                                                                         idleFillLevelFunctions,
                                                                                                                                         idleTransition);
-        RunningMode<FillLevelFunction<RunningModeBehaviour>> dischargeRunningMode =
-                                                                                    new RunningMode<FillLevelFunction<RunningModeBehaviour>>(BatteryMode.DISCHARGE.ordinal(),
+        RunningMode<FillLevelFunction<RunningModeBehaviour>> dischargeRunningMode = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(BatteryMode.DISCHARGE.ordinal(),
                                                                                                                                              "discharging",
                                                                                                                                              dischargeFillLevelFunctions,
                                                                                                                                              dischargeTransition);

@@ -177,6 +177,7 @@ public class BatterySimulation
     @Reference
     public void setContext(FlexiblePowerContext context) {
         this.context = context;
+        lastUpdatedTime = context.currentTime();
     }
 
     @Activate
