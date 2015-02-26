@@ -4,15 +4,13 @@ $(window).load(function() {
 		$(".error").hide();
 		$("#marketprice").text(data.price);
 		$("#timestamp").text(data.timestamp);
-		
+
 		$("#agents").empty();
-		
-		for(type in data.demands){
-			for(id in data.demands){
-				$("#agents").append("<p><label>"+ id +"</label> <span>" + data.demands[id] + "</span></p>");
-			}
+
+		for(id in data.demands){
+			$("#agents").append("<p><label>"+ id +"</label> <span>" + data.demands[id] + "</span></p>");
 		}
-		
+
 		$("p").show();
 	});
 	
