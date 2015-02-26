@@ -5,9 +5,10 @@
         </encoder>
     </appender>
     
+    <!--<logger name="org.flexiblepower.runtime.context.RuntimeContext" level="TRACE"/>-->
     <logger name="org.eclipse" level="ERROR"/>
     <logger name="org.flexiblepower.runtime.ui" level="ERROR"/>
-    <root level="DEBUG">
+    <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>
