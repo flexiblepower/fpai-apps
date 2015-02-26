@@ -11,6 +11,7 @@ import java.util.Map;
 import javax.measure.Measure;
 import javax.measure.quantity.Duration;
 import javax.measure.quantity.Power;
+import javax.measure.unit.NonSI;
 import javax.measure.unit.SI;
 
 import org.flexiblepower.context.FlexiblePowerContext;
@@ -32,6 +33,7 @@ import org.flexiblepower.ral.messages.ResourceMessage;
 import org.flexiblepower.ral.values.CommodityForecast;
 import org.flexiblepower.ral.values.CommoditySet;
 import org.flexiblepower.ral.values.UncertainMeasure;
+import org.flexiblepower.time.TimeUtil;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -174,56 +176,33 @@ public class MieleDishwasherManager
         logger.debug("Program selected: " + info.getProgram());
         String program = info.getProgram();
 
-        // Create energy Profile
-        UncertainMeasure<Power> energy1 = null;
-        UncertainMeasure<Duration> duration1 = null;
-        UncertainMeasure<Power> energy2 = null;
-        UncertainMeasure<Duration> duration2 = null;
-        UncertainMeasure<Power> energy3 = null;
-        UncertainMeasure<Duration> duration3 = null;
-
         CommodityForecast.Builder forecastBuilder = CommodityForecast.create();
 
         // Set Energy Profile
         if (program.equalsIgnoreCase("Energy Save")) {
-            energy1 = new UncertainMeasure<Power>(1000, SI.WATT);
-            duration1 = new UncertainMeasure<Duration>(1, HOUR);
-            forecastBuilder.duration(duration1);
-            forecastBuilder.electricity(energy1);
-            forecastBuilder.next();
-            energy2 = new UncertainMeasure<Power>(500, SI.WATT);
-            duration2 = new UncertainMeasure<Duration>(1, HOUR);
-            forecastBuilder.duration(duration2);
-            forecastBuilder.electricity(energy2);
-            forecastBuilder.next();
-
+            forecastBuilder.duration(Measure.valueOf(1, HOUR))
+                           .electricity(new UncertainMeasure<Power>(1000, SI.WATT))
+                           .next()
+                           .duration(Measure.valueOf(1, HOUR))
+                           .electricity(new UncertainMeasure<Power>(500, SI.WATT))
+                           .next();
         } else if (program.equalsIgnoreCase("Sensor Wash")) {
-            energy1 = new UncertainMeasure<Power>(1000, SI.WATT);
-            duration1 = new UncertainMeasure<Duration>(2, HOUR);
-            forecastBuilder.duration(duration1);
-            forecastBuilder.electricity(energy1);
-            forecastBuilder.next();
-            energy2 = new UncertainMeasure<Power>(1500, SI.WATT);
-            duration2 = new UncertainMeasure<Duration>(0.5, HOUR);
-            forecastBuilder.duration(duration2);
-            forecastBuilder.electricity(energy2);
-            forecastBuilder.next();
-            energy3 = new UncertainMeasure<Power>(500, SI.WATT);
-            duration3 = new UncertainMeasure<Duration>(0.3, HOUR);
-            forecastBuilder.duration(duration3);
-            forecastBuilder.electricity(energy3);
-            forecastBuilder.next();
+            forecastBuilder.duration(Measure.valueOf(2, HOUR))
+                           .electricity(new UncertainMeasure<Power>(1000, SI.WATT))
+                           .next()
+                           .duration(Measure.valueOf(30, NonSI.MINUTE))
+                           .electricity(new UncertainMeasure<Power>(1500, SI.WATT))
+                           .next()
+                           .duration(Measure.valueOf(18, NonSI.MINUTE))
+                           .electricity(new UncertainMeasure<Power>(500, SI.WATT))
+                           .next();
         } else {
-            energy1 = new UncertainMeasure<Power>(2000, SI.WATT);
-            duration1 = new UncertainMeasure<Duration>(3, HOUR);
-            forecastBuilder.duration(duration1);
-            forecastBuilder.electricity(energy1);
-            forecastBuilder.next();
-            energy2 = new UncertainMeasure<Power>(1000, SI.WATT);
-            duration2 = new UncertainMeasure<Duration>(1, HOUR);
-            forecastBuilder.duration(duration2);
-            forecastBuilder.electricity(energy2);
-            forecastBuilder.next();
+            forecastBuilder.duration(Measure.valueOf(3, HOUR))
+                           .electricity(new UncertainMeasure<Power>(2000, SI.WATT))
+                           .next()
+                           .duration(Measure.valueOf(1, HOUR))
+                           .electricity(new UncertainMeasure<Power>(1000, SI.WATT))
+                           .next();
         }
 
         CommodityForecast forecast = forecastBuilder.build();
@@ -232,7 +211,7 @@ public class MieleDishwasherManager
         currentUpdate = new TimeShifterUpdate(configuration.resourceId(),
                                               changedStateTime,
                                               changedStateTime,
-                                              info.getLatestStartTime(),
+                                              TimeUtil.add(info.getLatestStartTime(), forecast.getTotalDuration()),
                                               new SequentialProfile(0,
                                                                     maxInterval,
                                                                     forecast));
