@@ -145,7 +145,7 @@ public class ElasticSearchWriter implements Runnable {
             return jsonToSend = sw.toString();
         } catch (IOException ex) {
             // Shouldn't be possible when using a StringWriter
-            throw new AssertionError("I/O error while using a StringWriter?", ex);
+            throw new AssertionError("I/O error while using a StringWriter: " + ex.getMessage());
         }
     }
 }
