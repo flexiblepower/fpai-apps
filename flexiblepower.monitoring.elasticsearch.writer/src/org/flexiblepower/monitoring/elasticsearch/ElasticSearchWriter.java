@@ -2,8 +2,6 @@ package org.flexiblepower.monitoring.elasticsearch;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -124,18 +122,10 @@ public class ElasticSearchWriter implements Runnable {
                 w.endObject().endObject();
                 sw.append('\n');
 
-                Calendar cal = Calendar.getInstance();
-                long milliDiff = cal.get(Calendar.ZONE_OFFSET);
-                Date localTime = new Date(data.getObservation().getObservedAt().getTime() - milliDiff);
-
                 w.beginObject();
-                w.name("@timestamp").value(localTime);
+                w.name("@timestamp").value(data.getObservation().getObservedAt());
                 for (Entry<String, Object> entry : data.getObservation().getValueMap().entrySet()) {
-                    if (entry.getKey().equals("time")) {
-                        w.write(entry.getKey(), new Date(((Date) entry.getValue()).getTime() - milliDiff));
-                    } else {
-                        w.write(entry.getKey(), entry.getValue());
-                    }
+                    w.write(entry.getKey(), entry.getValue());
                 }
                 w.endObject();
                 sw.append('\n');

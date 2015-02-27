@@ -4,10 +4,13 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.TimeZone;
 
 import com.google.gson.stream.JsonWriter;
 
 public class DataWriter extends JsonWriter {
+    private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
+
     public DataWriter(Writer w) {
         super(w);
         setLenient(true);
@@ -40,9 +43,9 @@ public class DataWriter extends JsonWriter {
     }
 
     public static String format(long timeStamp) {
-        Calendar calendar = Calendar.getInstance();
+        Calendar calendar = Calendar.getInstance(GMT);
         calendar.setTimeInMillis(timeStamp);
-        return String.format("%04d-%02d-%02dT%02d:%02d:%02d.%03d",
+        return String.format("%04d-%02d-%02dT%02d:%02d:%02d.%03dZ",
                              calendar.get(Calendar.YEAR),
                              calendar.get(Calendar.MONTH) + 1, // 0-based...
                              calendar.get(Calendar.DAY_OF_MONTH),
