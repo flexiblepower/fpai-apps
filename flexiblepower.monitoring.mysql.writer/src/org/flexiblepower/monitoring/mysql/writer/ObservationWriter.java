@@ -17,11 +17,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import javax.measure.Measurable;
 import javax.measure.Measure;
 import javax.measure.quantity.Dimensionless;
+import javax.measure.quantity.Duration;
 import javax.measure.unit.Unit;
 
 import org.flexiblepower.context.FlexiblePowerContext;
@@ -38,8 +40,15 @@ import org.slf4j.LoggerFactory;
  */
 @SuppressWarnings({ "rawtypes", "unchecked" })
 public class ObservationWriter implements ObservationConsumer {
+    private final class DoInsert implements Runnable {
+        @Override
+        public void run() {
+            insert();
+        }
+    }
+
     /** The maximum amount of observations to queue */
-    private static final int QUEUE_SIZE = 16;
+    private static final int QUEUE_SIZE = 64;
 
     /** The prefix of fact tables used in the database. */
     private static final String FACT_PREFIX = "fact_";
@@ -110,10 +119,13 @@ public class ObservationWriter implements ObservationConsumer {
     /** The executor used to perform inserts on */
     private final FlexiblePowerContext context;
 
+    private final ScheduledFuture<?> schedule;
+
     public ObservationWriter(FlexiblePowerContext context,
                              ObservationWriterManager observationWriterManager,
                              ObservationProvider provider,
-                             Map<String, Object> properties) {
+                             Map<String, Object> properties,
+                             Measurable<Duration> updateRate) {
         this.context = context;
         dataSource = observationWriterManager;
         this.provider = provider;
@@ -143,6 +155,8 @@ public class ObservationWriter implements ObservationConsumer {
             close();
         }
 
+        schedule = context.scheduleAtFixedRate(new DoInsert(), updateRate, updateRate);
+
         provider.subscribe(this);
     }
 
@@ -151,6 +165,9 @@ public class ObservationWriter implements ObservationConsumer {
      */
     public void close() {
         provider.unsubscribe(this);
+        schedule.cancel(false);
+        // Run one last time to make sure the queue is empty
+        insert();
     }
 
     /**
@@ -388,7 +405,7 @@ public class ObservationWriter implements ObservationConsumer {
 
     /*
      * Consumes an observation and writes it to the database.
-     *
+     * 
      * @see org.flexiblepower.observation.ObservationConsumer#consume(org.flexiblepower
      * .observation.ObservationProvider, org.flexiblepower.observation.Observation)
      */
@@ -405,12 +422,10 @@ public class ObservationWriter implements ObservationConsumer {
             // Queue full
             logger.warn("MySQL writers observation queue is full, observation not saved");
         }
-        context.submit(new Runnable() {
-            @Override
-            public void run() {
-                insert();
-            }
-        });
+
+        if (queue.size() > QUEUE_SIZE - 5) {
+            context.submit(new DoInsert());
+        }
     }
 
     void insert() {
@@ -420,7 +435,7 @@ public class ObservationWriter implements ObservationConsumer {
         }
 
         // drain all current observations to a list
-        List<Observation> observations = new ArrayList<Observation>(queue.size());
+        List<Observation> observations = new ArrayList<Observation>(QUEUE_SIZE);
         int count = queue.drainTo(observations);
 
         // if the queue is empty (may be cleared by another thread ...), return

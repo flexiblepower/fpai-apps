@@ -16,6 +16,9 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.measure.Measure;
+import javax.measure.quantity.Duration;
+import javax.measure.unit.NonSI;
 import javax.sql.DataSource;
 
 import org.flexiblepower.context.FlexiblePowerContext;
@@ -68,6 +71,9 @@ public class ObservationWriterManager {
 
         @AD(deflt = "fpai", description = "password for connecting to the database")
         String jdbcPassword();
+
+        @AD(deflt = "5", min = "1", max = "60", description = "The number of minutes between update writes")
+        int updateRate();
     }
 
     /** The index of the column with table names from {@link DatabaseMetaData#getTables}. */
@@ -85,13 +91,19 @@ public class ObservationWriterManager {
 
     private Config config;
 
+    private Measure<Integer, Duration> updateRate;
+
     /**
      * Activates the ObservationWriterManager. Make sure a dataSource is configured (see
      * {@link #setDataSource(DataSource)}. The activation ensures that the right database structure is in place.
+     *
+     * @throws Exception
      */
     @Activate
-    public void activate(Map<String, Object> properties) {
+    public void activate(Map<String, Object> properties) throws Exception {
         config = Configurable.createConfigurable(Config.class, properties);
+
+        updateRate = Measure.valueOf(config.updateRate(), NonSI.MINUTE);
 
         // TODO do this asynchronously!
         // TODO ensure that the date dimension is maintained ... automatically
@@ -101,7 +113,8 @@ public class ObservationWriterManager {
         try {
             ensureSchema();
         } catch (Exception e) {
-            logger.error("Could not ensure the correct schema required", e);
+            logger.error("Could not ensure the correct schema required, are the database settings correct?", e);
+            throw e;
         }
         // }
         // }.start();
@@ -326,7 +339,7 @@ public class ObservationWriterManager {
     @Reference(dynamic = true, multiple = true, optional = true)
     public void addProvider(ObservationProvider provider, Map<String, Object> properties) {
         try {
-            ObservationWriter w = new ObservationWriter(context, this, provider, properties);
+            ObservationWriter w = new ObservationWriter(context, this, provider, properties, updateRate);
 
             ObservationWriter old = writers.put(provider, w);
             if (old != null) {
