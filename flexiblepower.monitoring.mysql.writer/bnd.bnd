@@ -1,12 +1,7 @@
 Bundle-Version: 1.0.0.${qualifier}
 Private-Package: org.flexiblepower.monitoring.mysql.*
 Service-Component: org.flexiblepower.monitoring.mysql.*
+-includeresource: res, @lib/mysql-connector-java-5.1.34.jar
 
--buildpath:  \
-	flexiblepower.api,\
-	biz.aQute.bnd.annotation,\
-	osgi.cmpn;version='[4.3,5.0)',\
-	flexiblepower.api.ext,\
-	slf4j.api,\
-	com.mysql.jdbc
+-buildpath:  ${fpai-buildpath}, lib/mysql-connector-java-5.1.34.jar;version=file
 	
