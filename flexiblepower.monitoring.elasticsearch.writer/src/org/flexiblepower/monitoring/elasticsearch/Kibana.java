@@ -30,7 +30,7 @@ public class Kibana {
 
     private static final Logger logger = LoggerFactory.getLogger(Kibana.class);
 
-    private final Proxy proxy = new Proxy();
+    // private final Proxy proxy = new Proxy();
 
     private HttpService httpService;
 
