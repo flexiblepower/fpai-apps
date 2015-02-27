@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -24,8 +23,8 @@ import javax.measure.Measurable;
 import javax.measure.Measure;
 import javax.measure.quantity.Dimensionless;
 import javax.measure.unit.Unit;
-import javax.sql.DataSource;
 
+import org.flexiblepower.context.FlexiblePowerContext;
 import org.flexiblepower.observation.Observation;
 import org.flexiblepower.observation.ObservationConsumer;
 import org.flexiblepower.observation.ObservationProvider;
@@ -86,12 +85,12 @@ public class ObservationWriter implements ObservationConsumer {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     /** The data source to use for getting connections to the database. */
-    private DataSource dataSource;
+    private final ObservationWriterManager dataSource;
 
     /** The provider of observations to write to the database. */
-    private ObservationProvider provider;
+    private final ObservationProvider provider;
     /** The meta-data properties of the provider. */
-    private Map<String, Object> providerProperties;
+    private final Map<String, Object> providerProperties;
 
     /** The (cached) names of the fields from {@link #providerProperties}, use {@link #getFieldNames()}. */
     private List<String> fieldNames;
@@ -109,49 +108,19 @@ public class ObservationWriter implements ObservationConsumer {
     private final BlockingQueue<Observation> queue = new LinkedBlockingQueue<Observation>(QUEUE_SIZE);
 
     /** The executor used to perform inserts on */
-    private Executor executor;
+    private final FlexiblePowerContext context;
 
-    /**
-     * Set the data source to use for writing observations.
-     *
-     * @param dataSource
-     *            The data source to use.
-     */
-    public void setDataSource(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-
-    /**
-     * Set the executor to perform the inserts on.
-     *
-     * @param executor
-     *            The executor to use.
-     */
-    public void setExecutor(Executor executor) {
-        this.executor = executor;
-    }
-
-    /**
-     * Set the observation provider which sources the observations (this writer will subscribe as consumer to the given
-     * provider).
-     *
-     * @param properties
-     *            The configuration of the provider to attach to.
-     * @param provider
-     *            The provider to attach to.
-     */
-    public void setProvider(Map<String, Object> properties, ObservationProvider provider) {
+    public ObservationWriter(FlexiblePowerContext context,
+                             ObservationWriterManager observationWriterManager,
+                             ObservationProvider provider,
+                             Map<String, Object> properties) {
+        this.context = context;
+        dataSource = observationWriterManager;
         this.provider = provider;
         providerProperties = properties;
-    }
 
-    /**
-     * Activates the writer, assumes that a data source and a provider are configured (see
-     * {@link #setDataSource(DataSource)} and {@link #setProvider(ObservationProvider)}).
-     */
-    public void activate() {
         try {
-            Connection con = dataSource.getConnection();
+            Connection con = dataSource.createConnection();
 
             try {
                 // make sure a table exists to insert the observations into
@@ -171,24 +140,17 @@ public class ObservationWriter implements ObservationConsumer {
             provider.subscribe(this);
         } catch (Throwable t) {
             logger.error("Couldn't activate an observation writer", t);
-            // deactivate on failure
-            deactivate();
+            close();
         }
+
+        provider.subscribe(this);
     }
 
     /**
-     * Deactives the observation writer, the writer will unsubscribe from the observation provider configured for this
-     * writer.
+     * Closes this writer
      */
-    public void deactivate() {
-        try {
-            if (provider != null) {
-                provider.unsubscribe(this);
-            }
-        } finally {
-            provider = null;
-            dataSource = null;
-        }
+    public void close() {
+        provider.unsubscribe(this);
     }
 
     /**
@@ -443,15 +405,15 @@ public class ObservationWriter implements ObservationConsumer {
             // Queue full
             logger.warn("MySQL writers observation queue is full, observation not saved");
         }
-        executor.execute(new Runnable() {
+        context.submit(new Runnable() {
             @Override
             public void run() {
-                ObservationWriter.this.insert();
+                insert();
             }
         });
     }
 
-    private void insert() {
+    void insert() {
         // if the queue is empty, return
         if (queue.size() == 0) {
             return;
@@ -467,7 +429,7 @@ public class ObservationWriter implements ObservationConsumer {
         }
 
         try {
-            Connection con = dataSource.getConnection();
+            Connection con = dataSource.createConnection();
 
             try {
                 String sql = getInsertQuery();

@@ -3,6 +3,7 @@ package org.flexiblepower.monitoring.mysql.writer;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -14,11 +15,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 import javax.sql.DataSource;
 
+import org.flexiblepower.context.FlexiblePowerContext;
 import org.flexiblepower.observation.Observation;
 import org.flexiblepower.observation.ObservationProvider;
 import org.flexiblepower.observation.ext.ObservationProviderRegistrationHelper;
@@ -29,7 +29,10 @@ import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.ConfigurationPolicy;
 import aQute.bnd.annotation.component.Reference;
+import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta.AD;
+
+import com.mysql.jdbc.Driver;
 
 /**
  * OSGi Declarative Services Component which manages {@link ObservationWriter}s which take {@link Observation}s from
@@ -41,6 +44,12 @@ import aQute.bnd.annotation.metatype.Meta.AD;
            configurationPolicy = ConfigurationPolicy.optional,
            designate = ObservationWriterManager.Config.class)
 public class ObservationWriterManager {
+    private static final Logger logger = LoggerFactory.getLogger(ObservationWriterManager.class);
+
+    static {
+        logger.debug("Loading Mysql driver for class {}", Driver.class);
+    }
+
     /**
      * Configuration for the manager of observation writers which allows for expressing LDAP filters used to selectively
      * reference observation providers (instead of all providers) and to select the right data source for writing the
@@ -51,30 +60,39 @@ public class ObservationWriterManager {
         @AD(description = "LDAP filter for discovery of ObservationProviders", deflt = "")
         String provider_filter();
 
-        /** @return The LDAP filter used for selection of the DataSource used for writing the observations to. */
-        @AD(description = "LDAP filter for binding to the right data source", deflt = "")
-        String dataSource_filter();
+        @AD(deflt = "jdbc:mysql://fpaimonitoring.sensorlab.tno.nl:3306/project", description = "URL to the database")
+        String jdbcURL();
+
+        @AD(deflt = "fpai", description = "username for connecting to the database")
+        String jdbcUser();
+
+        @AD(deflt = "fpai", description = "password for connecting to the database")
+        String jdbcPassword();
     }
 
     /** The index of the column with table names from {@link DatabaseMetaData#getTables}. */
     private static final int TABLE_NAME_COLUMN_IDX = 3;
 
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
-    /** The data source used by the observation writers */
-    private DataSource dataSource;
     /** map of writers keyed by the providers they were created for */
     private final Map<ObservationProvider, ObservationWriter> writers = new ConcurrentHashMap<ObservationProvider, ObservationWriter>();
 
-    /** The thread pool for executing the inserts */
-    private final Executor executor = Executors.newSingleThreadExecutor();
+    private FlexiblePowerContext context;
+
+    @Reference
+    public void setContext(FlexiblePowerContext context) {
+        this.context = context;
+    }
+
+    private Config config;
 
     /**
      * Activates the ObservationWriterManager. Make sure a dataSource is configured (see
      * {@link #setDataSource(DataSource)}. The activation ensures that the right database structure is in place.
      */
     @Activate
-    public void activate() {
+    public void activate(Map<String, Object> properties) {
+        config = Configurable.createConfigurable(Config.class, properties);
+
         // TODO do this asynchronously!
         // TODO ensure that the date dimension is maintained ... automatically
 
@@ -90,7 +108,7 @@ public class ObservationWriterManager {
     }
 
     private void ensureSchema() throws SQLException, IOException {
-        Connection con = dataSource.getConnection();
+        Connection con = createConnection();
 
         try {
             ResultSet tables = con.getMetaData().getTables(null, null, "dim_%", new String[] { "TABLE" });
@@ -112,11 +130,11 @@ public class ObservationWriterManager {
             if (!dimensionTables.contains("dim_time")) {
                 createDimTime(con);
 
-                Thread populateDimTime = new Thread() {
+                context.submit(new Runnable() {
                     @Override
                     public void run() {
                         try {
-                            Connection con = dataSource.getConnection();
+                            Connection con = createConnection();
 
                             try {
                                 populateDimTime(con);
@@ -127,19 +145,17 @@ public class ObservationWriterManager {
                             logger.warn("Failed to populate table dim_time", e);
                         }
                     };
-                };
-
-                populateDimTime.start();
+                });
             }
 
             if (!dimensionTables.contains("dim_date")) {
                 createDimDate(con);
 
-                Thread populateDimDate = new Thread() {
+                context.submit(new Runnable() {
                     @Override
                     public void run() {
                         try {
-                            Connection con = dataSource.getConnection();
+                            Connection con = createConnection();
 
                             try {
                                 populateDimDate(con);
@@ -150,15 +166,17 @@ public class ObservationWriterManager {
                             logger.warn("Failed to populate table dim_date", e);
                         }
                     };
-                };
-
-                populateDimDate.start();
+                });
             }
 
             logger.info("Schema checked and created and populated all required tables where necessary");
         } finally {
             con.close();
         }
+    }
+
+    Connection createConnection() throws SQLException {
+        return DriverManager.getConnection(config.jdbcURL(), config.jdbcUser(), config.jdbcPassword());
     }
 
     private void createDimObserver(Connection con) throws SQLException {
@@ -296,17 +314,6 @@ public class ObservationWriterManager {
     }
 
     /**
-     * Configures the data source to be used by the observation writers managed by this component.
-     *
-     * @param dataSource
-     *            The data source to be used.
-     */
-    @Reference
-    public void setDataSource(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
-
-    /**
      * Adds a provider as a reference, in response an observation writer will be activated to consume the observations
      * from the provider and write them to a database.
      *
@@ -319,17 +326,12 @@ public class ObservationWriterManager {
     @Reference(dynamic = true, multiple = true, optional = true)
     public void addProvider(ObservationProvider provider, Map<String, Object> properties) {
         try {
-            ObservationWriter w = new ObservationWriter();
+            ObservationWriter w = new ObservationWriter(context, this, provider, properties);
 
             ObservationWriter old = writers.put(provider, w);
             if (old != null) {
-                old.deactivate();
+                old.close();
             }
-
-            w.setDataSource(dataSource);
-            w.setExecutor(executor);
-            w.setProvider(properties, provider);
-            w.activate();
         } catch (Exception e) {
             logger.error("Couldn't reference a provider", e);
         }
@@ -344,7 +346,7 @@ public class ObservationWriterManager {
     public void removeProvider(ObservationProvider provider) {
         ObservationWriter w = writers.remove(provider);
         if (w != null) {
-            w.deactivate();
+            w.close();
         }
     }
 }
