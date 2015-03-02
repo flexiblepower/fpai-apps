@@ -30,10 +30,10 @@ import org.slf4j.LoggerFactory;
 
 import aQute.bnd.annotation.component.Activate;
 import aQute.bnd.annotation.component.Component;
-import aQute.bnd.annotation.component.ConfigurationPolicy;
 import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta.AD;
+import aQute.bnd.annotation.metatype.Meta.OCD;
 
 import com.mysql.jdbc.Driver;
 
@@ -43,9 +43,7 @@ import com.mysql.jdbc.Driver;
  * observation writer is created. When a provider is no longer referenced, the observation writer is deactivated.
  */
 @SuppressWarnings("rawtypes")
-@Component(immediate = true,
-           configurationPolicy = ConfigurationPolicy.optional,
-           designate = ObservationWriterManager.Config.class)
+@Component(immediate = true, designate = ObservationWriterManager.Config.class)
 public class ObservationWriterManager {
     private static final Logger logger = LoggerFactory.getLogger(ObservationWriterManager.class);
 
@@ -58,6 +56,7 @@ public class ObservationWriterManager {
      * reference observation providers (instead of all providers) and to select the right data source for writing the
      * observations to.
      */
+    @OCD(name = "MySQL observation writer")
     public interface Config {
         /** @return The LDAP filter used for discovery of ObservationProviders. */
         @AD(description = "LDAP filter for discovery of ObservationProviders", deflt = "")
