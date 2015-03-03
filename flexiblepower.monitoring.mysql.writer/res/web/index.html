@@ -8,10 +8,6 @@
 	
 	<body>
 		<div id="input-area">
-			<label for="data-sources">Data source</label>
-			<select id="data-sources">
-			</select>
-			
 			<label for="queries">Queries</label>
 			<select id="queries" onchange="document.getElementById('query').value = this.value;">
 			<option></option>
@@ -55,27 +51,9 @@
 				}
 			});
 			
-			d3.tsv("sql?cmd=list-data-sources", function(error, dataSources) {
-				var dataSourcesElement = document.getElementById("data-sources"); 
-				
-				for(var key in dataSources) {
-					var id = dataSources[key]["data-source-identifier"];
-					dataSourcesElement[dataSourcesElement.options.length]
-						= new Option(id, id);
-				}
-				
-				var dataSource = readCookie('dataSource');
-				if(dataSource && dataSource !== "null") {
-					document.getElementById('data-sources').value = decodeURI(dataSource);
-				}
-			});
-			
 			window.onbeforeunload = function(e) {
 				var query = document.getElementById('query').value;
 				createCookie('query', encodeURI(query), 1);
-				
-				var dataSource = document.getElementById('data-sources').value;
-				createCookie('dataSource', encodeURI(dataSource), 1);
 				
 				var chartType = document.getElementById('chart-type').value;
 				createCookie('chartType', encodeURI(chartType), 1);

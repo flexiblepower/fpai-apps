@@ -22,9 +22,12 @@ import javax.measure.unit.NonSI;
 import javax.sql.DataSource;
 
 import org.flexiblepower.context.FlexiblePowerContext;
+import org.flexiblepower.monitoring.mysql.ui.HttpActivator;
+import org.flexiblepower.monitoring.mysql.ui.SQLServlet;
 import org.flexiblepower.observation.Observation;
 import org.flexiblepower.observation.ObservationProvider;
 import org.flexiblepower.observation.ext.ObservationProviderRegistrationHelper;
+import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,6 +99,8 @@ public class ObservationWriterManager {
 
     private Measure<Integer, Duration> updateRate;
 
+    private HttpActivator activator;
+
     /**
      * Activates the ObservationWriterManager. Make sure a dataSource is configured (see
      * {@link #setDataSource(DataSource)}. The activation ensures that the right database structure is in place.
@@ -103,8 +108,15 @@ public class ObservationWriterManager {
      * @throws Exception
      */
     @Activate
-    public void activate(Map<String, Object> properties) throws Exception {
+    public void activate(BundleContext bundleContext, Map<String, Object> properties) throws Exception {
         config = Configurable.createConfigurable(Config.class, properties);
+
+        try {
+            activator = new HttpActivator(bundleContext, new SQLServlet(this));
+        } catch (NoClassDefFoundError error) {
+            // Ignore, the servlet is optional
+            logger.info("Could not load the servlet, no webserver available?");
+        }
 
         updateRate = Measure.valueOf(config.updateRate(), NonSI.MINUTE);
 
@@ -121,6 +133,13 @@ public class ObservationWriterManager {
         }
         // }
         // }.start();
+    }
+
+    public void deactivate() {
+        if (activator != null) {
+            activator.close();
+            activator = null;
+        }
     }
 
     private void ensureSchema() throws SQLException, IOException {
@@ -191,7 +210,7 @@ public class ObservationWriterManager {
         }
     }
 
-    Connection createConnection() throws SQLException {
+    public Connection createConnection() throws SQLException {
         return DriverManager.getConnection(config.jdbcURL(), config.jdbcUser(), config.jdbcPassword());
     }
 

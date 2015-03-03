@@ -6,4 +6,11 @@ Conditional-Package: com.mysql*
 Service-Component: org.flexiblepower.monitoring.mysql.*
 -includeresource: res
 
--buildpath:  ${fpai-buildpath}, lib/mysql-connector-java-5.1.34.jar;version=file
+-buildpath:  ${fpai-buildpath},\
+             lib/mysql-connector-java-5.1.34.jar;version=file,\
+             org.apache.felix.http.servlet-api;version=latest
+Import-Package:  \
+	org.osgi.util.tracker;resolution:=optional,\
+	org.osgi.service.http;resolution:=optional,\
+	javax.servlet*;resolution:=optional,\
+	*
