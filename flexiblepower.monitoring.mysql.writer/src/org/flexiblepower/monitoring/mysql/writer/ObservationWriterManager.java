@@ -48,7 +48,11 @@ public class ObservationWriterManager {
     private static final Logger logger = LoggerFactory.getLogger(ObservationWriterManager.class);
 
     static {
-        logger.debug("Loading Mysql driver for class {}", Driver.class);
+        try {
+            logger.debug("Loading Mysql driver for class {}", new Driver());
+        } catch (SQLException e) {
+            logger.error("Could not start a Mysql driver: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -62,7 +66,7 @@ public class ObservationWriterManager {
         @AD(description = "LDAP filter for discovery of ObservationProviders", deflt = "")
         String provider_filter();
 
-        @AD(deflt = "jdbc:mysql://fpaimonitoring.sensorlab.tno.nl:3306/project", description = "URL to the database")
+        @AD(deflt = "jdbc:mysql://localhost:3306/project", description = "URL to the database")
         String jdbcURL();
 
         @AD(deflt = "fpai", description = "username for connecting to the database")

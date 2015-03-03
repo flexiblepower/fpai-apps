@@ -1,5 +1,7 @@
 Bundle-Version: 1.0.0.${qualifier}
-Private-Package: org.flexiblepower.monitoring.mysql.*
+# The jdbc4 package is dynamically imported by the Driver
+Private-Package: org.flexiblepower.monitoring.mysql.*,\
+                 com.mysql.jdbc.exceptions.jdbc4
 Conditional-Package: com.mysql*
 Service-Component: org.flexiblepower.monitoring.mysql.*
 -includeresource: res
