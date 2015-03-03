@@ -164,8 +164,12 @@ public class ObservationWriter implements ObservationConsumer {
      * Closes this writer
      */
     public void close() {
-        provider.unsubscribe(this);
-        schedule.cancel(false);
+        if (provider != null) {
+            provider.unsubscribe(this);
+        }
+        if (schedule != null) {
+            schedule.cancel(false);
+        }
         // Run one last time to make sure the queue is empty
         insert();
     }
