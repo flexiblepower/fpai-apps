@@ -40,10 +40,55 @@ import org.slf4j.LoggerFactory;
  */
 @SuppressWarnings({ "rawtypes", "unchecked" })
 public class ObservationWriter implements ObservationConsumer {
+    private final class InitializeTable implements Runnable {
+        @Override
+        public void run() {
+            try {
+                synchronized (ObservationWriter.this) {
+                    Connection con = dataSource.createConnection();
+
+                    if (con == null) {
+                        // Can not start at this time, try again later?
+                    }
+
+                    try {
+                        // make sure a table exists to insert the observations into
+                        ensureTableExists(con);
+
+                        // lookup the observer id
+                        observerId = lookupObserverId(con);
+                        // or create one if there is no prior registration of this observer
+                        if (observerId == null) {
+                            observerId = registerObserver(con);
+                        }
+                    } finally {
+                        con.close();
+                    }
+
+                    // subscribe to observations from the observation provider
+                    provider.subscribe(ObservationWriter.this);
+                }
+            } catch (SQLException ex) {
+                logger.error("Couldn't activate an observation writer", ex);
+                close();
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "Initializing the MySQL table for this observation type";
+        }
+    }
+
     private final class DoInsert implements Runnable {
         @Override
         public void run() {
             insert();
+        }
+
+        @Override
+        public String toString() {
+            return "Writing observations into the MySQL database";
         }
     }
 
@@ -119,45 +164,24 @@ public class ObservationWriter implements ObservationConsumer {
     /** The executor used to perform inserts on */
     private final FlexiblePowerContext context;
 
-    private final ScheduledFuture<?> schedule;
+    private ScheduledFuture<?> schedule;
 
     public ObservationWriter(FlexiblePowerContext context,
                              ObservationWriterManager observationWriterManager,
                              ObservationProvider provider,
-                             Map<String, Object> properties,
-                             Measurable<Duration> updateRate) {
+                             Map<String, Object> properties) {
         this.context = context;
         dataSource = observationWriterManager;
         this.provider = provider;
         providerProperties = properties;
+    }
 
-        try {
-            Connection con = dataSource.createConnection();
-
-            try {
-                // make sure a table exists to insert the observations into
-                ensureTableExists(con);
-
-                // lookup the observer id
-                observerId = lookupObserverId(con);
-                // or create one if there is no prior registration of this observer
-                if (observerId == null) {
-                    observerId = registerObserver(con);
-                }
-            } finally {
-                con.close();
-            }
-
-            // subscribe to observations from the observation provider
-            provider.subscribe(this);
-        } catch (Throwable t) {
-            logger.error("Couldn't activate an observation writer", t);
-            close();
+    public void start(Measurable<Duration> updateRate) {
+        if (schedule != null) {
+            schedule.cancel(false);
         }
-
+        context.submit(new InitializeTable());
         schedule = context.scheduleAtFixedRate(new DoInsert(), updateRate, updateRate);
-
-        provider.subscribe(this);
     }
 
     /**

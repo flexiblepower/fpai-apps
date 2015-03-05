@@ -108,7 +108,7 @@ public class ObservationWriterManager {
      * @throws Exception
      */
     @Activate
-    public void activate(BundleContext bundleContext, Map<String, Object> properties) throws Exception {
+    public synchronized void activate(BundleContext bundleContext, Map<String, Object> properties) throws Exception {
         config = Configurable.createConfigurable(Config.class, properties);
 
         try {
@@ -133,9 +133,14 @@ public class ObservationWriterManager {
         }
         // }
         // }.start();
+
+        // Now start writers on providers for which no writer has been started
+        for (ObservationWriter writer : writers.values()) {
+            writer.start(updateRate);
+        }
     }
 
-    public void deactivate() {
+    public synchronized void deactivate() {
         if (activator != null) {
             activator.close();
             activator = null;
@@ -211,6 +216,9 @@ public class ObservationWriterManager {
     }
 
     public Connection createConnection() throws SQLException {
+        if (config == null) {
+            return null;
+        }
         return DriverManager.getConnection(config.jdbcURL(), config.jdbcUser(), config.jdbcPassword());
     }
 
@@ -359,16 +367,14 @@ public class ObservationWriterManager {
      *            (see also {@link ObservationProviderRegistrationHelper}).
      */
     @Reference(dynamic = true, multiple = true, optional = true)
-    public void addProvider(ObservationProvider provider, Map<String, Object> properties) {
-        try {
-            ObservationWriter w = new ObservationWriter(context, this, provider, properties, updateRate);
-
-            ObservationWriter old = writers.put(provider, w);
-            if (old != null) {
-                old.close();
-            }
-        } catch (Exception e) {
-            logger.error("Couldn't reference a provider", e);
+    public synchronized void addProvider(ObservationProvider provider, Map<String, Object> properties) {
+        ObservationWriter writer = new ObservationWriter(context, this, provider, properties);
+        if (updateRate != null) {
+            writer.start(updateRate);
+        }
+        ObservationWriter old = writers.put(provider, writer);
+        if (old != null) {
+            old.close();
         }
     }
 
@@ -378,7 +384,7 @@ public class ObservationWriterManager {
      * @param provider
      *            The observation provider that was deactivated.
      */
-    public void removeProvider(ObservationProvider provider) {
+    public synchronized void removeProvider(ObservationProvider provider) {
         ObservationWriter w = writers.remove(provider);
         if (w != null) {
             w.close();
