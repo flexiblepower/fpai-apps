@@ -47,12 +47,11 @@ function resizeChart() {
 	updateQuery(data);
 }
 
-function chartQuery(ds, q, t) {
-	dataSource = ds;
+function chartQuery(q, t) {
 	query = q;
 	chartType = t;
 	
-	var url = "sql?cmd=query&ds=" + encodeURIComponent(dataSource) + "&q=" + encodeURIComponent(query);
+	var url = "sql?cmd=query&q=" + encodeURIComponent(query);
 	
 	d3.select("#data-url")
 		.text(null)
@@ -180,9 +179,9 @@ function updateQuery(data) {
 		series.append("text")
 	      .datum(function(d) { 
 	    	  var values = d.values.filter(defined);
-	    	  return {name: d.name, value: values[values.length - 1]}; 
+	    	  return {name: d.name, value: values[0]}; 
     	  })
-	      .attr("transform", function(d) { return "translate(" + x(d.value.key) + "," + y(d.value.value) + ")"; })
+	      .attr("transform", function(d) { return "translate(" + x(d.name) + "," + y(d.value) + ")"; })
 	      .attr("x", ".5em")
 	      .attr("dy", ".35em")
 	      .text(function(d) { return label(d.name); });
