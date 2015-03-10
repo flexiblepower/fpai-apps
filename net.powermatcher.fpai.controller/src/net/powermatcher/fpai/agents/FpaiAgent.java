@@ -2,6 +2,7 @@ package net.powermatcher.fpai.agents;
 
 import net.powermatcher.api.data.Bid;
 import net.powermatcher.api.data.Price;
+import net.powermatcher.api.messages.BidUpdate;
 import net.powermatcher.api.messages.PriceUpdate;
 import net.powermatcher.core.BaseAgentEndpoint;
 import net.powermatcher.fpai.controller.AgentMessageSender;
@@ -71,7 +72,8 @@ public abstract class FpaiAgent extends BaseAgentEndpoint implements Comparable<
     protected synchronized void doBidUpdate() {
         if (isInitialized()) {
             Bid bid = createBid();
-            if (bid != null) {
+            BidUpdate lastBidUpdate = getLastBidUpdate();
+            if (bid != null && (lastBidUpdate == null || !bid.equals(lastBidUpdate.getBid()))) {
                 publishBid(bid);
             }
         }
