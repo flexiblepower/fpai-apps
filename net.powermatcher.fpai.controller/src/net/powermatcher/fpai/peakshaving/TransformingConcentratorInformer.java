@@ -17,12 +17,12 @@ public class TransformingConcentratorInformer implements ObservationConsumer<Pow
         @Meta.AD(deflt = "(agentId=peakshavingconcentrator)",
                  description = "The filter that is used to determine which transforming concentrator should get the power values")
                 String
-                concentrator_filter();
+                concentrator_target();
 
         @Meta.AD(deflt = "(org.flexiblepower.monitoring.observationOf=something)",
                  description = "The filter that is used to determine which observation provider should be used to get the power values")
                 String
-                observationProvider_filter();
+                observationProvider_target();
     }
 
     private TransformingConcentrator concentrator;
