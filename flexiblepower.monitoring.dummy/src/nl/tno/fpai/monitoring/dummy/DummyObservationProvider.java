@@ -31,6 +31,7 @@ public class DummyObservationProvider extends AbstractObservationProvider<SomeVa
     /** Configuration specification of the component. */
     public interface Config {
         String identifier();
+
     }
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());

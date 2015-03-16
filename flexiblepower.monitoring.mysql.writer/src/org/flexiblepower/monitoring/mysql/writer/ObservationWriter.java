@@ -506,8 +506,7 @@ public class ObservationWriter implements ObservationConsumer {
                     }
 
                     // execute the insert batch
-                    int updated = insert.executeUpdate();
-                    assert updated == 1;
+                    insert.executeBatch();
                 } finally {
                     insert.close();
                 }
