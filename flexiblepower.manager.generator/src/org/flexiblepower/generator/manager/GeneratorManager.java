@@ -167,14 +167,12 @@ public class GeneratorManager extends
         List<RunningMode<RunningModeBehaviour>> rmList = new ArrayList<RunningMode<RunningModeBehaviour>>();
         Timer theTimer = new Timer(1, "theOne", transitionTime);
 
-        for (int power : powerValues)
-        {
+        for (int power : powerValues) {
             Set<Integer> targetStates = new HashSet<Integer>(powerValues);
             targetStates.remove(power);
             Set<Transition> transitions = new HashSet<Transition>();
 
-            for (int targetState : targetStates)
-            {
+            for (int targetState : targetStates) {
                 transitions.add(new Transition(targetState,
                                                Collections.<Timer> singleton(theTimer),
                                                Collections.<Timer> singleton(theTimer),
