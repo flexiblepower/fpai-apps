@@ -456,7 +456,7 @@ public class ObservationWriter implements ObservationConsumer {
         }
     }
 
-    void insert() {
+    synchronized void insert() {
         // if the queue is empty, return
         if (queue.size() == 0) {
             return;
@@ -473,7 +473,7 @@ public class ObservationWriter implements ObservationConsumer {
 
         try {
             Connection con = dataSource.createConnection();
-
+            logger.debug("Writing {} observations to MySQL", count);
             try {
                 String sql = getInsertQuery();
                 PreparedStatement insert = con.prepareStatement(sql);
