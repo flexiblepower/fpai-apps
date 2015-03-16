@@ -14,7 +14,7 @@ import net.powermatcher.api.monitoring.AgentObserver;
 import net.powermatcher.api.monitoring.ObservableAgent;
 import net.powermatcher.api.monitoring.events.AgentEvent;
 import net.powermatcher.api.monitoring.events.IncomingPriceUpdateEvent;
-import net.powermatcher.api.monitoring.events.OutgoingBidEvent;
+import net.powermatcher.api.monitoring.events.OutgoingBidUpdateEvent;
 
 import org.flexiblepower.ui.Widget;
 
@@ -48,8 +48,8 @@ public class FullWidget implements Widget, AgentObserver {
     public void handleAgentEvent(AgentEvent event) {
         AgentInfo info = bids.get(event.getAgentId());
         if (info != null) {
-            if (event instanceof OutgoingBidEvent) {
-                info.setBid(((OutgoingBidEvent) event).getBidUpdate());
+            if (event instanceof OutgoingBidUpdateEvent) {
+                info.setBid(((OutgoingBidUpdateEvent) event).getBidUpdate());
             } else if (event instanceof IncomingPriceUpdateEvent) {
                 info.setPrice(((IncomingPriceUpdateEvent) event).getPriceUpdate());
             }

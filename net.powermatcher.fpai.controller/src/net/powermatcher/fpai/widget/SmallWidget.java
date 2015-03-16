@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.powermatcher.api.monitoring.AgentObserver;
 import net.powermatcher.api.monitoring.ObservableAgent;
 import net.powermatcher.api.monitoring.events.AgentEvent;
-import net.powermatcher.api.monitoring.events.OutgoingBidEvent;
+import net.powermatcher.api.monitoring.events.OutgoingBidUpdateEvent;
 import net.powermatcher.api.monitoring.events.OutgoingPriceUpdateEvent;
 
 import org.flexiblepower.ui.Widget;
@@ -50,8 +50,8 @@ public class SmallWidget implements AgentObserver, Widget {
             OutgoingPriceUpdateEvent e = (OutgoingPriceUpdateEvent) event;
             price = String.format("%1.2f", e.getPriceUpdate().getPrice().getPriceValue());
             priceTime = DF.format(e.getTimestamp());
-        } else if (event instanceof OutgoingBidEvent) {
-            OutgoingBidEvent e = (OutgoingBidEvent) event;
+        } else if (event instanceof OutgoingBidUpdateEvent) {
+            OutgoingBidUpdateEvent e = (OutgoingBidUpdateEvent) event;
             demands.put(e.getAgentId(), getDemands(e));
         }
     }
@@ -60,7 +60,7 @@ public class SmallWidget implements AgentObserver, Widget {
         return new Update(price, priceTime, demands);
     }
 
-    private String getDemands(OutgoingBidEvent bid) {
+    private String getDemands(OutgoingBidUpdateEvent bid) {
         double[] demand = bid.getBidUpdate().getBid().toArrayBid().getDemand();
         double first = demand[0] / 1000;
         double last = demand[demand.length - 1] / 1000;
