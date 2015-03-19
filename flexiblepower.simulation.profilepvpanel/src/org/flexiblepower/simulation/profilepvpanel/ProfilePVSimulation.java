@@ -4,7 +4,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -45,6 +47,9 @@ public class ProfilePVSimulation implements UncontrolledResourceManager, Runnabl
         @Meta.AD(deflt = "pvpanel", description = "Resource identifier")
         String resourceId();
 
+        @Meta.AD(deflt = "pv.txt", description = "CSV file with profile power data")
+        String filename();
+
         @Meta.AD(deflt = "5", description = "Delay between updates will be send out in seconds")
         int updateDelay();
     }
@@ -63,14 +68,30 @@ public class ProfilePVSimulation implements UncontrolledResourceManager, Runnabl
     private float[] pvPowerAtMinutesSinceJan1;
 
     @Activate
-    public void activate(BundleContext bundleContext, Map<String, Object> properties) {
+    public void activate(BundleContext bundleContext, Map<String, Object> properties) throws IOException {
         try {
             config = Configurable.createConfigurable(Config.class, properties);
 
             try {
-                loadPVData("../flexiblepower.simulation.profilepvpanel/res/pv.txt");
+                File file = new File(config.filename()); // For running from current directory
+                if (file.exists() && file.isFile()) {
+                    loadPVData(new FileInputStream(file));
+                } else {
+                    file = new File("res/" + config.filename()); // For running in Eclipse
+                    if (file.exists() && file.isFile()) {
+                        loadPVData(new FileInputStream(file));
+                    } else {
+                        URL url = bundleContext.getBundle().getResource(config.filename());
+                        if (url != null) {
+                            loadPVData(url.openStream());
+                        } else {
+                            throw new IllegalArgumentException("Could not load PV data");
+                        }
+                    }
+                }
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("Could not load PV data", e);
+                throw (e);
             }
 
             scheduledFuture = context.scheduleAtFixedRate(this,
@@ -116,8 +137,8 @@ public class ProfilePVSimulation implements UncontrolledResourceManager, Runnabl
         return (1 - fraction) * value1 + fraction * value2;
     }
 
-    private void loadPVData(String filename) throws IOException {
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(new File(filename))));
+    private void loadPVData(InputStream is) throws IOException {
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is));
 
         pvPowerAtMinutesSinceJan1 = new float[DAYS_IN_YEAR * HOURS_IN_DAY * MINUTES_IN_HOUR];
         String line = null;
