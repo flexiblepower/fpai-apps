@@ -146,16 +146,18 @@ public class ProfilePlayer implements UncontrolledResourceManager, Runnable, Mes
         powerAtMinutesSinceJan1 = new float[DAYS_IN_YEAR * HOURS_IN_DAY * MINUTES_IN_HOUR];
         String line = null;
         while ((line = bufferedReader.readLine()) != null) {
-            String[] split = line.split(",");
-            if (split.length == 5) {
-                int month = Integer.parseInt(split[0]);
-                int day = Integer.parseInt(split[1]);
-                int hour = Integer.parseInt(split[2]);
-                int minute = Integer.parseInt(split[3]);
-                float powerValue = Float.parseFloat(split[4]);
+            if (!line.startsWith("#")) { // Line does not contain comment
+                String[] split = line.split(",");
+                if (split.length == 5) {
+                    int month = Integer.parseInt(split[0]);
+                    int day = Integer.parseInt(split[1]);
+                    int hour = Integer.parseInt(split[2]);
+                    int minute = Integer.parseInt(split[3]);
+                    float powerValue = Float.parseFloat(split[4]);
 
-                int index = minutesSinceJan1(month, day, hour, minute);
-                powerAtMinutesSinceJan1[index] = powerValue;
+                    int index = minutesSinceJan1(month, day, hour, minute);
+                    powerAtMinutesSinceJan1[index] = powerValue;
+                }
             }
         }
         bufferedReader.close();
