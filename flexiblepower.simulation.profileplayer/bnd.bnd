@@ -1,5 +1,5 @@
 -buildpath:  ${fpai-buildpath}, flexiblepower.ui
 Bundle-Version: 2.1.0.${qualifier}
 Service-Component: *
-Export-Package: org.flexiblepower.simulation.profilepvpanel
+Export-Package: org.flexiblepower.simulation.profileplayer
 Require-Capability: flexiblepower.context;filter:="(runtime=fpai)"

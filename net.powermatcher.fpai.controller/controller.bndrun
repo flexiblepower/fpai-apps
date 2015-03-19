@@ -17,7 +17,7 @@
 	osgi.identity;filter:='(osgi.identity=net.powermatcher.fpai.controller)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.felix.webconsole.plugins)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.metatype)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.profilepvpanel)'
+	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.profileplayer)'
 -runbundles:  \
 	biz.aQute.bnd.annotation;version='[2.4.0,2.4.1)',\
 	ch.qos.logback.classic;version='[1.1.2,1.1.3)',\
@@ -30,7 +30,7 @@
 	flexiblepower.ral.efi.utils;version='[1.0.0,1.0.1)',\
 	flexiblepower.ral.ext;version='[1.0.0,1.0.1)',\
 	flexiblepower.runtime;version='[3.0.0,3.0.1)',\
-	flexiblepower.simulation.profilepvpanel;version=latest,\
+	flexiblepower.simulation.profileplayer;version=latest,\
 	flexiblepower.ui;version='[1.2.0,1.2.1)',\
 	net.powermatcher.api;version='[2.0.0,2.0.1)',\
 	net.powermatcher.core;version='[2.0.0,2.0.1)',\

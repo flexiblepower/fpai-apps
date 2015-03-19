@@ -1,4 +1,4 @@
-package org.flexiblepower.simulation.profilepvpanel;
+package org.flexiblepower.simulation.profileplayer;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -27,7 +27,7 @@ import org.flexiblepower.messaging.MessageHandler;
 import org.flexiblepower.ral.values.CommodityMeasurables;
 import org.flexiblepower.ral.values.CommoditySet;
 import org.flexiblepower.ral.values.ConstraintListMap;
-import org.flexiblepower.simulation.profilepvpanel.ProfilePVSimulation.Config;
+import org.flexiblepower.simulation.profileplayer.ProfilePlayer.Config;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,15 +40,18 @@ import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
-public class ProfilePVSimulation implements UncontrolledResourceManager, Runnable, MessageHandler {
+public class ProfilePlayer implements UncontrolledResourceManager, Runnable, MessageHandler {
 
     @Meta.OCD
     interface Config {
-        @Meta.AD(deflt = "pvpanel", description = "Resource identifier")
+        @Meta.AD(deflt = "profileplayer", description = "Resource identifier")
         String resourceId();
 
-        @Meta.AD(deflt = "pv.txt", description = "CSV file with profile power data")
+        @Meta.AD(deflt = "pv.txt", description = "CSV file with power data profile")
         String filename();
+
+        @Meta.AD(deflt = "true", description = "Generates power [true] or consumes power [false]")
+        boolean generatesPower();
 
         @Meta.AD(deflt = "5", description = "Delay between updates will be send out in seconds")
         int updateDelay();
@@ -59,13 +62,13 @@ public class ProfilePVSimulation implements UncontrolledResourceManager, Runnabl
     private static final int HOURS_IN_DAY = 24;
     private static final int MINUTES_IN_HOUR = 60;
 
-    private static final Logger logger = LoggerFactory.getLogger(ProfilePVSimulation.class);
+    private static final Logger logger = LoggerFactory.getLogger(ProfilePlayer.class);
 
     private Config config;
     private Connection connection;
     private FlexiblePowerContext context;
     private ScheduledFuture<?> scheduledFuture;
-    private float[] pvPowerAtMinutesSinceJan1;
+    private float[] powerAtMinutesSinceJan1;
 
     @Activate
     public void activate(BundleContext bundleContext, Map<String, Object> properties) throws IOException {
@@ -85,12 +88,12 @@ public class ProfilePVSimulation implements UncontrolledResourceManager, Runnabl
                         if (url != null) {
                             loadPVData(url.openStream());
                         } else {
-                            throw new IllegalArgumentException("Could not load PV data");
+                            throw new IllegalArgumentException("Could not load power profile data");
                         }
                     }
                 }
             } catch (IOException e) {
-                logger.error("Could not load PV data", e);
+                logger.error("Could not load power profile data", e);
                 throw (e);
             }
 
@@ -98,7 +101,7 @@ public class ProfilePVSimulation implements UncontrolledResourceManager, Runnabl
                                                           Measure.valueOf(0, SI.SECOND),
                                                           Measure.valueOf(config.updateDelay(), SI.SECOND));
         } catch (RuntimeException ex) {
-            logger.error("Error during initialization of the profile PV simulation: " + ex.getMessage(), ex);
+            logger.error("Error during initialization of the profile player: " + ex.getMessage(), ex);
             deactivate();
             throw ex;
         }
@@ -140,7 +143,7 @@ public class ProfilePVSimulation implements UncontrolledResourceManager, Runnabl
     private void loadPVData(InputStream is) throws IOException {
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is));
 
-        pvPowerAtMinutesSinceJan1 = new float[DAYS_IN_YEAR * HOURS_IN_DAY * MINUTES_IN_HOUR];
+        powerAtMinutesSinceJan1 = new float[DAYS_IN_YEAR * HOURS_IN_DAY * MINUTES_IN_HOUR];
         String line = null;
         while ((line = bufferedReader.readLine()) != null) {
             String[] split = line.split(",");
@@ -152,7 +155,7 @@ public class ProfilePVSimulation implements UncontrolledResourceManager, Runnabl
                 float powerValue = Float.parseFloat(split[4]);
 
                 int index = minutesSinceJan1(month, day, hour, minute);
-                pvPowerAtMinutesSinceJan1[index] = powerValue;
+                powerAtMinutesSinceJan1[index] = powerValue;
             }
         }
         bufferedReader.close();
@@ -184,9 +187,12 @@ public class ProfilePVSimulation implements UncontrolledResourceManager, Runnabl
                 int second = calendar.get(Calendar.SECOND);
 
                 int minutesSinceJan1 = minutesSinceJan1(month, day, hour, minute);
-                float powerValue1 = pvPowerAtMinutesSinceJan1[minutesSinceJan1];
-                float powerValue2 = pvPowerAtMinutesSinceJan1[(minutesSinceJan1 + 1) % pvPowerAtMinutesSinceJan1.length];
+                float powerValue1 = powerAtMinutesSinceJan1[minutesSinceJan1];
+                float powerValue2 = powerAtMinutesSinceJan1[(minutesSinceJan1 + 1) % powerAtMinutesSinceJan1.length];
                 double interpolatedPowerValue = interpolate(powerValue1, powerValue2, second / 60.0);
+                if (config.generatesPower()) {
+                    interpolatedPowerValue = -interpolatedPowerValue;
+                }
                 connection.sendMessage(new UncontrolledMeasurement(config.resourceId(),
                                                                    context.currentTime(),
                                                                    context.currentTime(),
@@ -196,7 +202,7 @@ public class ProfilePVSimulation implements UncontrolledResourceManager, Runnabl
                                                                                        .build()));
             }
         } catch (Exception e) {
-            logger.error("Error while running ProfilePVSimulation", e);
+            logger.error("Error while running profile player", e);
         }
     }
 
