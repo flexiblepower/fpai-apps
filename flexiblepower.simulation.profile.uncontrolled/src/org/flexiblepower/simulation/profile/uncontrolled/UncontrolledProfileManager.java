@@ -85,14 +85,15 @@ public class UncontrolledProfileManager implements UncontrolledResourceManager, 
     private FlexiblePowerContext context;
     private ScheduledFuture<?> scheduledFuture;
     private float[] powerAtMinutesSinceJan1;
-    private final double randomFactor = (2 * new Random().nextDouble() - 1) * config.forecastRandomnessPercentage()
-                                        / 100
-                                        + 1; // Calculate once to prevent jumping up and down in each run
+    private double randomFactor;
 
     @Activate
     public void activate(BundleContext bundleContext, Map<String, Object> properties) throws IOException {
         try {
             config = Configurable.createConfigurable(Config.class, properties);
+
+            // Calculate randomFactor once to prevent jumping up and down in each run
+            randomFactor = (2 * new Random().nextDouble() - 1) * config.forecastRandomnessPercentage() / 100 + 1;
 
             try {
                 File file = new File(config.filename()); // For running from current directory
