@@ -247,7 +247,6 @@ public class UncontrolledProfileManager implements UncontrolledResourceManager, 
                                                                    measurable));
 
                 CommodityForecast forecast = createForecast(currentTime);
-                logger.info(forecast.toString());
                 connection.sendMessage(new UncontrolledForecast(config.resourceId(), currentTime, currentTime, forecast));
             }
         } catch (Exception e) {
