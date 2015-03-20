@@ -85,7 +85,9 @@ public class UncontrolledProfileManager implements UncontrolledResourceManager, 
     private FlexiblePowerContext context;
     private ScheduledFuture<?> scheduledFuture;
     private float[] powerAtMinutesSinceJan1;
-    private final Random random = new Random();
+    private final double randomFactor = (2 * new Random().nextDouble() - 1) * config.forecastRandomnessPercentage()
+                                        / 100
+                                        + 1; // Calculate once to prevent jumping up and down in each run
 
     @Activate
     public void activate(BundleContext bundleContext, Map<String, Object> properties) throws IOException {
@@ -128,7 +130,6 @@ public class UncontrolledProfileManager implements UncontrolledResourceManager, 
         Builder forecastBuilder = CommodityForecast.create()
                                                    .duration(Measure.valueOf(60 * config.forecastDurationPerElement(),
                                                                              SI.SECOND));
-        double randomFactor = (2 * random.nextDouble() - 1) * config.forecastRandomnessPercentage() / 100 + 1;
         for (int element = 0; element < config.forecastNumberOfElements(); element++) {
             double powerValue = getPowerValue(date);
             forecastBuilder.electricity(new UncertainMeasure<Power>(powerValue * randomFactor,
