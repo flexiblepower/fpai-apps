@@ -1,0 +1,5 @@
+-buildpath:  ${fpai-buildpath}, flexiblepower.ui
+Bundle-Version: 2.1.0.${qualifier}
+Service-Component: *
+Export-Package: org.flexiblepower.simulation.profile.timeshifter
+Require-Capability: flexiblepower.context;filter:="(runtime=fpai)"
