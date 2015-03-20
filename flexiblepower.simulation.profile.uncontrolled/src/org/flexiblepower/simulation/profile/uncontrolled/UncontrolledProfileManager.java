@@ -1,4 +1,4 @@
-package org.flexiblepower.simulation.profileplayer;
+package org.flexiblepower.simulation.profile.uncontrolled;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -27,7 +27,7 @@ import org.flexiblepower.messaging.MessageHandler;
 import org.flexiblepower.ral.values.CommodityMeasurables;
 import org.flexiblepower.ral.values.CommoditySet;
 import org.flexiblepower.ral.values.ConstraintListMap;
-import org.flexiblepower.simulation.profileplayer.ProfilePlayer.Config;
+import org.flexiblepower.simulation.profile.uncontrolled.UncontrolledProfileManager.Config;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,14 +40,14 @@ import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
-public class ProfilePlayer implements UncontrolledResourceManager, Runnable, MessageHandler {
+public class UncontrolledProfileManager implements UncontrolledResourceManager, Runnable, MessageHandler {
 
     @Meta.OCD
     interface Config {
-        @Meta.AD(deflt = "profileplayer", description = "Resource identifier")
+        @Meta.AD(deflt = "uncontrolledprofilemanager", description = "Resource identifier")
         String resourceId();
 
-        @Meta.AD(deflt = "pv.txt", description = "CSV file with power data profile")
+        @Meta.AD(deflt = "pv.csv", description = "CSV file with power data profile")
         String filename();
 
         @Meta.AD(deflt = "true", description = "Generates power [true] or consumes power [false]")
@@ -62,7 +62,7 @@ public class ProfilePlayer implements UncontrolledResourceManager, Runnable, Mes
     private static final int HOURS_IN_DAY = 24;
     private static final int MINUTES_IN_HOUR = 60;
 
-    private static final Logger logger = LoggerFactory.getLogger(ProfilePlayer.class);
+    private static final Logger logger = LoggerFactory.getLogger(UncontrolledProfileManager.class);
 
     private Config config;
     private Connection connection;
@@ -78,15 +78,15 @@ public class ProfilePlayer implements UncontrolledResourceManager, Runnable, Mes
             try {
                 File file = new File(config.filename()); // For running from current directory
                 if (file.exists() && file.isFile()) {
-                    loadPVData(new FileInputStream(file));
+                    loadData(new FileInputStream(file));
                 } else {
                     file = new File("res/" + config.filename()); // For running in Eclipse
                     if (file.exists() && file.isFile()) {
-                        loadPVData(new FileInputStream(file));
+                        loadData(new FileInputStream(file));
                     } else {
                         URL url = bundleContext.getBundle().getResource(config.filename());
                         if (url != null) {
-                            loadPVData(url.openStream());
+                            loadData(url.openStream());
                         } else {
                             throw new IllegalArgumentException("Could not load power profile data");
                         }
@@ -101,7 +101,7 @@ public class ProfilePlayer implements UncontrolledResourceManager, Runnable, Mes
                                                           Measure.valueOf(0, SI.SECOND),
                                                           Measure.valueOf(config.updateDelay(), SI.SECOND));
         } catch (RuntimeException ex) {
-            logger.error("Error during initialization of the profile player: " + ex.getMessage(), ex);
+            logger.error("Error during initialization of the uncontrolled profile manager: " + ex.getMessage(), ex);
             deactivate();
             throw ex;
         }
@@ -140,7 +140,7 @@ public class ProfilePlayer implements UncontrolledResourceManager, Runnable, Mes
         return (1 - fraction) * value1 + fraction * value2;
     }
 
-    private void loadPVData(InputStream is) throws IOException {
+    private void loadData(InputStream is) throws IOException {
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is));
 
         powerAtMinutesSinceJan1 = new float[DAYS_IN_YEAR * HOURS_IN_DAY * MINUTES_IN_HOUR];
@@ -149,11 +149,11 @@ public class ProfilePlayer implements UncontrolledResourceManager, Runnable, Mes
             if (!line.startsWith("#")) { // Line does not contain comment
                 String[] split = line.split(",");
                 if (split.length == 5) {
-                    int month = Integer.parseInt(split[0]);
-                    int day = Integer.parseInt(split[1]);
-                    int hour = Integer.parseInt(split[2]);
-                    int minute = Integer.parseInt(split[3]);
-                    float powerValue = Float.parseFloat(split[4]);
+                    int month = Integer.parseInt(split[0].trim());
+                    int day = Integer.parseInt(split[1].trim());
+                    int hour = Integer.parseInt(split[2].trim());
+                    int minute = Integer.parseInt(split[3].trim());
+                    float powerValue = Float.parseFloat(split[4].trim());
 
                     int index = minutesSinceJan1(month, day, hour, minute);
                     powerAtMinutesSinceJan1[index] = powerValue;
@@ -204,7 +204,7 @@ public class ProfilePlayer implements UncontrolledResourceManager, Runnable, Mes
                                                                                        .build()));
             }
         } catch (Exception e) {
-            logger.error("Error while running profile player", e);
+            logger.error("Error while running uncontrolled profile manager", e);
         }
     }
 
