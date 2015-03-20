@@ -13,15 +13,18 @@ public class MockAgentSender<T extends FpaiAgent> implements AgentMessageSender 
     private Object lastMessage;
     private final T agent;
 
-    public static <T extends FpaiAgent> MockAgentSender<T> create(Class<T> clazz) throws Exception {
-        return new MockAgentSender<T>(clazz);
+    public static <T extends FpaiAgent>
+            MockAgentSender<T>
+            create(Class<T> clazz, String agentId, String desiredParentId) throws Exception {
+        return new MockAgentSender<T>(clazz, agentId, desiredParentId);
     }
 
-    public MockAgentSender(Class<T> clazz) throws Exception {
+    public MockAgentSender(Class<T> clazz, String agentId, String desiredParentId) throws Exception {
         destroyed = false;
         lastMessage = null;
 
-        agent = clazz.getConstructor(AgentMessageSender.class).newInstance(this);
+        agent = clazz.getConstructor(AgentMessageSender.class, String.class, String.class)
+                     .newInstance(this, agentId, desiredParentId);
     }
 
     public T getAgent() {

@@ -126,9 +126,8 @@ public class UnconstrainedAgentTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        agentSender = MockAgentSender.create(UnconstrainedAgent.class);
+        agentSender = MockAgentSender.create(UnconstrainedAgent.class, "agent-1", "matcher");
         agent = agentSender.getAgent();
-        agent.activate("agent-1", "matcher");
         agent.setContext(context);
         agent.connectToMatcher(session);
     }

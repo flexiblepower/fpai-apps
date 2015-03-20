@@ -51,8 +51,18 @@ public class TimeshifterAgent extends FpaiAgent implements Runnable {
     /** Future for when a automatic bid updates are scheduled */
     private ScheduledFuture<?> scheduledFuture = null;
 
-    public TimeshifterAgent(AgentMessageSender messageHandler) {
-        super(messageHandler);
+    /**
+     * Constructs an TimeshifterAgent based on the given messageSender.
+     *
+     * @param messageSender
+     *            The {@link AgentMessageSender} that should be used to send messages
+     * @param agentId
+     *            The unique identifier of this agent
+     * @param desiredParentId
+     *            The identifier of the parent agent this agent wants to connect to
+     */
+    public TimeshifterAgent(AgentMessageSender messageSender, String agentId, String desiredParentId) {
+        super(messageSender, agentId, desiredParentId);
     }
 
     @Override

@@ -71,8 +71,8 @@ public class AgentMessageHandler implements MessageHandler, AgentMessageSender {
     private void createAgent(String agentId) {
         if (agent == null) {
             try {
-                agent = type.getConstructor(AgentMessageSender.class).newInstance(this);
-                agent.activate(agentId, desiredParentId);
+                agent = type.getConstructor(AgentMessageSender.class, String.class, String.class)
+                            .newInstance(this, agentId, desiredParentId);
 
                 Hashtable<String, Object> properties = new Hashtable<String, Object>();
                 properties.put("agentId", agentId);

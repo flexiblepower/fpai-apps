@@ -50,8 +50,18 @@ public class BufferAgent<Q extends Quantity> extends FpaiAgent {
     private BufferTargetProfileUpdate<Q> lastBufferTargetProfile;
     private BufferSystemDescription lastBufferSystemDescription;
 
-    public BufferAgent(AgentMessageSender messageHandler) {
-        super(messageHandler);
+    /**
+     * Constructs an BufferAgent based on the given messageSender.
+     *
+     * @param messageSender
+     *            The {@link AgentMessageSender} that should be used to send messages
+     * @param agentId
+     *            The unique identifier of this agent
+     * @param desiredParentId
+     *            The identifier of the parent agent this agent wants to connect to
+     */
+    public BufferAgent(AgentMessageSender messageSender, String agentId, String desiredParentId) {
+        super(messageSender, agentId, desiredParentId);
     }
 
     @SuppressWarnings("unchecked")

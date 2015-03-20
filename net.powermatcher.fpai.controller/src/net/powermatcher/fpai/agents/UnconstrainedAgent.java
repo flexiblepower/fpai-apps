@@ -39,8 +39,18 @@ public class UnconstrainedAgent extends FpaiAgent {
     private BufferBid lastBid;
     private ControlSpaceUpdate lastControlSpaceUpdate;
 
-    public UnconstrainedAgent(AgentMessageSender handler) {
-        super(handler);
+    /**
+     * Constructs an {@link UnconstrainedAgent} based on the given messageSender.
+     *
+     * @param messageSender
+     *            The {@link AgentMessageSender} that should be used to send messages
+     * @param agentId
+     *            The unique identifier of this agent
+     * @param desiredParentId
+     *            The identifier of the parent agent this agent wants to connect to
+     */
+    public UnconstrainedAgent(AgentMessageSender messageSender, String agentId, String desiredParentId) {
+        super(messageSender, agentId, desiredParentId);
     }
 
     @Override

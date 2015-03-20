@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import net.powermatcher.fpai.agents.BufferAgent;
+import net.powermatcher.fpai.agents.FpaiAgent;
 import net.powermatcher.fpai.agents.TimeshifterAgent;
 import net.powermatcher.fpai.agents.UnconstrainedAgent;
 import net.powermatcher.fpai.agents.UncontrolledAgent;
@@ -63,42 +64,28 @@ public class PowerMatcherController implements EfiControllerManager {
 
     @Override
     public MessageHandler onConnect(Connection connection) {
-        AgentMessageHandler newHandler;
         String agentId = agentIdPrefix + this.agentId.getAndIncrement() + "-";
 
+        Class<? extends FpaiAgent> clazz = null;
         if ("buffer".equals(connection.getPort().name())) {
-            newHandler = new AgentMessageHandler(bundleContext,
-                                                 this,
-                                                 connection,
-                                                 agentId,
-                                                 desiredParent,
-                                                 BufferAgent.class);
+            clazz = BufferAgent.class;
         } else if ("timeshifter".equals(connection.getPort().name())) {
-            newHandler = new AgentMessageHandler(bundleContext,
-                                                 this,
-                                                 connection,
-                                                 agentId,
-                                                 desiredParent,
-                                                 TimeshifterAgent.class);
+            clazz = TimeshifterAgent.class;
         } else if ("unconstrained".equals(connection.getPort().name())) {
-            newHandler = new AgentMessageHandler(bundleContext,
-                                                 this,
-                                                 connection,
-                                                 agentId,
-                                                 desiredParent,
-                                                 UnconstrainedAgent.class);
+            clazz = UnconstrainedAgent.class;
         } else if ("uncontrolled".equals(connection.getPort().name())) {
-            newHandler = new AgentMessageHandler(bundleContext,
-                                                 this,
-                                                 connection,
-                                                 agentId,
-                                                 desiredParent,
-                                                 UncontrolledAgent.class);
+            clazz = UncontrolledAgent.class;
         } else {
             // Wut?
             throw new IllegalArgumentException("Unknown type of connection");
         }
 
+        AgentMessageHandler newHandler = new AgentMessageHandler(bundleContext,
+                                                                 this,
+                                                                 connection,
+                                                                 agentId,
+                                                                 desiredParent,
+                                                                 clazz);
         synchronized (activeHandlers) {
             activeHandlers.add(newHandler);
         }

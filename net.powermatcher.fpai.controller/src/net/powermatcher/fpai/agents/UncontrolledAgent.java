@@ -26,8 +26,18 @@ public class UncontrolledAgent extends FpaiAgent {
     private UncontrolledRegistration registration;
     private UncontrolledMeasurement lastUncontrolledMeasurement;
 
-    public UncontrolledAgent(AgentMessageSender messageHandler) {
-        super(messageHandler);
+    /**
+     * Constructs an UncontrolledAgent based on the given messageSender.
+     *
+     * @param messageSender
+     *            The {@link AgentMessageSender} that should be used to send messages
+     * @param agentId
+     *            The unique identifier of this agent
+     * @param desiredParentId
+     *            The identifier of the parent agent this agent wants to connect to
+     */
+    public UncontrolledAgent(AgentMessageSender messageSender, String agentId, String desiredParentId) {
+        super(messageSender, agentId, desiredParentId);
     }
 
     @Override

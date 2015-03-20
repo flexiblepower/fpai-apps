@@ -26,13 +26,18 @@ public abstract class FpaiAgent extends BaseAgentEndpoint implements Comparable<
      *
      * @param messageSender
      *            The {@link AgentMessageSender} that should be used to send messages
+     * @param agentId
+     *            The unique identifier of this agent
+     * @param desiredParentId
+     *            The identifier of the parent agent this agent wants to connect to
      */
-    public FpaiAgent(AgentMessageSender messageSender) {
+    public FpaiAgent(AgentMessageSender messageSender, String agentId, String desiredParentId) {
         if (messageSender == null) {
             throw new NullPointerException("messageHandler");
         }
 
         this.messageSender = messageSender;
+        init(agentId, desiredParentId);
     }
 
     /**
@@ -70,7 +75,7 @@ public abstract class FpaiAgent extends BaseAgentEndpoint implements Comparable<
     protected abstract Bid createBid();
 
     protected synchronized void doBidUpdate() {
-        if (isInitialized()) {
+        if (isConnected()) {
             Bid bid = createBid();
             BidUpdate lastBidUpdate = getLastBidUpdate();
             if (bid != null && (lastBidUpdate == null || !bid.equals(lastBidUpdate.getBid()))) {

@@ -205,9 +205,8 @@ public class BufferAgentTest extends TestCase {
     @Override
     @SuppressWarnings("unchecked")
     protected void setUp() throws Exception {
-        agentSender = MockAgentSender.create(BufferAgent.class);
+        agentSender = MockAgentSender.create(BufferAgent.class, "agent-1", "matcher");
         agent = agentSender.getAgent();
-        agent.activate("agent-1", "matcher");
         agent.setContext(context);
         agent.connectToMatcher(session);
     }
