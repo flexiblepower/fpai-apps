@@ -10,23 +10,30 @@ import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ScheduledFuture;
 
 import javax.measure.Measure;
+import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
 import org.flexiblepower.context.FlexiblePowerContext;
 import org.flexiblepower.efi.UncontrolledResourceManager;
+import org.flexiblepower.efi.uncontrolled.UncontrolledForecast;
 import org.flexiblepower.efi.uncontrolled.UncontrolledMeasurement;
 import org.flexiblepower.efi.uncontrolled.UncontrolledRegistration;
 import org.flexiblepower.messaging.Connection;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.messaging.MessageHandler;
+import org.flexiblepower.ral.values.CommodityForecast;
+import org.flexiblepower.ral.values.CommodityForecast.Builder;
 import org.flexiblepower.ral.values.CommodityMeasurables;
 import org.flexiblepower.ral.values.CommoditySet;
 import org.flexiblepower.ral.values.ConstraintListMap;
+import org.flexiblepower.ral.values.UncertainMeasure;
 import org.flexiblepower.simulation.profile.uncontrolled.UncontrolledProfileManager.Config;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
@@ -44,14 +51,23 @@ public class UncontrolledProfileManager implements UncontrolledResourceManager, 
 
     @Meta.OCD
     interface Config {
-        @Meta.AD(deflt = "uncontrolledprofilemanager", description = "Resource identifier")
-        String resourceId();
-
         @Meta.AD(deflt = "pv.csv", description = "CSV file with power data profile")
         String filename();
 
         @Meta.AD(deflt = "true", description = "Generates power [true] or consumes power [false]")
         boolean generatesPower();
+
+        @Meta.AD(deflt = "15", description = "Duration of each forecast element in minutes")
+        int forecastDurationPerElement();
+
+        @Meta.AD(deflt = "4", description = "Number of elements to use in each forecast")
+        int forecastNumberOfElements();
+
+        @Meta.AD(deflt = "10", description = "Randomness percentage [up and down] applied to forecast values")
+        int forecastRandomnessPercentage();
+
+        @Meta.AD(deflt = "uncontrolledprofilemanager", description = "Resource identifier")
+        String resourceId();
 
         @Meta.AD(deflt = "5", description = "Delay between updates will be send out in seconds")
         int updateDelay();
@@ -69,6 +85,7 @@ public class UncontrolledProfileManager implements UncontrolledResourceManager, 
     private FlexiblePowerContext context;
     private ScheduledFuture<?> scheduledFuture;
     private float[] powerAtMinutesSinceJan1;
+    private final Random random = new Random();
 
     @Activate
     public void activate(BundleContext bundleContext, Map<String, Object> properties) throws IOException {
@@ -107,6 +124,23 @@ public class UncontrolledProfileManager implements UncontrolledResourceManager, 
         }
     }
 
+    private CommodityForecast createForecast(Date date) {
+        Builder forecastBuilder = CommodityForecast.create()
+                                                   .duration(Measure.valueOf(60 * config.forecastDurationPerElement(),
+                                                                             SI.SECOND));
+        double randomFactor = (2 * random.nextDouble() - 1) * config.forecastRandomnessPercentage() / 100 + 1;
+        for (int element = 0; element < config.forecastNumberOfElements(); element++) {
+            double powerValue = getPowerValue(date);
+            forecastBuilder.electricity(new UncertainMeasure<Power>(powerValue * randomFactor,
+                                                                    SI.WATT)).next();
+            GregorianCalendar calendar = new GregorianCalendar();
+            calendar.setTime(date);
+            calendar.add(Calendar.MINUTE, config.forecastDurationPerElement());
+            date = calendar.getTime();
+        }
+        return forecastBuilder.build();
+    }
+
     @Deactivate
     public void deactivate() {
         if (scheduledFuture != null) {
@@ -120,20 +154,28 @@ public class UncontrolledProfileManager implements UncontrolledResourceManager, 
         connection = null;
     }
 
-    @Override
-    public void handleMessage(Object message) {
-        // We do not expect messages
+    private double getPowerValue(Date date) {
+        Calendar calendar = new GregorianCalendar();
+        calendar.setTime(date);
+        int month = calendar.get(Calendar.MONTH) + 1;
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+        int hour = calendar.get(Calendar.HOUR_OF_DAY);
+        int minute = calendar.get(Calendar.MINUTE);
+        int second = calendar.get(Calendar.SECOND);
+
+        int minutesSinceJan1 = minutesSinceJan1(month, day, hour, minute);
+        float powerValue1 = powerAtMinutesSinceJan1[minutesSinceJan1];
+        float powerValue2 = powerAtMinutesSinceJan1[(minutesSinceJan1 + 1) % powerAtMinutesSinceJan1.length];
+        double interpolatedPowerValue = interpolate(powerValue1, powerValue2, second / 60.0);
+        if (config.generatesPower()) {
+            interpolatedPowerValue = -interpolatedPowerValue;
+        }
+        return interpolatedPowerValue;
     }
 
     @Override
-    public MessageHandler onConnect(Connection connection) {
-        this.connection = connection;
-        connection.sendMessage(new UncontrolledRegistration(config.resourceId(),
-                                                            context.currentTime(),
-                                                            Measure.zero(SI.SECOND),
-                                                            CommoditySet.onlyElectricity,
-                                                            ConstraintListMap.create().build()));
-        return this;
+    public void handleMessage(Object message) {
+        // We do not expect messages
     }
 
     private double interpolate(float value1, float value2, double fraction) {
@@ -177,31 +219,36 @@ public class UncontrolledProfileManager implements UncontrolledResourceManager, 
     }
 
     @Override
+    public MessageHandler onConnect(Connection connection) {
+        this.connection = connection;
+        connection.sendMessage(new UncontrolledRegistration(config.resourceId(),
+                                                            context.currentTime(),
+                                                            Measure.zero(SI.SECOND),
+                                                            CommoditySet.onlyElectricity,
+                                                            ConstraintListMap.create().build()));
+        return this;
+    }
+
+    @Override
     public synchronized void run() {
         try {
             if (connection != null) {
-                Calendar calendar = new GregorianCalendar();
-                calendar.setTime(context.currentTime());
-                int month = calendar.get(Calendar.MONTH) + 1;
-                int day = calendar.get(Calendar.DAY_OF_MONTH);
-                int hour = calendar.get(Calendar.HOUR_OF_DAY);
-                int minute = calendar.get(Calendar.MINUTE);
-                int second = calendar.get(Calendar.SECOND);
+                Date currentTime = context.currentTime();
 
-                int minutesSinceJan1 = minutesSinceJan1(month, day, hour, minute);
-                float powerValue1 = powerAtMinutesSinceJan1[minutesSinceJan1];
-                float powerValue2 = powerAtMinutesSinceJan1[(minutesSinceJan1 + 1) % powerAtMinutesSinceJan1.length];
-                double interpolatedPowerValue = interpolate(powerValue1, powerValue2, second / 60.0);
-                if (config.generatesPower()) {
-                    interpolatedPowerValue = -interpolatedPowerValue;
-                }
+                double powerValue = getPowerValue(currentTime);
+
+                CommodityMeasurables measurable = CommodityMeasurables.create()
+                                                                      .electricity(Measure.valueOf(powerValue,
+                                                                                                   SI.WATT))
+                                                                      .build();
                 connection.sendMessage(new UncontrolledMeasurement(config.resourceId(),
-                                                                   context.currentTime(),
-                                                                   context.currentTime(),
-                                                                   CommodityMeasurables.create()
-                                                                                       .electricity(Measure.valueOf(interpolatedPowerValue,
-                                                                                                                    SI.WATT))
-                                                                                       .build()));
+                                                                   currentTime,
+                                                                   currentTime,
+                                                                   measurable));
+
+                CommodityForecast forecast = createForecast(currentTime);
+                logger.info(forecast.toString());
+                connection.sendMessage(new UncontrolledForecast(config.resourceId(), currentTime, currentTime, forecast));
             }
         } catch (Exception e) {
             logger.error("Error while running uncontrolled profile manager", e);
