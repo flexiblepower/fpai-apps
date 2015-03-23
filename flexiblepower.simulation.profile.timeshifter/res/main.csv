@@ -1,5 +1,0 @@
-# Main CSV file for timeshifter simulation
-# valid from (minutes from simulation start), end before (minutes from simulation start), profile CSV file
-0,300,washingmachine1.csv
-400,750,tumbledryer2.csv
-1000,2000,dishwasher4.csv
