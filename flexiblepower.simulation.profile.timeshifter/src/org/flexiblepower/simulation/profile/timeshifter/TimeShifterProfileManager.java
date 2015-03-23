@@ -60,11 +60,11 @@ public class TimeShifterProfileManager implements TimeShifterResourceManager, Ru
         String filename();
 
         @Meta.AD(deflt = "0",
-                 description = "This profile has validFrom value of activation time plus this value in minutes")
+                 description = "This profile has validFrom value of bundle activation time plus this value in minutes")
         int validFrom();
 
         @Meta.AD(deflt = "600",
-                 description = "This profile has endBefore value of activation time plus this value in minutes")
+                 description = "This profile has endBefore value of bundle activation time plus this value in minutes")
         int endBefore();
 
         @Meta.AD(deflt = "5", description = "Delay between updates will be send out in seconds")
@@ -177,9 +177,9 @@ public class TimeShifterProfileManager implements TimeShifterResourceManager, Ru
         // Transformed to CSV using: http://arohatgi.info/WebPlotDigitizer/app
 
         // Read profile data from file. <minute since start, power in watt>
-        // 0.35134207716943777, 6.137829084209898
-        // 0.7084667785064305, 8.747102870387153
-        // 1.065591479843425, 8.747102870387153
+        // 0.351, 6.137
+        // 0.708, 8.747
+        // 1.065, 8.747
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is));
 
         NavigableMap<Float, Float> powerAtMinutesSinceStartFromPlot = new TreeMap<Float, Float>();
@@ -196,10 +196,7 @@ public class TimeShifterProfileManager implements TimeShifterResourceManager, Ru
         }
         bufferedReader.close();
 
-        // Interpolate profile data to an array with index of minute
-        // [0] =
-        // [1] =
-        // [2] =
+        // Interpolate profile data to an array with index of whole minutes
         int lastMinute = (int) (float) powerAtMinutesSinceStartFromPlot.lastKey();
         powerAtMinutesSinceStart = new float[lastMinute];
         for (int i = 0; i < lastMinute; i++) {
