@@ -5,9 +5,10 @@ import java.io.StringWriter;
 import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+
+import javax.measure.Measure;
+import javax.measure.unit.SI;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPut;
@@ -15,6 +16,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.flexiblepower.context.FlexiblePowerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,8 +29,10 @@ public class ElasticSearchWriter implements Runnable {
     private final String baseUrl;
     private final CloseableHttpClient httpClient;
 
-    public ElasticSearchWriter(ScheduledExecutorService scheduler, int delay, String indexName, String baseUrl) {
-        schedule = scheduler.scheduleWithFixedDelay(this, delay / 2, delay, TimeUnit.SECONDS);
+    public ElasticSearchWriter(FlexiblePowerContext context, int delay, String indexName, String baseUrl) {
+        schedule = context.scheduleWithFixedDelay(this,
+                                                  Measure.valueOf(delay / 2, SI.SECOND),
+                                                  Measure.valueOf(delay, SI.SECOND));
         observationsToWrite = new ConcurrentLinkedQueue<Data>();
         this.indexName = indexName; // "observations";
         this.baseUrl = baseUrl; // "http://192.168.1.60:9200";

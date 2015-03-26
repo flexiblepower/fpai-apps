@@ -6,10 +6,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
+import javax.measure.Measure;
+import javax.measure.unit.SI;
+
+import org.flexiblepower.context.FlexiblePowerContext;
 import org.flexiblepower.protocol.mielegateway.MieleProtocolHandler.Config;
 import org.flexiblepower.protocol.mielegateway.api.MieleResourceDriver;
 import org.flexiblepower.protocol.mielegateway.api.MieleResourceDriverFactory;
@@ -40,11 +42,11 @@ public class MieleProtocolHandler implements Runnable {
         public int pollingTime();
     }
 
-    private ScheduledExecutorService executorService;
+    private FlexiblePowerContext fpContext;
 
     @Reference
-    public void setScheduledExecutorService(ScheduledExecutorService executorService) {
-        this.executorService = executorService;
+    public void setContext(FlexiblePowerContext fpContext) {
+        this.fpContext = fpContext;
     }
 
     private final List<MieleResourceDriverFactory<?, ?, MieleResourceDriver<?, ?>>> factories = new CopyOnWriteArrayList<MieleResourceDriverFactory<?, ?, MieleResourceDriver<?, ?>>>();
@@ -67,7 +69,9 @@ public class MieleProtocolHandler implements Runnable {
         Config config = Configurable.createConfigurable(MieleProtocolHandler.Config.class, properties);
         homebusURL = new URL("http://" + config.hostname() + "/homebus/?language=en");
 
-        future = executorService.scheduleWithFixedDelay(this, 0, config.pollingTime(), TimeUnit.SECONDS);
+        future = fpContext.scheduleWithFixedDelay(this,
+                                                  Measure.valueOf(0, SI.SECOND),
+                                                  Measure.valueOf(config.pollingTime(), SI.SECOND));
     }
 
     @Deactivate

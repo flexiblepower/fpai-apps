@@ -2,8 +2,8 @@ package org.flexiblepower.monitoring.elasticsearch;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
 
+import org.flexiblepower.context.FlexiblePowerContext;
 import org.flexiblepower.monitoring.elasticsearch.ElasticSearchConsumer.Config;
 import org.flexiblepower.observation.Observation;
 import org.flexiblepower.observation.ObservationConsumer;
@@ -22,23 +22,23 @@ import aQute.bnd.annotation.metatype.Meta;
 public class ElasticSearchConsumer implements ObservationConsumer<Object> {
     private static final String KEY_OBSERVATION_ID = "org.flexiblepower.monitoring.observationOf";
 
-    public ScheduledExecutorService scheduler;
-
     @Meta.OCD(description = "This configures the ObservationConsumer that sends all Observations to Elastic Search")
     public static interface Config {
-        @Meta.AD(deflt = "projectname", description = "URL to the MQTT broker")
+        @Meta.AD(deflt = "projectname", description = "Name of the index to which the observations will be written")
         public String elasticSearchIndexName();
 
-        @Meta.AD(deflt = "http://localhost:9200", description = "URL to the MQTT broker")
+        @Meta.AD(deflt = "http://localhost:9200", description = "URL to the elasticsearch REST service")
         public String elasticSearchServerURL();
 
         @Meta.AD(deflt = "15", description = "Write every x seconds to database")
         public int writeDelay();
     }
 
+    public FlexiblePowerContext fpContext;
+
     @Reference
-    public void setScheduler(ScheduledExecutorService scheduler) {
-        this.scheduler = scheduler;
+    public void setContext(FlexiblePowerContext context) {
+        fpContext = context;
     }
 
     public final Map<ObservationProvider<?>, String> providers = new ConcurrentHashMap<ObservationProvider<?>, String>();
@@ -72,7 +72,7 @@ public class ElasticSearchConsumer implements ObservationConsumer<Object> {
     @Activate
     public void activate(BundleContext context, Map<String, Object> properties) {
         config = Configurable.createConfigurable(Config.class, properties);
-        writer = new ElasticSearchWriter(scheduler,
+        writer = new ElasticSearchWriter(fpContext,
                                          config.writeDelay(),
                                          config.elasticSearchIndexName(),
                                          config.elasticSearchServerURL());

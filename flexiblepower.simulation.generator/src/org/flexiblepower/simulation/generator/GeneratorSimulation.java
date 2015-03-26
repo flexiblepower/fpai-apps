@@ -1,10 +1,12 @@
 package org.flexiblepower.simulation.generator;
 
 import java.util.Map;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
+import javax.measure.Measure;
+import javax.measure.unit.SI;
+
+import org.flexiblepower.context.FlexiblePowerContext;
 import org.flexiblepower.driver.generator.GeneratorControlParameters;
 import org.flexiblepower.driver.generator.GeneratorLevel;
 import org.flexiblepower.driver.generator.GeneratorState;
@@ -40,7 +42,6 @@ public class GeneratorSimulation extends AbstractResourceDriver<GeneratorState, 
     }
 
     private ScheduledFuture<?> scheduledFuture;
-    private ScheduledExecutorService schedulerService;
     private Config config;
     private GeneratorLevel generatorLevel = new GeneratorLevel();
 
@@ -68,7 +69,9 @@ public class GeneratorSimulation extends AbstractResourceDriver<GeneratorState, 
         try {
             config = Configurable.createConfigurable(Config.class, properties);
 
-            scheduledFuture = schedulerService.scheduleAtFixedRate(this, 0, config.updateFrequency(), TimeUnit.SECONDS);
+            scheduledFuture = fpContext.scheduleAtFixedRate(this,
+                                                            Measure.valueOf(0, SI.SECOND),
+                                                            Measure.valueOf(config.updateFrequency(), SI.SECOND));
             generatorLevel.setLevel(0);
 
         } catch (RuntimeException ex) {
@@ -98,17 +101,19 @@ public class GeneratorSimulation extends AbstractResourceDriver<GeneratorState, 
         }
     }
 
-    @Reference
-    public void setSchedulerService(ScheduledExecutorService schedulerService) {
-        this.schedulerService = schedulerService;
-    }
-
     @Override
     public void run() {
         GeneratorState state = new State(generatorLevel);
         logger.debug("Publishing state {}", state);
         // System.out.println("ping");
         publishState(state);
+    }
+
+    private FlexiblePowerContext fpContext;
+
+    @Reference
+    public void setContext(FlexiblePowerContext fpContext) {
+        this.fpContext = fpContext;
     }
 
     @Override

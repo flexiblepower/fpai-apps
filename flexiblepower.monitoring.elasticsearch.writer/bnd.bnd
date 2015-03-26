@@ -1,6 +1,6 @@
 -buildpath: ${default-buildpath},\
-	org.apache.httpcomponents.httpclient,\
 	org.apache.httpcomponents.httpcore,\
+	org.apache.httpcomponents.httpclient,\
 	com.google.gson,\
 	org.apache.felix.http.servlet-api,\
 	org.apache.commons.io
