@@ -12,6 +12,7 @@ Service-Component: *
 Private-Package:  \
 	net.powermatcher.fpai.agents,\
 	net.powermatcher.fpai.controller,\
+	net.powermatcher.fpai.observations,\
 	net.powermatcher.fpai.peakshaving,\
 	net.powermatcher.fpai.widget
 Import-Package: aQute.bnd.annotation.metatype;resolution:=optional,*
