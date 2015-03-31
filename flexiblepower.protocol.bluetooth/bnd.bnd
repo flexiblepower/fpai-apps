@@ -1,0 +1,24 @@
+-buildpath: ${default-buildpath}
+
+Bundle-Version: 2.1.0
+Export-Package: \
+	javax.bluetooth;version=1.0.0,\
+	javax.microedition.io;version=1.0.0,\
+	javax.obex;version=1.0.0
+Private-Package: \
+	com.ibm.oti.*,\
+	com.intel.bluetooth*,\
+	com.sun.cdc.io*,\
+	org.flexiblepower.protocol.bluetooth
+Bundle-Activator: org.flexiblepower.protocol.bluetooth.BluetoothUrlStreamHandler
+
+Import-Package: android.os;resolution:=optional,*
+Bundle-ClassPath: .,bluecove-gpl-2.1.0.jar
+
+# From the origin jar
+License: The Apache Software License, Version 2.0
+Description: BlueCove JSR-82 implementation
+Implementation-URL: http://www.bluecove.org/
+Specification-Title: JSR-82
+Specification-Version: 1.1.1
+Specification-Vendor: JCP
