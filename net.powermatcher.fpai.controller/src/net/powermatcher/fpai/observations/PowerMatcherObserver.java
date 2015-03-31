@@ -18,7 +18,7 @@ import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
-@Component(designateFactory = PowerMatcherObserver.Config.class)
+@Component(designateFactory = PowerMatcherObserver.Config.class, immediate = true, provide = {})
 public class PowerMatcherObserver implements AgentObserver {
     public interface Config {
         @Meta.AD(description = "Whether outgoing price events should be published", deflt = "true")
