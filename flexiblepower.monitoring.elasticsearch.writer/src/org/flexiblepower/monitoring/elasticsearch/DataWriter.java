@@ -64,6 +64,22 @@ public class DataWriter extends JsonWriter {
             name(name).value((Number) value);
         } else if (value instanceof CharSequence) {
             name(name).value(value.toString());
+        } else if (value.getClass().isArray()) {
+            name(name).beginArray();
+            if (value instanceof double[]) {
+                for (double v : (double[]) value) {
+                    value(v);
+                }
+            } else if (value instanceof int[]) {
+                for (int v : (int[]) value) {
+                    value(v);
+                }
+            } else if (value instanceof long[]) {
+                for (long v : (long[]) value) {
+                    value(v);
+                }
+            }
+            endArray();
         }
         return this;
     }
