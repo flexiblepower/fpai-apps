@@ -1,0 +1,16 @@
+-buildpath: ${fpai-buildpath},\
+	flexiblepower.ui,\
+	flexiblepower.protocol.bluetooth;version=latest
+-testpath: ${test-buildpath}
+
+Bundle-Version: 1.0.0.${qualifier}
+Export-Package: \
+	org.flexiblepower.driver.pv.sma
+Private-Package: \
+	org.flexiblepower.driver.pv.sma.*, \
+	com.luckycatlabs.sunrisesunset*
+Service-Component: *
+
+Import-Package: \
+	org.flexiblepower.protocol.bluetooth;resolution:=optional,\
+	*
