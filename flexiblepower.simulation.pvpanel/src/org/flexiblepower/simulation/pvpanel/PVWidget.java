@@ -62,8 +62,8 @@ public class PVWidget implements Widget {
         default:
             newWeather = Weather.moon;
         }
-
-        simulation.setWeather(newWeather);
+        // The next call updates the power value and the weather.
+        simulation.changeWeatherTo(newWeather);
         return update();
     }
 
