@@ -37,11 +37,7 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
                                                                                                Runnable {
 
     public final static class PowerStateImpl implements PowerState {
-        private Measurable<Power> demand;
-
-        public void setDemand(Measurable<Power> demand) {
-            this.demand = demand;
-        }
+        private final Measurable<Power> demand;
 
         private final Date currentTime;
 
@@ -169,18 +165,6 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
 
     public void setWeather(Weather weather) {
         this.weather = weather;
-    }
-
-    public void changeWeatherTo(Weather weather) {
-        this.weather = weather;
-        if (weather == Weather.sun) {
-            demand = -1 * sunny;
-        } else if (weather == Weather.clouds) {
-            demand = -1 * cloudy;
-        } else {
-            demand = 0;
-        }
-        publishState(getCurrentState());
     }
 
     @Override
