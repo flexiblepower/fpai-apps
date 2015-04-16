@@ -14,27 +14,36 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import javax.measure.Measure;
 import javax.measure.quantity.Power;
+import javax.measure.quantity.VolumetricFlowRate;
+import javax.measure.unit.NonSI;
 import javax.measure.unit.SI;
 
-import org.flexiblepower.context.FlexiblePowerContext;
-import org.flexiblepower.efi.UncontrolledResourceManager;
+import org.flexiblepower.efi.uncontrolled.UncontrolledAllocation;
 import org.flexiblepower.efi.uncontrolled.UncontrolledForecast;
 import org.flexiblepower.efi.uncontrolled.UncontrolledMeasurement;
 import org.flexiblepower.efi.uncontrolled.UncontrolledRegistration;
+import org.flexiblepower.efi.uncontrolled.UncontrolledUpdate;
+import org.flexiblepower.messaging.Cardinality;
 import org.flexiblepower.messaging.Connection;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.messaging.MessageHandler;
+import org.flexiblepower.messaging.Port;
+import org.flexiblepower.ral.messages.AllocationRevoke;
+import org.flexiblepower.ral.messages.AllocationStatusUpdate;
+import org.flexiblepower.ral.messages.ControlSpaceRevoke;
 import org.flexiblepower.ral.values.CommodityForecast;
 import org.flexiblepower.ral.values.CommodityForecast.Builder;
 import org.flexiblepower.ral.values.CommodityMeasurables;
 import org.flexiblepower.ral.values.CommoditySet;
 import org.flexiblepower.ral.values.ConstraintListMap;
 import org.flexiblepower.ral.values.UncertainMeasure;
-import org.flexiblepower.simulation.profile.uncontrolled.UncontrolledProfileManager.Config;
+import org.flexiblepower.time.TimeService;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,8 +55,15 @@ import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Configurable;
 import aQute.bnd.annotation.metatype.Meta;
 
-@Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
-public class UncontrolledProfileManager implements UncontrolledResourceManager, Runnable, MessageHandler {
+@Port(name = "controller",
+      accepts = { UncontrolledAllocation.class, AllocationRevoke.class },
+      sends = { UncontrolledRegistration.class,
+               UncontrolledUpdate.class,
+               AllocationStatusUpdate.class,
+               ControlSpaceRevoke.class },
+      cardinality = Cardinality.SINGLE)
+@Component(designateFactory = UncontrolledProfileManager.Config.class, provide = Endpoint.class, immediate = true)
+public class UncontrolledProfileManager implements Runnable, MessageHandler, Endpoint {
 
     @Meta.OCD
     interface Config {
@@ -71,7 +87,18 @@ public class UncontrolledProfileManager implements UncontrolledResourceManager, 
 
         @Meta.AD(deflt = "5", description = "Delay between updates will be send out in seconds")
         int updateDelay();
+
+        @Meta.AD(deflt = commodityElecricityOption,
+                 description = "Commodity for this profile",
+                 optionValues = { commodityElecricityOption, commodityHeatOption, commodityGasOption })
+        String profileCommodity();
     }
+
+    static final String commodityElecricityOption = "Electricity";
+    static final String commodityHeatOption = "Heat";
+    static final String commodityGasOption = "Gas";
+
+    private CommoditySet commoditySet;
 
     private static final int YEAR = 2012;
     private static final int DAYS_IN_YEAR = 366;
@@ -82,15 +109,27 @@ public class UncontrolledProfileManager implements UncontrolledResourceManager, 
 
     private Config config;
     private Connection connection;
-    private FlexiblePowerContext context;
     private ScheduledFuture<?> scheduledFuture;
     private float[] powerAtMinutesSinceJan1;
     private double randomFactor;
+    private TimeService timeService;
+    private ScheduledExecutorService scheduledExecutorService;
 
     @Activate
     public void activate(BundleContext bundleContext, Map<String, Object> properties) throws IOException {
         try {
             config = Configurable.createConfigurable(Config.class, properties);
+
+            if (config.profileCommodity().equals(commodityElecricityOption)) {
+                commoditySet = CommoditySet.onlyElectricity;
+                logger.info("Electricity only");
+            } else if (config.profileCommodity().equals(commodityHeatOption)) {
+                commoditySet = CommoditySet.onlyHeat;
+                logger.info("Heat only");
+            } else {
+                commoditySet = CommoditySet.onlyGas;
+                logger.info("Gas only");
+            }
 
             // Calculate randomFactor once to prevent jumping up and down in each run
             randomFactor = (2 * new Random().nextDouble() - 1) * config.forecastRandomnessPercentage() / 100 + 1;
@@ -117,9 +156,8 @@ public class UncontrolledProfileManager implements UncontrolledResourceManager, 
                 throw (e);
             }
 
-            scheduledFuture = context.scheduleAtFixedRate(this,
-                                                          Measure.valueOf(0, SI.SECOND),
-                                                          Measure.valueOf(config.updateDelay(), SI.SECOND));
+            scheduledFuture = scheduledExecutorService.scheduleAtFixedRate(this,
+                                                                           0, config.updateDelay(), TimeUnit.SECONDS);
         } catch (RuntimeException ex) {
             logger.error("Error during initialization of the uncontrolled profile manager: " + ex.getMessage(), ex);
             deactivate();
@@ -133,8 +171,16 @@ public class UncontrolledProfileManager implements UncontrolledResourceManager, 
                                                                              SI.SECOND));
         for (int element = 0; element < config.forecastNumberOfElements(); element++) {
             double powerValue = getPowerValue(date);
-            forecastBuilder.electricity(new UncertainMeasure<Power>(powerValue * randomFactor,
-                                                                    SI.WATT)).next();
+
+            if (config.profileCommodity().equals(commodityElecricityOption)) {
+                forecastBuilder.electricity(new UncertainMeasure<Power>(powerValue * randomFactor, SI.WATT)).next();
+            } else if (config.profileCommodity().equals(commodityHeatOption)) {
+                forecastBuilder.heat(new UncertainMeasure<Power>(powerValue * randomFactor, SI.WATT)).next();
+            } else {
+                forecastBuilder.gas(new UncertainMeasure<VolumetricFlowRate>(powerValue * randomFactor,
+                                                                             NonSI.CUBIC_METRE_PER_SECOND)).next();
+            }
+
             GregorianCalendar calendar = new GregorianCalendar();
             calendar.setTime(date);
             calendar.add(Calendar.MINUTE, config.forecastDurationPerElement());
@@ -223,10 +269,11 @@ public class UncontrolledProfileManager implements UncontrolledResourceManager, 
     @Override
     public MessageHandler onConnect(Connection connection) {
         this.connection = connection;
+
         connection.sendMessage(new UncontrolledRegistration(config.resourceId(),
-                                                            context.currentTime(),
+                                                            timeService.getTime(),
                                                             Measure.zero(SI.SECOND),
-                                                            CommoditySet.onlyElectricity,
+                                                            commoditySet,
                                                             ConstraintListMap.create().build()));
         return this;
     }
@@ -235,14 +282,24 @@ public class UncontrolledProfileManager implements UncontrolledResourceManager, 
     public synchronized void run() {
         try {
             if (connection != null) {
-                Date currentTime = context.currentTime();
+                Date currentTime = timeService.getTime();
 
                 double powerValue = getPowerValue(currentTime);
 
-                CommodityMeasurables measurable = CommodityMeasurables.create()
-                                                                      .electricity(Measure.valueOf(powerValue,
-                                                                                                   SI.WATT))
-                                                                      .build();
+                CommodityMeasurables measurable;
+
+                if (config.profileCommodity().equals(commodityElecricityOption)) {
+                    measurable = CommodityMeasurables.create()
+                                                     .electricity(Measure.valueOf(powerValue, SI.WATT))
+                                                     .build();
+                } else if (config.profileCommodity().equals(commodityHeatOption)) {
+                    measurable = CommodityMeasurables.create().heat(Measure.valueOf(powerValue, SI.WATT)).build();
+                } else {
+                    measurable = CommodityMeasurables.create()
+                                                     .gas(Measure.valueOf(powerValue, NonSI.CUBIC_METRE_PER_SECOND))
+                                                     .build();
+                }
+
                 connection.sendMessage(new UncontrolledMeasurement(config.resourceId(),
                                                                    currentTime,
                                                                    currentTime,
@@ -257,7 +314,12 @@ public class UncontrolledProfileManager implements UncontrolledResourceManager, 
     }
 
     @Reference
-    public void setContext(FlexiblePowerContext context) {
-        this.context = context;
+    public void setScheduledExecutorService(ScheduledExecutorService scheduledExecutorService) {
+        this.scheduledExecutorService = scheduledExecutorService;
+    }
+
+    @Reference
+    public void setTimeService(TimeService timeService) {
+        this.timeService = timeService;
     }
 }

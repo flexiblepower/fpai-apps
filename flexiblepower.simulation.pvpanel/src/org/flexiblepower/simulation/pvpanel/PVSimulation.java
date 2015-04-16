@@ -38,6 +38,7 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
 
     public final static class PowerStateImpl implements PowerState {
         private final Measurable<Power> demand;
+
         private final Date currentTime;
 
         private PowerStateImpl(Measurable<Power> demand, Date currentTime) {
