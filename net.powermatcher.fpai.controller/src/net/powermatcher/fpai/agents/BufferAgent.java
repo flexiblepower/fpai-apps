@@ -9,6 +9,7 @@ import java.util.List;
 import javax.measure.quantity.Quantity;
 import javax.measure.unit.SI;
 
+import net.powermatcher.api.AgentEndpoint;
 import net.powermatcher.api.data.Bid;
 import net.powermatcher.api.data.MarketBasis;
 import net.powermatcher.api.data.PointBid;
@@ -130,9 +131,9 @@ public class BufferAgent<Q extends Quantity> extends FpaiAgent {
     }
 
     @Override
-    protected Bid createBid() {
-        MarketBasis marketBasis = getMarketBasis();
-        if (marketBasis == null || registration == null
+    protected Bid createBid(AgentEndpoint.Status status) {
+        MarketBasis marketBasis = status.getMarketBasis();
+        if (registration == null
             || !bufferHelper.hasReceivedStateUpdate()
             || !bufferHelper.hasReceivedSystemDescription()) {
             LOGGER.error("Not sending a bid, because not enough information has been received to form a bid (marketbasis, registration, stateupdate, systemdescription).");
@@ -150,7 +151,7 @@ public class BufferAgent<Q extends Quantity> extends FpaiAgent {
 
         if (runningModes.isEmpty()) {
             LOGGER.error("No reachable running mode found, sending must off bid.");
-            return new PointBid.Builder(marketBasis).add(new PricePoint(getMarketBasis(), 0, 0)).build();
+            return new PointBid.Builder(marketBasis).add(new PricePoint(marketBasis, 0, 0)).build();
         }
 
         double fillLevel = bufferHelper.getCurrentFillLevel().doubleValue(registration.getFillLevelUnit());
@@ -188,7 +189,7 @@ public class BufferAgent<Q extends Quantity> extends FpaiAgent {
 
         if (elements.isEmpty()) {
             LOGGER.debug("Due to fill level no reachable running mode was found, sending must off bid.");
-            return new PointBid.Builder(marketBasis).add(new PricePoint(getMarketBasis(), 0, 0)).build();
+            return new PointBid.Builder(marketBasis).add(new PricePoint(marketBasis, 0, 0)).build();
         }
 
         // TODO: Check for concurrency problems with lastBid...

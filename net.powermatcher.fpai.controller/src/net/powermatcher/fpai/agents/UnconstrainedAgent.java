@@ -8,6 +8,7 @@ import java.util.List;
 
 import javax.measure.unit.SI;
 
+import net.powermatcher.api.AgentEndpoint;
 import net.powermatcher.api.data.Bid;
 import net.powermatcher.api.data.MarketBasis;
 import net.powermatcher.api.data.Price;
@@ -112,8 +113,8 @@ public class UnconstrainedAgent extends FpaiAgent {
     }
 
     @Override
-    protected Bid createBid() {
-        MarketBasis marketBasis = getMarketBasis();
+    protected Bid createBid(AgentEndpoint.Status status) {
+        MarketBasis marketBasis = status.getMarketBasis();
         if (marketBasis == null || registration == null
             || !unconstrainedHelper.hasReceivedStateUpdate()
             || !unconstrainedHelper.hasReceivedSystemDescription()) {
