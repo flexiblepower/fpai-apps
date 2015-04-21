@@ -171,8 +171,7 @@ public class UncontrolledProfileManager implements Runnable, MessageHandler, End
     }
 
     private CommodityForecast createForecast(Date startTime, int forecastNumberOfElements,
-                                             int forecastDurationPerElement,
-                                             int forecastRandomnessPercentage) {
+                                             int forecastDurationPerElement) {
         Builder forecastBuilder = CommodityForecast.create()
                                                    .duration(Measure.valueOf(60 * forecastDurationPerElement,
                                                                              SI.SECOND));
@@ -217,10 +216,9 @@ public class UncontrolledProfileManager implements Runnable, MessageHandler, End
         if (randomFactor == 0) {
             calcRandomFactor(forecastRandomnessPercentage);
         }
-        return getForecast(startTime,
-                           forecastNumberOfElements,
-                           forecastDurationPerElement,
-                           forecastRandomnessPercentage);
+        return createForecast(startTime,
+                              forecastNumberOfElements,
+                              forecastDurationPerElement);
     }
 
     private double getPowerValue(Date date) {
@@ -328,8 +326,7 @@ public class UncontrolledProfileManager implements Runnable, MessageHandler, End
 
                 CommodityForecast forecast = createForecast(currentTime,
                                                             config.forecastNumberOfElements(),
-                                                            config.forecastDurationPerElement(),
-                                                            config.forecastRandomnessPercentage());
+                                                            config.forecastDurationPerElement());
                 connection.sendMessage(new UncontrolledForecast(config.resourceId(), currentTime, currentTime, forecast));
             }
         } catch (Exception e) {
