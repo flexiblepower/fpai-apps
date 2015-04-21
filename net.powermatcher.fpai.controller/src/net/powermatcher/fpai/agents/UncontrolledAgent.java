@@ -4,6 +4,7 @@ import javax.measure.Measurable;
 import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
+import net.powermatcher.api.AgentEndpoint;
 import net.powermatcher.api.data.Bid;
 import net.powermatcher.api.data.MarketBasis;
 import net.powermatcher.api.data.Price;
@@ -80,9 +81,9 @@ public class UncontrolledAgent extends FpaiAgent {
     }
 
     @Override
-    protected Bid createBid() {
-        MarketBasis marketBasis = getMarketBasis();
-        if (lastUncontrolledMeasurement == null || marketBasis == null) {
+    protected Bid createBid(AgentEndpoint.Status status) {
+        MarketBasis marketBasis = status.getMarketBasis();
+        if (lastUncontrolledMeasurement == null) {
             return null;
         } else {
             Measurable<Power> demand = lastUncontrolledMeasurement.getMeasurable().get(Commodity.ELECTRICITY);

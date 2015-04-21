@@ -12,6 +12,7 @@ import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 import javax.measure.unit.Unit;
 
+import net.powermatcher.api.AgentEndpoint;
 import net.powermatcher.api.data.ArrayBid;
 import net.powermatcher.api.data.Bid;
 import net.powermatcher.api.data.MarketBasis;
@@ -137,11 +138,8 @@ public class TimeshifterAgent extends FpaiAgent implements Runnable {
     }
 
     @Override
-    protected Bid createBid() {
-        MarketBasis marketBasis = getMarketBasis();
-        if (marketBasis == null) {
-            return null;
-        }
+    protected Bid createBid(AgentEndpoint.Status status) {
+        MarketBasis marketBasis = status.getMarketBasis();
         if (lastTimeshifterUpdate == null) {
             // No flexibility, must not run bid
             return new ArrayBid.Builder(marketBasis).demand(0).build();
@@ -198,7 +196,7 @@ public class TimeshifterAgent extends FpaiAgent implements Runnable {
         double stepPrice = priceRange * ratio + marketBasis.getMinimumPrice() + marketBasis.getPriceIncrement();
 
         if (scheduledFuture == null) {
-            scheduleBidUpdates(startWindow / getMarketBasis().getPriceSteps());
+            scheduleBidUpdates(startWindow / marketBasis.getPriceSteps());
         }
 
         // the bid depends on whether the initial demand is actually demand or is supply

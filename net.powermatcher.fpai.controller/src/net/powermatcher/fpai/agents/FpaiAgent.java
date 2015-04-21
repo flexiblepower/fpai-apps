@@ -1,5 +1,6 @@
 package net.powermatcher.fpai.agents;
 
+import net.powermatcher.api.AgentEndpoint;
 import net.powermatcher.api.data.Bid;
 import net.powermatcher.api.data.Price;
 import net.powermatcher.api.messages.BidUpdate;
@@ -72,11 +73,12 @@ public abstract class FpaiAgent extends BaseAgentEndpoint implements Comparable<
      */
     public abstract void handleAllocationStatusUpdate(AllocationStatusUpdate message);
 
-    protected abstract Bid createBid();
+    protected abstract Bid createBid(AgentEndpoint.Status currentStatus);
 
     protected synchronized void doBidUpdate() {
-        if (isConnected()) {
-            Bid bid = createBid();
+        AgentEndpoint.Status currentStatus = getStatus();
+        if (currentStatus.isConnected()) {
+            Bid bid = createBid(currentStatus);
             BidUpdate lastBidUpdate = getLastBidUpdate();
             if (bid != null && (lastBidUpdate == null || !bid.equals(lastBidUpdate.getBid()))) {
                 publishBid(bid);
