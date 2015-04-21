@@ -63,7 +63,7 @@ import aQute.bnd.annotation.metatype.Meta;
                ControlSpaceRevoke.class },
       cardinality = Cardinality.SINGLE)
 @Component(designateFactory = UncontrolledProfileManager.Config.class, provide = Endpoint.class, immediate = true)
-public class UncontrolledProfileManager implements Runnable, MessageHandler, Endpoint {
+public class UncontrolledProfileManager implements Runnable, MessageHandler, Endpoint, UncontrolledProfileForecaster {
 
     @Meta.OCD
     interface Config {
@@ -131,8 +131,7 @@ public class UncontrolledProfileManager implements Runnable, MessageHandler, End
                 logger.info("Gas only");
             }
 
-            // Calculate randomFactor once to prevent jumping up and down in each run
-            randomFactor = (2 * new Random().nextDouble() - 1) * config.forecastRandomnessPercentage() / 100 + 1;
+            calcRandomFactor(config.forecastRandomnessPercentage());
 
             try {
                 File file = new File(config.filename()); // For running from current directory
@@ -165,12 +164,20 @@ public class UncontrolledProfileManager implements Runnable, MessageHandler, End
         }
     }
 
-    private CommodityForecast createForecast(Date date) {
+    private void calcRandomFactor(int randomnessPercentage) {
+        while (randomFactor == 0) {
+            randomFactor = (2 * new Random().nextDouble() - 1) * config.forecastRandomnessPercentage() / 100 + 1;
+        }
+    }
+
+    private CommodityForecast createForecast(Date startTime, int forecastNumberOfElements,
+                                             int forecastDurationPerElement,
+                                             int forecastRandomnessPercentage) {
         Builder forecastBuilder = CommodityForecast.create()
-                                                   .duration(Measure.valueOf(60 * config.forecastDurationPerElement(),
+                                                   .duration(Measure.valueOf(60 * forecastDurationPerElement,
                                                                              SI.SECOND));
-        for (int element = 0; element < config.forecastNumberOfElements(); element++) {
-            double powerValue = getPowerValue(date);
+        for (int element = 0; element < forecastNumberOfElements; element++) {
+            double powerValue = getPowerValue(startTime);
 
             if (config.profileCommodity().equals(commodityElecricityOption)) {
                 forecastBuilder.electricity(new UncertainMeasure<Power>(powerValue * randomFactor, SI.WATT)).next();
@@ -182,9 +189,9 @@ public class UncontrolledProfileManager implements Runnable, MessageHandler, End
             }
 
             GregorianCalendar calendar = new GregorianCalendar();
-            calendar.setTime(date);
+            calendar.setTime(startTime);
             calendar.add(Calendar.MINUTE, config.forecastDurationPerElement());
-            date = calendar.getTime();
+            startTime = calendar.getTime();
         }
         return forecastBuilder.build();
     }
@@ -200,6 +207,20 @@ public class UncontrolledProfileManager implements Runnable, MessageHandler, End
     @Override
     public void disconnected() {
         connection = null;
+    }
+
+    @Override
+    public CommodityForecast getForecast(Date startTime,
+                                         int forecastNumberOfElements,
+                                         int forecastDurationPerElement,
+                                         int forecastRandomnessPercentage) {
+        if (randomFactor == 0) {
+            calcRandomFactor(forecastRandomnessPercentage);
+        }
+        return getForecast(startTime,
+                           forecastNumberOfElements,
+                           forecastDurationPerElement,
+                           forecastRandomnessPercentage);
     }
 
     private double getPowerValue(Date date) {
@@ -305,7 +326,10 @@ public class UncontrolledProfileManager implements Runnable, MessageHandler, End
                                                                    currentTime,
                                                                    measurable));
 
-                CommodityForecast forecast = createForecast(currentTime);
+                CommodityForecast forecast = createForecast(currentTime,
+                                                            config.forecastNumberOfElements(),
+                                                            config.forecastDurationPerElement(),
+                                                            config.forecastRandomnessPercentage());
                 connection.sendMessage(new UncontrolledForecast(config.resourceId(), currentTime, currentTime, forecast));
             }
         } catch (Exception e) {
