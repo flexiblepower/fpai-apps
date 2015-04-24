@@ -1,0 +1,6 @@
+-buildpath:  ${fpai-buildpath}, flexiblepower.runtime.simulation, flexiblepower.ui
+-testpath: ${test-buildpath}
+
+Bundle-Version: 1.0.0.${qualifier}
+Private-Package: org.flexiblepower.simulation.widget
+Service-Component: *
