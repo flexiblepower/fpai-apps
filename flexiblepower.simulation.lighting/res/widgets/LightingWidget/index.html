@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+<head>
+	<link rel="stylesheet" href="/css/widget.css" />
+	<link rel="stylesheet" href="style.css" />
+	<script type="text/javascript" src="/js/vendor/jquery.min.js"></script>
+	<script type="text/javascript" src="/js/vendor/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="/js/widget.js"></script>
+	<script type="text/javascript" src="script.js"></script>
+	<title>Simulated Weather</title>
+</head>
+<body class="widget">
+	<img id="loading" src="/img/loading.gif" alt="Loading..." />
+
+	<img id="icon" src="light-off.png" alt="Lighting" />
+
+	<p class="error"></p>
+	<p><label>Power usage:</label><span id="power"></span> W</p>
+	<p><label>Nr. of Lights:</label><span id="numberOfLights"></span> W</p>
+	<div id="up_down">
+		<p><img src="up.gif" /> <span id="sunUp"></span></p>
+		<p><img src="down.gif" /> <span id="sunDown"></span></p>
+	</div>
+</body>
+</html>

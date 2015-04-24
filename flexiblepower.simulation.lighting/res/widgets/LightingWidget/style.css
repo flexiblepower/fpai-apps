@@ -1,0 +1,23 @@
+#loading {
+	position: absolute;
+	left: 45%;
+	top: 40%;
+}
+
+#icon {
+	position: absolute;
+	top: 5;
+	right: 1em;
+}
+
+span {
+	margin-right: 5px;
+}
+
+p {
+	display: none;
+}
+
+#up_down {
+	padding-top: 10px;
+}

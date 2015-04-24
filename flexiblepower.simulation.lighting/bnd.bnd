@@ -1,0 +1,12 @@
+-include: ../cnf/base.bnd
+-buildpath:  \
+	${default-buildpath},\
+	flexiblepower.api,\
+	flexiblepower.ral.efi,\
+	flexiblepower.ral,\
+	flexiblepower.ral.ext,\
+	flexiblepower.ui
+
+Bundle-Version: 1.0.0
+Private-Package: org.flexiblepower.simulation.lighting
+Service-Component: org.flexiblepower.simulation.lighting.*
