@@ -1,2 +1,1 @@
 checkstyleMain.exclude '**/gnu/io/**'
-checkstyleMain.exclude '**/com/intel/bluetooth/**'

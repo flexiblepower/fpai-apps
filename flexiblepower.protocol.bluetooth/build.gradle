@@ -1,0 +1,6 @@
+checkstyleMain.exclude '**/com/intel/bluetooth/**'
+checkstyleMain.exclude '**/com/ibm/oti/**'
+checkstyleMain.exclude '**/com/sun/cdc/**'
+checkstyleMain.exclude '**/javax/bluetooth/**'
+checkstyleMain.exclude '**/javax/microedition/io/**'
+checkstyleMain.exclude '**/javax/obex/**'
