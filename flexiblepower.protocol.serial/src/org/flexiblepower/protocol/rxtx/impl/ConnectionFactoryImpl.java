@@ -14,9 +14,6 @@ import org.flexiblepower.protocol.rxtx.SerialConnectionOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import aQute.bnd.annotation.component.Component;
-
-@Component
 public class ConnectionFactoryImpl implements ConnectionFactory {
     private static final Logger log = LoggerFactory.getLogger(ConnectionFactoryImpl.class);
 
