@@ -7,7 +7,6 @@ import java.util.Calendar;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 
-import javax.bluetooth.BluetoothStateException;
 import javax.measure.DecimalMeasure;
 import javax.measure.Measure;
 import javax.measure.unit.SI;
@@ -40,8 +39,8 @@ import com.luckycatlabs.sunrisesunset.dto.Location;
 
 @Component(designateFactory = Config.class, immediate = true, provide = { ResourceDriver.class })
 public class SmaResourceDriver extends AbstractResourceDriver<SmaInverterState, ResourceControlParameters> implements
-    SmaInverterDriver,
-    Runnable {
+                                                                                                          SmaInverterDriver,
+                                                                                                          Runnable {
     public interface Config {
         @Meta.AD(description = "The unique resource identifier", deflt = "sma-inverter")
         String resourceId();
@@ -62,7 +61,7 @@ public class SmaResourceDriver extends AbstractResourceDriver<SmaInverterState, 
         int sunUpOffset();
 
         @Meta.AD(description = "The timezone identifier of the machine running this code, used for sunset/rise",
-                deflt = "Europe/Amsterdam")
+                 deflt = "Europe/Amsterdam")
         String timezone();
 
         @Meta.AD(description = "The update frequency at which the inverter will be read in seconds", deflt = "60")
@@ -93,7 +92,7 @@ public class SmaResourceDriver extends AbstractResourceDriver<SmaInverterState, 
     private PVObservationProvider pvObservationProvider;
 
     @Activate
-    public void activate(BundleContext context, Map<String, ?> properties) throws BluetoothStateException {
+    public void activate(BundleContext context, Map<String, ?> properties) {
         Config config = Configurable.createConfigurable(Config.class, properties);
 
         try {

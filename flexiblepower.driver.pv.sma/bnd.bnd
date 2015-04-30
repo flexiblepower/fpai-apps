@@ -11,6 +11,8 @@ Private-Package: \
 	com.luckycatlabs.sunrisesunset*
 Service-Component: *
 
+Require-Capability: osgi.url; filter:="(protocol=btspp)"
+
 Import-Package: \
 	org.flexiblepower.protocol.bluetooth;resolution:=optional,\
 	*
