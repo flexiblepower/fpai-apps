@@ -48,6 +48,11 @@
 		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.widget.SmallWidget">
 		    <agent.target></agent.target>
 		</config>
+		
+		<config bundleId="flexiblepower.ui.connectionspage" serviceId="org.flexiblepower.runtime.ui.connectionspage.ConnectionsPage">
+			<felixPluginActive>true</felixPluginActive>
+			<dashboardWidgetActive>true</dashboardWidgetActive>
+		</config>
 
 		<connection from="pvsim:manager" to="pvman:driver"/>
 		<connection from="pvman:controller" to="pm:uncontrolled"/>
@@ -110,6 +115,11 @@
 
 		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.widget.SmallWidget">
 		    <agent.target></agent.target>
+		</config>
+		
+		<config bundleId="flexiblepower.ui.connectionspage" serviceId="org.flexiblepower.runtime.ui.connectionspage.ConnectionsPage">
+			<felixPluginActive>true</felixPluginActive>
+			<dashboardWidgetActive>true</dashboardWidgetActive>
 		</config>
 
 		<connection from="pvsim:manager" to="pvman:driver"/>
@@ -182,6 +192,11 @@
 
 		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.widget.SmallWidget">
 		    <agent.target></agent.target>
+		</config>
+		
+		<config bundleId="flexiblepower.ui.connectionspage" serviceId="org.flexiblepower.runtime.ui.connectionspage.ConnectionsPage">
+			<felixPluginActive>true</felixPluginActive>
+			<dashboardWidgetActive>true</dashboardWidgetActive>
 		</config>
 
 		<connection from="batsim:manager" to="batman:driver"/>
@@ -266,6 +281,11 @@
 
 		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.widget.SmallWidget">
 		    <agent.target></agent.target>
+		</config>
+		
+		<config bundleId="flexiblepower.ui.connectionspage" serviceId="org.flexiblepower.runtime.ui.connectionspage.ConnectionsPage">
+			<felixPluginActive>true</felixPluginActive>
+			<dashboardWidgetActive>true</dashboardWidgetActive>
 		</config>
 
 		<connection from="batsim:manager" to="batman:driver"/>
