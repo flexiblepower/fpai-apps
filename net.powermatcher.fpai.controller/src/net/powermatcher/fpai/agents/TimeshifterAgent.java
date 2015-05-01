@@ -244,7 +244,9 @@ public class TimeshifterAgent extends FpaiAgent implements Runnable {
         // Do an allocation?
         if (lastTimeshifterUpdate != null && profileStartTime == null) {
             // We're in the flexibility period, the program hasn't started yet
-            double demandForCurrentPrice = getLastBidUpdate().getBid().getDemandAt(newPrice);
+            // TODO The last bid get's converted to an ArrayBid first, since the PointBid.getDemandAt does not give the
+            // desired result. This should be fixed in the PowerMatcher code.
+            double demandForCurrentPrice = getLastBidUpdate().getBid().toArrayBid().getDemandAt(newPrice);
             if (demandForCurrentPrice != 0) {
                 // Let's start!
                 final Date startTime = new Date(context.currentTimeMillis());
