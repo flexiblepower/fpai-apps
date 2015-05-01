@@ -2,6 +2,7 @@
 <html>
 <head>
 	<link rel="stylesheet" href="/css/widget.css" />
+	<link rel="stylesheet" href="/css/tooltip.css" />
 	<link rel="stylesheet" href="style.css" />
 	<script type="text/javascript" src="/js/vendor/jquery.min.js"></script>
 	<script type="text/javascript" src="/js/widget.js"></script>
@@ -10,6 +11,13 @@
 </head>
 <body class="widget">
 	<img id="loading" src="/img/loading.gif" alt="Loading..." />
+	<a class='tooltip info' href="https://github.com/flexiblepower/fpai-core/wiki" target="_blank">
+		<img src='/img/info.png' />
+		<span>
+			This is the demonstrator of the FPAI. You can start a scenario by selecting one from the dropdown box and clicking start.
+			For more explanation about this demonstration, click here to go to the wiki.
+		</span>
+	</a>
 	<p class="error"></p>
 	<p id="scenarios"><select></select><button id="start_scenarion_button">Start</button></p>
 	<p id="status">...</p>

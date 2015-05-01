@@ -2,6 +2,7 @@
 <html>
 <head>
 	<link rel="stylesheet" href="/css/widget.css" />
+	<link rel="stylesheet" href="/css/tooltip.css" />
 	<link rel="stylesheet" href="style.css" />
 	<script type="text/javascript" src="/js/vendor/jquery.min.js"></script>
 	<script type="text/javascript" src="/js/widget.js"></script>
@@ -13,10 +14,11 @@
 	<img id="weather" src="moon.png" alt="Weather" />
 	<img id="loading" src="/img/loading.gif" alt="Loading..." />
 	<!-- Information tooltip -->	
-	<a class='tooltip lefttooltip'>
-		<img src='i.png' class='i'>
+	<a class='tooltip info'>
+		<img src='/img/info.png' />
 		<span>
-			The PV panel produces electricity. This widget can be toggled by clicking on the weather icon. The 'Power output' value is refreshed shortly after the icon has changed.
+			The PV panel produces electricity. This widget can be toggled by clicking on the weather icon. 
+			The 'Power output' value is refreshed shortly after the icon has changed.
 		</span>
 	</a>
 	<p class="error"></p>

@@ -2,6 +2,7 @@
 <html>
 <head>
 	<link rel="stylesheet" href="/css/widget.css" />
+	<link rel="stylesheet" href="/css/tooltip.css" />
 	<link rel="stylesheet" href="style.css" />
 	<script type="text/javascript" src="/js/vendor/jquery.min.js"></script>
 	<script type="text/javascript" src="/js/widget.js"></script>
@@ -10,6 +11,14 @@
 </head>
 <body class="widget">
 	<img id="icon" src="1.png" alt="Battery" />
+	<a class='tooltip info'>
+		<img src='/img/info.png' />
+		<span>
+			The battery can produce or consume energy. This widget can not be controlled through the UI, but will
+			be controlled by the smart grid application that is active.
+		</span>
+	</a>
+	
 	<img id="loading" src="/img/loading.gif" alt="Loading..." />
 
 	<p><label>State of charge</label> <span id="soc">...</span></p>

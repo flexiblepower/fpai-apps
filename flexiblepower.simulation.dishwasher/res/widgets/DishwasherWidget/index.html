@@ -2,6 +2,7 @@
 <html>
 <head>
 	<link rel="stylesheet" href="/css/widget.css" />
+	<link rel="stylesheet" href="/css/tooltip.css" />
 	<link rel="stylesheet" href="style.css" />
 	<script type="text/javascript" src="/js/vendor/jquery.min.js"></script>
 	<script type="text/javascript" src="/js/widget.js"></script>
@@ -10,6 +11,14 @@
 </head>
 <body class="widget">
 	<img id="icon" src="dishwasher.png" alt="Dishwasher" />
+	<a class='tooltip info'>
+		<img src='/img/info.png' />
+		<span>
+			The dishwasher uses energy when it is running a program. You can plan a program by clicking on the
+			dishwasher image. This will schedule a new run of the dishwasher that will be started by the smart
+			grid application when there is electricity available to use.
+		</span>
+	</a>
 	<img id="loading" src="/img/loading.gif" alt="Loading..." />
 
 	<p class="error"></p>
