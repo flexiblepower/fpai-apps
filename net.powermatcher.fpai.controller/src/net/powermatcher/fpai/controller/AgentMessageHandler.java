@@ -49,6 +49,7 @@ public class AgentMessageHandler implements MessageHandler, AgentMessageSender {
 
     @Override
     public synchronized void handleMessage(Object message) {
+        logger.debug("Handling message for {}: {}", type.getSimpleName(), String.valueOf(message));
         if (message == null) {
             logger.error("Received a null message");
         } else if (message instanceof ControlSpaceRegistration) {
@@ -106,7 +107,7 @@ public class AgentMessageHandler implements MessageHandler, AgentMessageSender {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see net.powermatcher.fpai.agents.AgentMessageSender#destroyAgent()
      */
     @Override
@@ -128,7 +129,7 @@ public class AgentMessageHandler implements MessageHandler, AgentMessageSender {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see net.powermatcher.fpai.agents.AgentMessageSender#sendMessage(java.lang.Object)
      */
     @Override
