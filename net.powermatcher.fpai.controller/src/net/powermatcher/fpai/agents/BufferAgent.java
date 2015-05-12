@@ -126,8 +126,11 @@ public class BufferAgent<Q extends Quantity> extends FpaiAgent {
 
     @Override
     public void handleControlSpaceRevoke(ControlSpaceRevoke message) {
-        // TODO Auto-generated method stub
-
+        bufferHelper = new Buffer<Q>(registration); // Reset the helper
+        if (lastBufferSystemDescription != null) {
+            bufferHelper.processSystemDescription(lastBufferSystemDescription);
+        }
+        doBidUpdate(); // Send the zero-bid
     }
 
     @Override
@@ -136,8 +139,12 @@ public class BufferAgent<Q extends Quantity> extends FpaiAgent {
         if (registration == null
             || !bufferHelper.hasReceivedStateUpdate()
             || !bufferHelper.hasReceivedSystemDescription()) {
-            LOGGER.error("Not sending a bid, because not enough information has been received to form a bid (marketbasis, registration, stateupdate, systemdescription).");
-            return null;
+            LOGGER.warn("Sending zero-bid, because not enough information has been received to form a bid ({}, {}, {})",
+                        registration == null ? "registration is missing" : "registration received",
+                        bufferHelper.hasReceivedSystemDescription() ? "system description received"
+                                                                   : "system description missing",
+                        bufferHelper.hasReceivedStateUpdate() ? "state update received" : "state update missing");
+            return Bid.flatDemand(marketBasis, 0);
         }
 
         double soc = bufferHelper.getCurrentFillFraction();

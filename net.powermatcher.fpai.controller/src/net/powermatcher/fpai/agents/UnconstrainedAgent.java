@@ -110,6 +110,7 @@ public class UnconstrainedAgent extends FpaiAgent {
     public void handleControlSpaceRevoke(ControlSpaceRevoke message) {
         // Return to no-flexibility-state
         lastControlSpaceUpdate = null;
+        doBidUpdate();
     }
 
     @Override

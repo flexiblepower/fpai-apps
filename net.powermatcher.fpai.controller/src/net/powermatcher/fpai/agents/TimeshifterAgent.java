@@ -135,6 +135,7 @@ public class TimeshifterAgent extends FpaiAgent implements Runnable {
     @Override
     public void handleControlSpaceRevoke(ControlSpaceRevoke message) {
         goToNoFlexiblityState();
+        doBidUpdate();
     }
 
     @Override
@@ -180,7 +181,7 @@ public class TimeshifterAgent extends FpaiAgent implements Runnable {
         }
 
         long timeSinceAllowableStart = context.currentTimeMillis() - startAfter;
-        double ratio = Math.pow(timeSinceAllowableStart / startWindow, EAGERNESS);
+        double ratio = Math.pow((double) timeSinceAllowableStart / startWindow, EAGERNESS);
 
         if (initialDemandWatt < 0) {
             // if the initial demand is supply, the ratio flips
@@ -194,6 +195,7 @@ public class TimeshifterAgent extends FpaiAgent implements Runnable {
         double priceRange = marketBasis.getMaximumPrice() - marketBasis.getMinimumPrice()
                             - (marketBasis.getPriceIncrement() * 2);
         double stepPrice = priceRange * ratio + marketBasis.getMinimumPrice() + marketBasis.getPriceIncrement();
+        LOGGER.debug("Timeshifter flexible bid @ {}", stepPrice);
 
         if (scheduledFuture == null) {
             scheduleBidUpdates(startWindow / marketBasis.getPriceSteps());
@@ -284,5 +286,11 @@ public class TimeshifterAgent extends FpaiAgent implements Runnable {
             scheduledFuture.cancel(false);
             scheduledFuture = null;
         }
+    }
+
+    @Override
+    public void deactivate() {
+        cancelScheduledBidUpdates();
+        super.deactivate();
     }
 }

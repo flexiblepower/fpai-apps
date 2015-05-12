@@ -155,11 +155,8 @@ public class BufferBid {
         } else { // priority > -1 && priority < 1
             // Define the flexible area
             double minPriceFraction, maxPriceFraction;
-            if (priority == 0.0) {
-                minPriceFraction = 0.0;
-                maxPriceFraction = 1.0;
-            } else if (priority > 0.0) {
-                // 0.0 < priority < 1.0
+            if (priority >= 0.0) {
+                // 0.0 <= priority < 1.0
                 minPriceFraction = priority;
                 maxPriceFraction = 1.0;
             } else {
