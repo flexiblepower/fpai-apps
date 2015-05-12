@@ -37,6 +37,7 @@ public class SmallWidget implements AgentObserver, Widget {
 
     public void removeAgent(ObservableAgent agent) {
         agent.removeObserver(this);
+        demands.remove(agent.getAgentId());
     }
 
     @Override
