@@ -22,9 +22,10 @@
 	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.pvpanel)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.ui.connectionspage)',\
 	osgi.identity;filter:='(osgi.identity=net.powermatcher.fpai.controller)',\
-	osgi.identity;filter:='(osgi.identity=net.powermatcher.visualisation)'
+	osgi.identity;filter:='(osgi.identity=net.powermatcher.visualisation)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.uncontrolled)'
 
--runbundles: \
+-runbundles:  \
 	biz.aQute.bnd.annotation;version='[2.4.0,2.4.1)',\
 	ch.qos.logback.classic;version='[1.1.2,1.1.3)',\
 	ch.qos.logback.core;version='[1.1.2,1.1.3)',\
@@ -42,6 +43,7 @@
 	flexiblepower.simulation.battery;version=latest,\
 	flexiblepower.simulation.dishwasher;version=latest,\
 	flexiblepower.simulation.pvpanel;version=latest,\
+	flexiblepower.simulation.uncontrolled;version=latest,\
 	flexiblepower.ui;version='[1.2.0,1.2.1)',\
 	flexiblepower.ui.connectionspage;version='[1.0.0,1.0.1)',\
 	net.powermatcher.api;version='[2.0.1,2.0.2)',\

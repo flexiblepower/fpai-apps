@@ -295,5 +295,96 @@
 		<connection from="dwsim:manager" to="dwman:driver"/>
 		<connection from="dwman:controller" to="pm:timeshifter"/>
 	</scenario>
+	
+	<scenario name="6. PV + Battery + Timeshifter + Uncontrolled">
+		<config bundleId="flexiblepower.manager.uncontrolled" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager" ref="uncontrolledmanager-1">
+		    <expirationTime>20</expirationTime>
+		    <showWidget>false</showWidget>
+		    <resourceId>pvpanel</resourceId>
+		</config>
+		
+		<config bundleId="flexiblepower.manager.dishwasher.miele" factoryId="org.flexiblepower.miele.dishwasher.manager.MieleDishwasherManager" ref="mieledishwashermanager-2">
+		    <resourceId>dishwasher</resourceId>
+		</config>
+		
+		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.widget.SmallWidget">
+		    <agent.target></agent.target>
+		</config>
+		
+		<config bundleId="flexiblepower.simulation.battery" factoryId="org.flexiblepower.simulation.battery.BatterySimulation" ref="batterysimulation-3">
+		    <selfDischargePower>50</selfDischargePower>
+		    <totalCapacity>1.0</totalCapacity>
+		    <updateInterval>5</updateInterval>
+		    <chargeEfficiency>0.9</chargeEfficiency>
+		    <dischargeEfficiency>0.9</dischargeEfficiency>
+		    <initialStateOfCharge>0.5</initialStateOfCharge>
+		    <dischargePower>2000</dischargePower>
+		    <chargePower>2000</chargePower>
+		</config>
+		
+		<config bundleId="flexiblepower.simulation.pvpanel" factoryId="org.flexiblepower.simulation.pvpanel.PVSimulation" ref="pvsimulation-4">
+		    <powerWhenStandBy>0.0</powerWhenStandBy>
+		    <updateDelay>5</updateDelay>
+		    <powerWhenCloudy>200</powerWhenCloudy>
+		    <powerWhenSunny>2000</powerWhenSunny>
+		    <resourceId>pvpanel</resourceId>
+		</config>
+		
+		<config bundleId="flexiblepower.simulation.dishwasher" factoryId="org.flexiblepower.simulation.dishwasher.DishwasherSimulationImpl" ref="dishwashersimulationimpl-5">
+		    <resourceId></resourceId>
+		</config>
+		
+		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.controller.PowerMatcherController" ref="powermatchercontroller-6">
+		    <agentIdPrefix>fpai-agent-</agentIdPrefix>
+		    <desiredParent>auctioneer</desiredParent>
+		</config>
+		
+		<config bundleId="flexiblepower.manager.battery" factoryId="org.flexiblepower.battery.manager.BatteryManager" ref="batterymanager-7">
+		    <resourceId>battery</resourceId>
+		</config>
+		
+		<config bundleId="flexiblepower.simulation.uncontrolled" factoryId="org.flexiblepower.uncontrolled.simulation.UncontrolledSimulation" ref="uncontrolledsimulation-8">
+		    <powerWhenEspresso>1500</powerWhenEspresso>
+		    <powerWhenTV>200</powerWhenTV>
+		    <powerWhenOff>0.0</powerWhenOff>
+		    <resourceId>uncontrolledsim</resourceId>
+		    <updateFrequency>5</updateFrequency>
+		</config>
+		
+		<config bundleId="flexiblepower.ui.connectionspage" factoryId="org.flexiblepower.runtime.ui.connectionspage.ConnectionsPage">
+		    <felixPluginActive>true</felixPluginActive>
+		    <dashboardWidgetActive>true</dashboardWidgetActive>
+		</config>
+		
+		<config bundleId="net.powermatcher.core" factoryId="net.powermatcher.core.auctioneer.Auctioneer">
+		    <priceSteps>100</priceSteps>
+		    <commodity>electricity</commodity>
+		    <minimumPrice>0.0</minimumPrice>
+		    <minTimeBetweenPriceUpdates>1000</minTimeBetweenPriceUpdates>
+		    <maximumPrice>1.0</maximumPrice>
+		    <clusterId>DefaultCluster</clusterId>
+		    <currency>EUR</currency>
+		    <agentId>auctioneer</agentId>
+		</config>
+		
+		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.widget.FullWidget">
+		    <agent.target></agent.target>
+		</config>
+		
+		<config bundleId="flexiblepower.manager.uncontrolled" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager" ref="uncontrolledmanager-9">
+		    <expirationTime>20</expirationTime>
+		    <showWidget>false</showWidget>
+		    <resourceId>uncontrolled</resourceId>
+		</config>
+		
+		<connection from="powermatchercontroller-6:uncontrolled" to="uncontrolledmanager-9:controller" />
+		<connection from="powermatchercontroller-6:uncontrolled" to="uncontrolledmanager-1:controller" />
+		<connection from="pvsimulation-4:manager" to="uncontrolledmanager-1:driver" />
+		<connection from="powermatchercontroller-6:buffer" to="batterymanager-7:controller" />
+		<connection from="uncontrolledmanager-9:driver" to="uncontrolledsimulation-8:manager" />
+		<connection from="batterymanager-7:driver" to="batterysimulation-3:manager" />
+		<connection from="powermatchercontroller-6:timeshifter" to="mieledishwashermanager-2:controller" />
+		<connection from="mieledishwashermanager-2:driver" to="dishwashersimulationimpl-5:manager" />
+	</scenario>
 
 </scenarios>
