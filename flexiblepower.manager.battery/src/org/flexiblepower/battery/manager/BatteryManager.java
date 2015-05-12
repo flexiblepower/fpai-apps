@@ -1,5 +1,9 @@
 package org.flexiblepower.battery.manager;
 
+import static javax.measure.unit.SI.JOULE;
+import static javax.measure.unit.SI.SECOND;
+import static javax.measure.unit.SI.WATT;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -13,7 +17,6 @@ import javax.measure.Measure;
 import javax.measure.quantity.Duration;
 import javax.measure.quantity.Energy;
 import javax.measure.quantity.Money;
-import javax.measure.quantity.MoneyFlow;
 import javax.measure.quantity.Power;
 import javax.measure.unit.NonSI;
 import javax.measure.unit.SI;
@@ -45,6 +48,7 @@ import org.flexiblepower.ral.drivers.battery.BatteryState;
 import org.flexiblepower.ral.ext.AbstractResourceManager;
 import org.flexiblepower.ral.messages.AllocationStatus;
 import org.flexiblepower.ral.messages.AllocationStatusUpdate;
+import org.flexiblepower.ral.messages.ControlSpaceRevoke;
 import org.flexiblepower.ral.messages.ResourceMessage;
 import org.flexiblepower.ral.values.CommodityMeasurables;
 import org.flexiblepower.ral.values.CommoditySet;
@@ -64,11 +68,9 @@ import aQute.bnd.annotation.metatype.Meta;
 public class BatteryManager extends AbstractResourceManager<BatteryState, BatteryControlParameters>
                                                                                                    implements
                                                                                                    BufferResourceManager {
-    private static final Unit<Duration> MS = SI.MILLI(SI.SECOND);
+    private static final Unit<Duration> MS = SI.MILLI(SECOND);
     private static final Logger logger = LoggerFactory.getLogger(BatteryManager.class);
 
-    @SuppressWarnings("unchecked")
-    private static final Unit<Energy> WH = (Unit<Energy>) SI.WATT.times(NonSI.HOUR); // Define WattHour (Wh)
     private static final int BATTERY_ACTUATOR_ID = 1; // self chosen id for the actuator
 
     @Meta.OCD
@@ -103,17 +105,21 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
         actuators.add(batteryActuator);
         batteryBufferRegistration = new BufferRegistration<Energy>(configuration.resourceId(),
                                                                    changedStateTimestamp,
-                                                                   toSeconds(0),
+                                                                   Measure.zero(SECOND),
                                                                    "Battery level",
-                                                                   WH,
+                                                                   JOULE,
                                                                    actuators);
 
         // ---- Buffer system description ----
         // create a behavior of the battery
-        ActuatorBehaviour batteryActuatorBehaviour = makeBatteryActuatorBehaviour(batteryActuator.getActuatorId());
+        ActuatorBehaviour batteryActuatorBehaviour = makeBatteryActuatorBehaviour(batteryActuator.getActuatorId(),
+                                                                                  batteryState);
         // create the leakage function of the battery
         FillLevelFunction<LeakageRate> bufferLeakageFunction = FillLevelFunction.<LeakageRate> create(0)
-                                                                                .add(6000, new LeakageRate(0.0001))
+                                                                                .add(batteryState.getTotalCapacity()
+                                                                                                 .doubleValue(JOULE),
+                                                                                     new LeakageRate(batteryState.getSelfDischargeSpeed()
+                                                                                                                 .doubleValue(WATT)))
                                                                                 .build();
         // create the buffer system description message
         Set<ActuatorBehaviour> actuatorsBehaviours = new HashSet<ActuatorBehaviour>();
@@ -214,6 +220,11 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
         }
     }
 
+    @Override
+    protected ControlSpaceRevoke createRevokeMessage() {
+        return new ControlSpaceRevoke(configuration.resourceId(), context.currentTime());
+    }
+
     /**
      * Set up the change to the battery mode, after the specified delay
      *
@@ -257,7 +268,7 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
      * @param actuatorId
      * @return Returns the completely filled battery actuator behavior object
      */
-    private ActuatorBehaviour makeBatteryActuatorBehaviour(int actuatorId) {
+    private ActuatorBehaviour makeBatteryActuatorBehaviour(int actuatorId, BatteryState state) {
         // make three transitions holders
         Transition toChargingTransition = makeTransition(BatteryMode.CHARGE.ordinal());
         Transition toIdleTransition = makeTransition(BatteryMode.IDLE.ordinal());
@@ -274,61 +285,33 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
         dischargeTransition.add(toIdleTransition);
         dischargeTransition.add(toChargingTransition);
 
-        // Make the three running battery modes (idle, charge, discharge), all with zero cost
-        // -----------------------------------------------------------------------------------
-        //
-        // ___________CHARGE_____________________________IDLE_______________________________DISCHARGE
-        // Range(X)___Chargespeed (x/s)__Elec power (W)__Chargespeed (x/s)__Elec power (W)__Dischargespeed (x/s)__power
-        // 0-5000_____0.3968_____________1460____________0__________________0_______________-0.3968_______________-1400
-        // 5000-6000__0.2778_____________1050____________0__________________0_______________-0.3968_______________-1400
+        FillLevelFunction<RunningModeBehaviour> chargeFillLevelFunctions, idleFillLevelFunctions, dischargeFillLevelFunctions;
 
-        // make the fill level functions
-        // CHARGE
-        FillLevelFunction<RunningModeBehaviour> chargeFillLevelFunctions = FillLevelFunction.<RunningModeBehaviour> create(0)
-                                                                                            .add(5000,
-                                                                                                 new RunningModeBehaviour(0.3968,
-                                                                                                                          CommodityMeasurables.create()
-                                                                                                                                              .electricity(toWatt(1460))
-                                                                                                                                              .build(),
-                                                                                                                          toEuroPerHour(0)))
-                                                                                            .add(6000,
-                                                                                                 new RunningModeBehaviour(0.2778,
-                                                                                                                          CommodityMeasurables.create()
-                                                                                                                                              .electricity(toWatt(1050))
-                                                                                                                                              .build(),
-                                                                                                                          toEuroPerHour(0)))
-                                                                                            .build();
-        // IDLE
-        FillLevelFunction<RunningModeBehaviour> idleFillLevelFunctions = FillLevelFunction.<RunningModeBehaviour> create(0)
-                                                                                          .add(5000,
-                                                                                               new RunningModeBehaviour(0,
-                                                                                                                        CommodityMeasurables.create()
-                                                                                                                                            .electricity(toWatt(0))
-                                                                                                                                            .build(),
-                                                                                                                        toEuroPerHour(0)))
-                                                                                          .add(6000,
-                                                                                               new RunningModeBehaviour(0,
-                                                                                                                        CommodityMeasurables.create()
-                                                                                                                                            .electricity(toWatt(0))
-                                                                                                                                            .build(),
-                                                                                                                        toEuroPerHour(0)))
-                                                                                          .build();
+        double totalCapacity = state.getTotalCapacity().doubleValue(JOULE);
+        Measurable<Power> chargeSpeed = state.getChargeSpeed();
 
-        // DISCHARGE
-        FillLevelFunction<RunningModeBehaviour> dischargeFillLevelFunctions = FillLevelFunction.<RunningModeBehaviour> create(0)
-                                                                                               .add(5000,
-                                                                                                    new RunningModeBehaviour(-0.3968,
-                                                                                                                             CommodityMeasurables.create()
-                                                                                                                                                 .electricity(toWatt(-1400))
-                                                                                                                                                 .build(),
-                                                                                                                             toEuroPerHour(0)))
-                                                                                               .add(6000,
-                                                                                                    new RunningModeBehaviour(-0.3968,
-                                                                                                                             CommodityMeasurables.create()
-                                                                                                                                                 .electricity(toWatt(-1400))
-                                                                                                                                                 .build(),
-                                                                                                                             toEuroPerHour(0)))
-                                                                                               .build();
+        chargeFillLevelFunctions = FillLevelFunction.<RunningModeBehaviour> create(0)
+                                                    .add(totalCapacity,
+                                                         new RunningModeBehaviour(chargeSpeed.doubleValue(WATT) * state.getChargeEfficiency(),
+                                                                                  CommodityMeasurables.electricity(chargeSpeed),
+                                                                                  Measure.zero(NonSI.EUR_PER_HOUR)))
+                                                    .build();
+
+        idleFillLevelFunctions = FillLevelFunction.<RunningModeBehaviour> create(0)
+                                                  .add(totalCapacity,
+                                                       new RunningModeBehaviour(0,
+                                                                                CommodityMeasurables.electricity(Measure.zero(WATT)),
+                                                                                Measure.zero(NonSI.EUR_PER_HOUR)))
+                                                  .build();
+
+        Measurable<Power> dischargeSpeed = state.getDischargeSpeed();
+        dischargeFillLevelFunctions = FillLevelFunction.<RunningModeBehaviour> create(0)
+                                                       .add(totalCapacity,
+                                                            new RunningModeBehaviour(-dischargeSpeed.doubleValue(WATT) / state.getDischargeEfficiency(),
+                                                                                     CommodityMeasurables.electricity(Measure.valueOf(-dischargeSpeed.doubleValue(WATT),
+                                                                                                                                      WATT)),
+                                                                                     Measure.zero(NonSI.EUR_PER_HOUR)))
+                                                       .build();
 
         // Based on the fill level functions and the transitions, create the three running modes
         RunningMode<FillLevelFunction<RunningModeBehaviour>> chargeRunningMode = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(BatteryMode.CHARGE.ordinal(),
@@ -362,10 +345,10 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
         // no timers
         Set<Timer> startTimers = null;
         Set<Timer> blockingTimers = null;
-        Measurable<Duration> transitionTime = toSeconds(0);
+        Measurable<Duration> transitionTime = Measure.zero(SECOND);
 
         // no cost
-        Measurable<Money> transitionCosts = toEurocent(0);
+        Measurable<Money> transitionCosts = Measure.zero(NonSI.EUROCENT);
 
         // return transition
         return new Transition(transitionId,
@@ -397,31 +380,11 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
     private Measure<Double, Energy> getCurrentFillLevel(BatteryState batteryState) {
         double stateOfCharge = batteryState.getStateOfCharge();
         Measurable<Energy> totalCapacity = batteryState.getTotalCapacity();
-        return Measure.valueOf(stateOfCharge * totalCapacity.doubleValue(WH), WH);
+        return Measure.valueOf(stateOfCharge * totalCapacity.doubleValue(JOULE), JOULE);
     }
 
     @Reference
     public void setContext(FlexiblePowerContext context) {
         this.context = context;
     }
-
-    // ---------------- helper conversion methodes ------------------
-
-    private Measure<Integer, Power> toWatt(int watt) {
-        return Measure.valueOf(watt, SI.WATT);
-    }
-
-    private Measure<Integer, Money> toEurocent(int eurocent) {
-        return Measure.valueOf(eurocent, NonSI.EUROCENT);
-    }
-
-    private Measurable<MoneyFlow> toEuroPerHour(int euroPerHour) {
-        return Measure.valueOf(euroPerHour,
-                               NonSI.EUR_PER_HOUR);
-    }
-
-    private Measure<Integer, Duration> toSeconds(int seconds) {
-        return Measure.valueOf(seconds, SI.SECOND);
-    }
-
 }
