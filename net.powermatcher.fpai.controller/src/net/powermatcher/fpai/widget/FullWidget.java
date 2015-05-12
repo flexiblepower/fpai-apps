@@ -92,6 +92,7 @@ public class FullWidget implements Widget, AgentObserver {
 
             double[][] coordinates = new double[demand.length][];
             MarketBasis mb = bidUpdate.getBid().getMarketBasis();
+            maxDemand = 1;
             for (int i = 0; i < demand.length; i++) {
                 coordinates[i] = new double[] { new PriceStep(mb, i).toPrice().getPriceValue(), demand[i] };
                 maxDemand = Math.max(Math.abs(demand[i]), maxDemand);

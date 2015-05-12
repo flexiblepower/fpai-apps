@@ -66,6 +66,8 @@ public class AgentMessageHandler implements MessageHandler, AgentMessageSender {
             } else {
                 logger.error("Received unknown type of message: " + message);
             }
+        } else {
+            logger.warn("Received a message before the registration of type {}", message.getClass().getSimpleName());
         }
     }
 
@@ -107,7 +109,7 @@ public class AgentMessageHandler implements MessageHandler, AgentMessageSender {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see net.powermatcher.fpai.agents.AgentMessageSender#destroyAgent()
      */
     @Override
@@ -129,7 +131,7 @@ public class AgentMessageHandler implements MessageHandler, AgentMessageSender {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see net.powermatcher.fpai.agents.AgentMessageSender#sendMessage(java.lang.Object)
      */
     @Override

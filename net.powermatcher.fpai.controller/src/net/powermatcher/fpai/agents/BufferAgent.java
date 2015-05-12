@@ -71,6 +71,7 @@ public class BufferAgent<Q extends Quantity> extends FpaiAgent {
         if (message instanceof BufferRegistration) {
             if (registration == null) {
                 registration = (BufferRegistration<Q>) message;
+                LOGGER.debug("Received registration for {}", registration.getResourceId());
                 bufferHelper = new Buffer<Q>(registration);
             } else {
                 LOGGER.error("Received multiple ControlSpaceRegistrations, ignoring...");
@@ -83,6 +84,7 @@ public class BufferAgent<Q extends Quantity> extends FpaiAgent {
     @SuppressWarnings("unchecked")
     @Override
     public void handleControlSpaceUpdate(ControlSpaceUpdate message) {
+        LOGGER.debug("Received update of type {}", message.getClass().getSimpleName());
         if (message instanceof BufferSystemDescription) {
             bufferHelper.processSystemDescription((BufferSystemDescription) message);
             lastBufferSystemDescription = (BufferSystemDescription) message;
