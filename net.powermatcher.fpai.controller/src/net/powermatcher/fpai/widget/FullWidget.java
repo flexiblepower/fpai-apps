@@ -78,11 +78,13 @@ public class FullWidget implements Widget, AgentObserver {
         public volatile int bidNumber;
         public volatile double price;
         public volatile int priceBidNumber;
+        public volatile double maxDemand;
 
         public AgentInfo(String agentId) {
             this.agentId = agentId;
             coordinates = new double[0][];
             price = 0;
+            maxDemand = 1;
         }
 
         public void setBid(BidUpdate bidUpdate) {
@@ -92,6 +94,7 @@ public class FullWidget implements Widget, AgentObserver {
             MarketBasis mb = bidUpdate.getBid().getMarketBasis();
             for (int i = 0; i < demand.length; i++) {
                 coordinates[i] = new double[] { new PriceStep(mb, i).toPrice().getPriceValue(), demand[i] };
+                maxDemand = Math.max(Math.abs(demand[i]), maxDemand);
             }
 
             this.coordinates = coordinates;
