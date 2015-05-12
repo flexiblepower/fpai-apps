@@ -9,7 +9,7 @@
 		    <powerWhenStandBy>0.0</powerWhenStandBy>
 		    <updateDelay>5</updateDelay>
 		    <powerWhenCloudy>200</powerWhenCloudy>
-		    <powerWhenSunny>1500</powerWhenSunny>
+		    <powerWhenSunny>2000</powerWhenSunny>
 		    <resourceId>pvpanel</resourceId>
 		</config>
 
@@ -65,7 +65,7 @@
 		    <powerWhenStandBy>0.0</powerWhenStandBy>
 		    <updateDelay>5</updateDelay>
 		    <powerWhenCloudy>200</powerWhenCloudy>
-		    <powerWhenSunny>1500</powerWhenSunny>
+		    <powerWhenSunny>2000</powerWhenSunny>
 		    <resourceId>pvpanel</resourceId>
 		</config>
 
@@ -135,7 +135,7 @@
 		    <powerWhenStandBy>0.0</powerWhenStandBy>
 		    <updateDelay>5</updateDelay>
 		    <powerWhenCloudy>200</powerWhenCloudy>
-		    <powerWhenSunny>1500</powerWhenSunny>
+		    <powerWhenSunny>2000</powerWhenSunny>
 		    <resourceId>pvpanel</resourceId>
 		</config>
 
@@ -156,8 +156,8 @@
 		    <chargeEfficiency>0.9</chargeEfficiency>
 		    <dischargeEfficiency>0.9</dischargeEfficiency>
 		    <initialStateOfCharge>0.5</initialStateOfCharge>
-		    <dischargePower>1500</dischargePower>
-		    <chargePower>1500</chargePower>
+		    <dischargePower>2000</dischargePower>
+		    <chargePower>2000</chargePower>
 		</config>
 
 		<config bundleId="flexiblepower.manager.battery" 
@@ -212,7 +212,7 @@
 		    <powerWhenStandBy>0.0</powerWhenStandBy>
 		    <updateDelay>5</updateDelay>
 		    <powerWhenCloudy>200</powerWhenCloudy>
-		    <powerWhenSunny>1500</powerWhenSunny>
+		    <powerWhenSunny>2000</powerWhenSunny>
 		    <resourceId>pvpanel</resourceId>
 		</config>
 
@@ -233,8 +233,8 @@
 		    <chargeEfficiency>0.9</chargeEfficiency>
 		    <dischargeEfficiency>0.9</dischargeEfficiency>
 		    <initialStateOfCharge>0.5</initialStateOfCharge>
-		    <dischargePower>1500</dischargePower>
-		    <chargePower>1500</chargePower>
+		    <dischargePower>2000</dischargePower>
+		    <chargePower>2000</chargePower>
 		</config>
 
 		<config bundleId="flexiblepower.manager.battery" 
