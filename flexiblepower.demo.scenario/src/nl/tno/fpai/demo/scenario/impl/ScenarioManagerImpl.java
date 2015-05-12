@@ -126,6 +126,10 @@ public class ScenarioManagerImpl implements ScenarioManager {
         }
 
         setStatus("Loaded scenario's, nothing started");
+
+        log.info("           ............------------============------------............           ");
+        log.info("The demonstrator has started, go to http://localhost:8080 to see the demonstration");
+        log.info("           ''''''''''''------------============------------''''''''''''           ");
     }
 
     @Deactivate
