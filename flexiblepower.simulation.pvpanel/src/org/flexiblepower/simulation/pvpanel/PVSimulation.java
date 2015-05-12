@@ -165,6 +165,7 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
 
     public void setWeather(Weather weather) {
         this.weather = weather;
+        run();
     }
 
     @Override
