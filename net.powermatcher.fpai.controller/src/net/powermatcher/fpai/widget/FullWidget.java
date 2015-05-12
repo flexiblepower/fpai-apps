@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.powermatcher.api.data.Bid;
 import net.powermatcher.api.data.MarketBasis;
 import net.powermatcher.api.data.PriceStep;
 import net.powermatcher.api.messages.BidUpdate;
@@ -13,8 +14,10 @@ import net.powermatcher.api.messages.PriceUpdate;
 import net.powermatcher.api.monitoring.AgentObserver;
 import net.powermatcher.api.monitoring.ObservableAgent;
 import net.powermatcher.api.monitoring.events.AgentEvent;
+import net.powermatcher.api.monitoring.events.AggregatedBidEvent;
 import net.powermatcher.api.monitoring.events.IncomingPriceUpdateEvent;
 import net.powermatcher.api.monitoring.events.OutgoingBidUpdateEvent;
+import net.powermatcher.api.monitoring.events.OutgoingPriceUpdateEvent;
 
 import org.flexiblepower.ui.Widget;
 
@@ -42,6 +45,7 @@ public class FullWidget implements Widget, AgentObserver {
     public void removeAgent(ObservableAgent agent) {
         agent.removeObserver(this);
         bids.remove(agent.getAgentId());
+        bids.remove("Aggregated-" + agent.getAgentId());
     }
 
     @Override
@@ -52,8 +56,24 @@ public class FullWidget implements Widget, AgentObserver {
                 info.setBid(((OutgoingBidUpdateEvent) event).getBidUpdate());
             } else if (event instanceof IncomingPriceUpdateEvent) {
                 info.setPrice(((IncomingPriceUpdateEvent) event).getPriceUpdate());
+            } else if (event instanceof AggregatedBidEvent) {
+                AgentInfo aggregatedInfo = getAggregatedInfo(event.getAgentId());
+                aggregatedInfo.setBid(((AggregatedBidEvent) event).getAggregatedBid());
+            } else if (event instanceof OutgoingPriceUpdateEvent) {
+                if (bids.containsKey("Aggregated-" + event.getAgentId())) {
+                    AgentInfo aggregatedInfo = getAggregatedInfo(event.getAgentId());
+                    aggregatedInfo.setPrice(((OutgoingPriceUpdateEvent) event).getPriceUpdate());
+                }
             }
         }
+    }
+
+    private AgentInfo getAggregatedInfo(String agentId) {
+        String key = "Aggregated-" + agentId;
+        if (!bids.containsKey(key)) {
+            bids.put(key, new AgentInfo(key));
+        }
+        return bids.get(key);
     }
 
     @Override
@@ -87,11 +107,11 @@ public class FullWidget implements Widget, AgentObserver {
             maxDemand = 1;
         }
 
-        public void setBid(BidUpdate bidUpdate) {
-            double[] demand = bidUpdate.getBid().toArrayBid().getDemand();
+        public void setBid(Bid bid) {
+            double[] demand = bid.toArrayBid().getDemand();
 
             double[][] coordinates = new double[demand.length][];
-            MarketBasis mb = bidUpdate.getBid().getMarketBasis();
+            MarketBasis mb = bid.getMarketBasis();
             maxDemand = 1;
             for (int i = 0; i < demand.length; i++) {
                 coordinates[i] = new double[] { new PriceStep(mb, i).toPrice().getPriceValue(), demand[i] };
@@ -99,6 +119,10 @@ public class FullWidget implements Widget, AgentObserver {
             }
 
             this.coordinates = coordinates;
+        }
+
+        public void setBid(BidUpdate bidUpdate) {
+            setBid(bidUpdate.getBid());
             bidNumber = bidUpdate.getBidNumber();
         }
 
