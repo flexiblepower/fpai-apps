@@ -21,6 +21,7 @@ import org.flexiblepower.messaging.Port;
 import org.flexiblepower.ral.ResourceControlParameters;
 import org.flexiblepower.ral.drivers.uncontrolled.PowerState;
 import org.flexiblepower.ral.ext.AbstractResourceManager;
+import org.flexiblepower.ral.messages.ControlSpaceRevoke;
 import org.flexiblepower.ral.messages.ResourceMessage;
 import org.flexiblepower.ral.values.CommodityMeasurables;
 import org.flexiblepower.ral.values.CommoditySet;
@@ -137,4 +138,8 @@ public class UncontrolledManager extends
         throw new AssertionError();
     }
 
+    @Override
+    protected ControlSpaceRevoke createRevokeMessage() {
+        return new ControlSpaceRevoke(config.resourceId(), context.currentTime());
+    }
 }

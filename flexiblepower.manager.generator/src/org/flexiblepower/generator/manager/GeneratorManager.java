@@ -263,6 +263,11 @@ public class GeneratorManager extends
         context.schedule(allocationHelper, delay);
     }
 
+    @Override
+    protected ControlSpaceRevoke createRevokeMessage() {
+        return new ControlSpaceRevoke(config.resourceId(), context.currentTime());
+    }
+
     @Reference
     public void setContext(FlexiblePowerContext context) {
         this.context = context;

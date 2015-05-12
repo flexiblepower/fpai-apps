@@ -218,6 +218,11 @@ public class MieleDishwasherManager
         return currentUpdate;
     }
 
+    @Override
+    protected ControlSpaceRevoke createRevokeMessage() {
+        return new ControlSpaceRevoke(configuration.resourceId(), context.currentTime());
+    }
+
     protected DishwasherState getCurrentState() {
         return currentState;
     }
