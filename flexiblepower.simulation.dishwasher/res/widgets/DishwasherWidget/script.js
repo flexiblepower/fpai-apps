@@ -1,17 +1,13 @@
+
 $(window).load(function() {
 	w = new widget("update", 2000, function(data) {
 		$("#loading").detach();
 		$("p").show();
 		$(".error").hide();
 		$("#program").text(data.program);
-		$("#startTime").text(data.date);
+		$("#latestStartTime").text(data.latestStartTime);
+		$("#startedAt").text(data.startedAt);
 		$("#icon").attr("src", "dishwasher.png");
-		
-		if(data.state == 4) {
-			$("#startProgram").show();
-		} else {
-			$("#startProgram").hide();
-		}
 	});
 	
 	w.error = function(msg) {

@@ -183,8 +183,8 @@ public class DishwasherSimulationImpl
 
         } else {
             logger.warn("Trying to start a different program (current={}, controlled={})",
-                     currentState.getProgram(),
-                     resourceControlParameters.getProgram());
+                        currentState.getProgram(),
+                        resourceControlParameters.getProgram());
         }
     }
 
