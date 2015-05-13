@@ -22,7 +22,6 @@ import net.powermatcher.api.messages.PriceUpdate;
 import net.powermatcher.fpai.test.BidAnalyzer;
 import net.powermatcher.fpai.test.MockAgentSender;
 import net.powermatcher.fpai.test.MockSession;
-import net.powermatcher.mock.MockContext;
 
 import org.flexiblepower.efi.buffer.Actuator;
 import org.flexiblepower.efi.buffer.ActuatorBehaviour;
@@ -237,7 +236,7 @@ public class BufferAgentTest extends TestCase {
      *
      * Expected behavior: Agent creates a bid without flexibility
      */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({ "unchecked" })
     public void testTimerBlocking() throws Exception {
         BufferAgent<Temperature> agent = agentSender.getAgent();
 

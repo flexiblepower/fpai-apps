@@ -4,7 +4,7 @@
 	flexiblepower.ui;version=latest,\
 	net.powermatcher.api,\
 	net.powermatcher.core
--testpath: ${test-buildpath}, net.powermatcher.test.helpers
+-testpath: ${test-buildpath}
 	
 -includeresource: {OSGI-INF/permissions.perm=permissions.perm}, res
 Bundle-Version: 2.0.0.${qualifier}

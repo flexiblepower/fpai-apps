@@ -18,7 +18,6 @@ import net.powermatcher.api.messages.PriceUpdate;
 import net.powermatcher.fpai.test.BidAnalyzer;
 import net.powermatcher.fpai.test.MockAgentSender;
 import net.powermatcher.fpai.test.MockSession;
-import net.powermatcher.mock.MockContext;
 
 import org.flexiblepower.efi.unconstrained.RunningModeBehaviour;
 import org.flexiblepower.efi.unconstrained.RunningModeSelector;
