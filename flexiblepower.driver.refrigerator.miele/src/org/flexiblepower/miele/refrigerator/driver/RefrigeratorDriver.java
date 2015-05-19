@@ -7,6 +7,7 @@ import javax.measure.quantity.Temperature;
 
 import org.flexiblepower.context.FlexiblePowerContext;
 import org.flexiblepower.protocol.mielegateway.api.ActionPerformer;
+import org.flexiblepower.protocol.mielegateway.api.ActionResult;
 import org.flexiblepower.protocol.mielegateway.api.MieleResourceDriver;
 import org.flexiblepower.ral.drivers.refrigerator.RefrigeratorControlParameters;
 import org.flexiblepower.ral.drivers.refrigerator.RefrigeratorState;
@@ -100,8 +101,19 @@ public class RefrigeratorDriver extends MieleResourceDriver<RefrigeratorState, R
 
     @Override
     protected void handleControlParameters(RefrigeratorControlParameters controlParameters) {
-        // TODO
-        System.out.println("Supercoolmode: " + controlParameters.getSupercoolMode());
+        if (!currentState.supercoolMode && controlParameters.getSupercoolMode()) {
+            // Turn supercoolMode on!
+            logger.debug("Turning supercool mode on");
+            ActionResult actionResult = performAction("SuperCooling On");
+            logger.debug("Result of truning supercool mode on: " + actionResult.toString());
+        } else if (currentState.supercoolMode && !controlParameters.getSupercoolMode()) {
+            // Turn supercoolMode off!
+            logger.debug("Turning supercool mode off");
+            ActionResult actionResult = performAction("SuperCooling Off");
+            logger.debug("Result of truning supercool mode off: " + actionResult.toString());
+        } else {
+            logger.debug("Received controlparameter with supercool = " + controlParameters.getSupercoolMode()
+                         + ", but that already is the state, ignoring...");
+        }
     }
-
 }
