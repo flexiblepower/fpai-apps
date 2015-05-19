@@ -3,6 +3,7 @@ package org.flexiblepower.protocol.mielegateway.api;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.measure.Measurable;
 import javax.measure.Measure;
@@ -10,12 +11,16 @@ import javax.measure.quantity.Temperature;
 import javax.measure.unit.SI;
 
 import org.flexiblepower.context.FlexiblePowerContext;
+import org.flexiblepower.observation.Observation;
+import org.flexiblepower.observation.ObservationConsumer;
+import org.flexiblepower.observation.ObservationProvider;
 import org.flexiblepower.ral.ResourceControlParameters;
 import org.flexiblepower.ral.ResourceState;
 import org.flexiblepower.ral.ext.AbstractResourceDriver;
 
 public abstract class MieleResourceDriver<RS extends ResourceState, RCP extends ResourceControlParameters> extends
-                                                                                                           AbstractResourceDriver<RS, RCP> {
+                                                                                                           AbstractResourceDriver<RS, RCP> implements
+                                                                                                                                          ObservationProvider<RS> {
 
     public static Integer parseTime(String value) {
         if (value != null) {
@@ -76,6 +81,9 @@ public abstract class MieleResourceDriver<RS extends ResourceState, RCP extends 
 
     private final ActionPerformer actionPerformer;
     protected final FlexiblePowerContext context;
+    private final CopyOnWriteArrayList<ObservationConsumer<? super RS>> subscriptions = new CopyOnWriteArrayList<ObservationConsumer<? super RS>>();
+    private RS lastState;
+    private Observation<RS> observation;
 
     public MieleResourceDriver(ActionPerformer actionPerformer, FlexiblePowerContext context) {
         this.actionPerformer = actionPerformer;
@@ -90,4 +98,29 @@ public abstract class MieleResourceDriver<RS extends ResourceState, RCP extends 
 
     public void close() {
     }
+
+    protected void publishMieleState(RS state) {
+        publishState(state);
+        observation = new Observation<RS>(context.currentTime(), state);
+        for (ObservationConsumer<? super RS> consumer : subscriptions) {
+            consumer.consume(this, observation);
+        }
+        lastState = state;
+    }
+
+    @Override
+    public void subscribe(ObservationConsumer<? super RS> consumer) {
+        subscriptions.add(consumer);
+    }
+
+    @Override
+    public void unsubscribe(ObservationConsumer<? super RS> consumer) {
+        subscriptions.remove(consumer);
+    }
+
+    @Override
+    public Observation<? extends RS> getLastObservation() {
+        return observation;
+    }
+
 }

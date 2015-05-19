@@ -23,7 +23,9 @@
 	osgi.identity;filter:='(osgi.identity=flexiblepower.ui.connectionspage)',\
 	osgi.identity;filter:='(osgi.identity=net.powermatcher.fpai.controller)',\
 	osgi.identity;filter:='(osgi.identity=net.powermatcher.visualisation)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.uncontrolled)'
+	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.uncontrolled)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.protocol.miele.gateway)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.driver.refrigerator.miele)'
 
 -runbundles:  \
 	biz.aQute.bnd.annotation;version='[2.4.0,2.4.1)',\
@@ -32,9 +34,11 @@
 	com.google.gson;version='[2.2.4,2.2.5)',\
 	flexiblepower.api;version='[3.0.0,3.0.1)',\
 	flexiblepower.demo.scenario;version=latest,\
+	flexiblepower.driver.refrigerator.miele;version=latest,\
 	flexiblepower.manager.battery;version=latest,\
 	flexiblepower.manager.dishwasher.miele;version=latest,\
 	flexiblepower.manager.uncontrolled;version=latest,\
+	flexiblepower.protocol.miele.gateway;version=latest,\
 	flexiblepower.ral;version='[1.0.0,1.0.1)',\
 	flexiblepower.ral.efi;version='[1.0.0,1.0.1)',\
 	flexiblepower.ral.efi.utils;version='[1.0.0,1.0.1)',\

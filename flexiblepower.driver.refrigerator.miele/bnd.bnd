@@ -1,0 +1,5 @@
+-buildpath: ${fpai-buildpath}, flexiblepower.ui;version=latest, flexiblepower.protocol.miele.gateway;version=latest
+
+Bundle-Version: 2.1.0.${qualifier}
+Private-Package: org.flexiblepower.miele.refrigerator.driver
+Service-Component: org.flexiblepower.miele.refrigerator.driver.*

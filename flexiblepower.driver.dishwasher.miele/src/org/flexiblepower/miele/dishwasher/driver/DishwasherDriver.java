@@ -107,7 +107,7 @@ public class DishwasherDriver extends MieleResourceDriver<DishwasherState, Dishw
         // Integer duration = parseTime(information.get("Duration"));
 
         currentState = new State(startTime, currentProgram);
-        publishState(currentState);
+        publishMieleState(currentState);
     }
 
     State getCurrentState() {
