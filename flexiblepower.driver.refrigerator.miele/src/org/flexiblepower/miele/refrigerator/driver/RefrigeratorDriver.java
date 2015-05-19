@@ -1,8 +1,6 @@
 package org.flexiblepower.miele.refrigerator.driver;
 
-import java.util.LinkedList;
 import java.util.Map;
-import java.util.Queue;
 
 import javax.measure.Measurable;
 import javax.measure.quantity.Temperature;
@@ -73,7 +71,7 @@ public class RefrigeratorDriver extends MieleResourceDriver<RefrigeratorState, R
 
     private final RefrigeratorWidget widget;
     private final ServiceRegistration<Widget> widgetRegistration;
-    private final Queue<RefrigeratorControlParameters> controlParameterQueue = new LinkedList<RefrigeratorControlParameters>();
+    private RefrigeratorControlParameters controlParameterQueue = null;
 
     public RefrigeratorDriver(ActionPerformer actionPerformer, FlexiblePowerContext context, BundleContext bundleContext) {
         super(actionPerformer, context);
@@ -97,8 +95,10 @@ public class RefrigeratorDriver extends MieleResourceDriver<RefrigeratorState, R
         currentState = new State(true, targetTemerature, currentTemerature, null, supercoolMode);
         publishMieleState(currentState);
 
-        if (!controlParameterQueue.isEmpty()) {
-            handleControlParameters(controlParameterQueue.poll());
+        if (controlParameterQueue != null) {
+            RefrigeratorControlParameters temp = controlParameterQueue;
+            controlParameterQueue = null;
+            handleControlParameters(temp);
         }
     }
 
@@ -110,7 +110,7 @@ public class RefrigeratorDriver extends MieleResourceDriver<RefrigeratorState, R
     protected void handleControlParameters(RefrigeratorControlParameters controlParameters) {
         if (currentState == null) {
             // no valid state, queue this controlParameter
-            controlParameterQueue.add(controlParameters);
+            controlParameterQueue = controlParameters;
         } else {
             // Execute the Control Parameter
             if (!currentState.supercoolMode && controlParameters.getSupercoolMode()) {
