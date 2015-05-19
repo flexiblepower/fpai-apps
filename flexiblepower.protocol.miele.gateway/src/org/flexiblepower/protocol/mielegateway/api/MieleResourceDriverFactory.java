@@ -3,6 +3,7 @@ package org.flexiblepower.protocol.mielegateway.api;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.observation.ext.ObservationProviderRegistrationHelper;
 import org.flexiblepower.ral.ResourceControlParameters;
 import org.flexiblepower.ral.ResourceDriver;
@@ -32,7 +33,7 @@ public abstract class MieleResourceDriverFactory<RS extends ResourceState, RCP e
                                                         .observedBy(driver.getClass().getName())
                                                         .observationType(observationClass)
                                                         .setProperty("resourceId", name)
-                                                        .register(ResourceDriver.class);
+                                                        .register(ResourceDriver.class, Endpoint.class);
 
             registrations.put(name, registration);
             return driver;
