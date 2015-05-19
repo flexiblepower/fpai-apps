@@ -1,33 +1,54 @@
 package org.flexiblepower.miele.refrigerator.driver;
 
-import java.util.Date;
 import java.util.Locale;
 
+import javax.measure.unit.SI;
+
+import org.flexiblepower.miele.refrigerator.driver.RefrigeratorDriver.State;
 import org.flexiblepower.ral.drivers.refrigerator.RefrigeratorState;
 import org.flexiblepower.ui.Widget;
 
 public class RefrigeratorWidget implements Widget {
 
     public static class Update {
-        private final String program;
-        private final String date;
 
-        public Update(String program, Date date) {
-            this.program = program;
-            if (date != null) {
-                this.date = date.toString();
-            } else {
-                this.date = "None";
-            }
+        private final double currentTemperature;
+        private final double targetTemerature;
+        private final boolean superCool;
+        private final boolean ready;
+
+        public Update(double currentTemperature, double targetTemerature, boolean superCool) {
+            this.currentTemperature = currentTemperature;
+            this.targetTemerature = targetTemerature;
+            this.superCool = superCool;
+            ready = true;
         }
 
-        public String getProgram() {
-            return program;
+        public Update(RefrigeratorState state) {
+            this(state.getCurrentTemperature().doubleValue(SI.CELSIUS),
+                 state.getTargetTemperature().doubleValue(SI.CELSIUS),
+                 state.getSupercoolMode());
         }
 
-        public String getDate() {
-            return date;
+        public Update() {
+            currentTemperature = 0;
+            targetTemerature = 0;
+            superCool = false;
+            ready = false;
         }
+
+        public double getCurrentTemperature() {
+            return currentTemperature;
+        }
+
+        public double getTargetTemerature() {
+            return targetTemerature;
+        }
+
+        public boolean isSuperCool() {
+            return superCool;
+        }
+
     }
 
     private final RefrigeratorDriver refrigerator;
@@ -41,21 +62,14 @@ public class RefrigeratorWidget implements Widget {
         return refrigerator;
     }
 
-    private RefrigeratorState state;
-
-    // public Update update(Locale locale) {
-    // state = refrigerator.getCurrentState();
-    // if (state != null) {
-    // return new Update(state.getProgram(), state.getStartTime());
-    // } else {
-    // return new Update("No Program Selected", null);
-    // }
-    // }
-
-    // public Update startProgram(Locale locale) throws IOException {
-    // refrigerator.startNow();
-    // return update(locale);
-    // }
+    public Update update(Locale locale) {
+        State state = refrigerator.getCurrentState();
+        if (state == null) {
+            return new Update();
+        } else {
+            return new Update(state);
+        }
+    }
 
     @Override
     public String getTitle(Locale locale) {
