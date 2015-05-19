@@ -1,6 +1,8 @@
 package org.flexiblepower.miele.refrigerator.driver;
 
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 
 import javax.measure.Measurable;
 import javax.measure.quantity.Temperature;
@@ -71,6 +73,7 @@ public class RefrigeratorDriver extends MieleResourceDriver<RefrigeratorState, R
 
     private final RefrigeratorWidget widget;
     private final ServiceRegistration<Widget> widgetRegistration;
+    private final Queue<RefrigeratorControlParameters> controlParameterQueue = new LinkedList<RefrigeratorControlParameters>();
 
     public RefrigeratorDriver(ActionPerformer actionPerformer, FlexiblePowerContext context, BundleContext bundleContext) {
         super(actionPerformer, context);
@@ -93,6 +96,10 @@ public class RefrigeratorDriver extends MieleResourceDriver<RefrigeratorState, R
         boolean supercoolMode = "Super Cooling".equals(information.get("State"));
         currentState = new State(true, targetTemerature, currentTemerature, null, supercoolMode);
         publishMieleState(currentState);
+
+        if (!controlParameterQueue.isEmpty()) {
+            handleControlParameters(controlParameterQueue.poll());
+        }
     }
 
     State getCurrentState() {
@@ -101,19 +108,29 @@ public class RefrigeratorDriver extends MieleResourceDriver<RefrigeratorState, R
 
     @Override
     protected void handleControlParameters(RefrigeratorControlParameters controlParameters) {
-        if (!currentState.supercoolMode && controlParameters.getSupercoolMode()) {
-            // Turn supercoolMode on!
-            logger.debug("Turning supercool mode on");
-            ActionResult actionResult = performAction("SuperCooling On");
-            logger.debug("Result of truning supercool mode on: " + actionResult.toString());
-        } else if (currentState.supercoolMode && !controlParameters.getSupercoolMode()) {
-            // Turn supercoolMode off!
-            logger.debug("Turning supercool mode off");
-            ActionResult actionResult = performAction("SuperCooling Off");
-            logger.debug("Result of truning supercool mode off: " + actionResult.toString());
+        if (currentState == null) {
+            // no valid state, queue this controlParameter
+            controlParameterQueue.add(controlParameters);
         } else {
-            logger.debug("Received controlparameter with supercool = " + controlParameters.getSupercoolMode()
-                         + ", but that already is the state, ignoring...");
+            // Execute the Control Parameter
+            if (!currentState.supercoolMode && controlParameters.getSupercoolMode()) {
+                // Turn supercoolMode on!
+                logger.debug("Turning supercool mode on");
+                ActionResult actionResult = performAction("SuperCooling On");
+                logger.debug("Result of truning supercool mode on: " + actionResult.toString());
+                // Invalidate the currentState
+                currentState = null;
+            } else if (currentState.supercoolMode && !controlParameters.getSupercoolMode()) {
+                // Turn supercoolMode off!
+                logger.debug("Turning supercool mode off");
+                ActionResult actionResult = performAction("SuperCooling Off");
+                logger.debug("Result of truning supercool mode off: " + actionResult.toString());
+                // Invalidate the currentState
+                currentState = null;
+            } else {
+                logger.debug("Received controlparameter with supercool = " + controlParameters.getSupercoolMode()
+                             + ", but that already is the state, ignoring...");
+            }
         }
     }
 }

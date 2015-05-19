@@ -4,7 +4,6 @@ import java.util.Locale;
 
 import javax.measure.unit.SI;
 
-import org.flexiblepower.miele.refrigerator.driver.RefrigeratorDriver.State;
 import org.flexiblepower.ral.drivers.refrigerator.RefrigeratorState;
 import org.flexiblepower.ui.Widget;
 
@@ -49,6 +48,10 @@ public class RefrigeratorWidget implements Widget {
             return superCool;
         }
 
+        public boolean isReady() {
+            return ready;
+        }
+
     }
 
     private final RefrigeratorDriver refrigerator;
@@ -63,7 +66,7 @@ public class RefrigeratorWidget implements Widget {
     }
 
     public Update update(Locale locale) {
-        State state = refrigerator.getCurrentState();
+        RefrigeratorState state = refrigerator.getLastObservation().getValue();
         if (state == null) {
             return new Update();
         } else {
