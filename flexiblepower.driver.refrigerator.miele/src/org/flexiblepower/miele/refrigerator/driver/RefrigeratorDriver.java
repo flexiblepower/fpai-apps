@@ -81,7 +81,6 @@ public class RefrigeratorDriver extends MieleResourceDriver<RefrigeratorState, R
 
     @Override
     public void close() {
-        super.close();
         widgetRegistration.unregister();
     }
 

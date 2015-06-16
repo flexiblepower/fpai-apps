@@ -1,5 +1,6 @@
 package org.flexiblepower.protocol.mielegateway.api;
 
+import java.io.Closeable;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
@@ -20,7 +21,8 @@ import org.flexiblepower.ral.ext.AbstractResourceDriver;
 
 public abstract class MieleResourceDriver<RS extends ResourceState, RCP extends ResourceControlParameters> extends
                                                                                                            AbstractResourceDriver<RS, RCP> implements
-                                                                                                                                          ObservationProvider<RS> {
+                                                                                                                                          ObservationProvider<RS>,
+                                                                                                                                          Closeable {
 
     public static Integer parseTime(String value) {
         if (value != null) {
@@ -82,7 +84,6 @@ public abstract class MieleResourceDriver<RS extends ResourceState, RCP extends 
     private final ActionPerformer actionPerformer;
     protected final FlexiblePowerContext context;
     private final CopyOnWriteArrayList<ObservationConsumer<? super RS>> subscriptions = new CopyOnWriteArrayList<ObservationConsumer<? super RS>>();
-    private RS lastState;
     private Observation<RS> observation;
 
     public MieleResourceDriver(ActionPerformer actionPerformer, FlexiblePowerContext context) {
@@ -96,16 +97,12 @@ public abstract class MieleResourceDriver<RS extends ResourceState, RCP extends 
         return actionPerformer.performAction(action);
     }
 
-    public void close() {
-    }
-
     protected void publishMieleState(RS state) {
         publishState(state);
         observation = new Observation<RS>(context.currentTime(), state);
         for (ObservationConsumer<? super RS> consumer : subscriptions) {
             consumer.consume(this, observation);
         }
-        lastState = state;
     }
 
     @Override

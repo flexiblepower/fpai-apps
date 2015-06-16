@@ -1,5 +1,7 @@
 package org.flexiblepower.protocol.mielegateway;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Map;
@@ -12,7 +14,7 @@ import org.flexiblepower.protocol.mielegateway.xml.ActionResultParser;
 import org.flexiblepower.protocol.mielegateway.xml.XMLUtil;
 import org.w3c.dom.Document;
 
-public class MieleResourceDriverWrapper implements ActionPerformer {
+public class MieleResourceDriverWrapper implements ActionPerformer, Closeable {
     private URL detailsURL;
     private MieleResourceDriver<?, ?> driver;
 
@@ -60,5 +62,10 @@ public class MieleResourceDriverWrapper implements ActionPerformer {
     @Override
     public String toString() {
         return driver.getClass().getSimpleName();
+    }
+
+    @Override
+    public void close() throws IOException {
+        driver.close();
     }
 }

@@ -86,7 +86,6 @@ public class DishwasherDriver extends MieleResourceDriver<DishwasherState, Dishw
 
     @Override
     public void close() {
-        super.close();
         widgetRegistration.unregister();
     }
 

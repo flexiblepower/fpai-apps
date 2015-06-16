@@ -1,5 +1,6 @@
 package org.flexiblepower.protocol.mielegateway;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
@@ -76,7 +77,15 @@ public class MieleProtocolHandler implements Runnable {
 
     @Deactivate
     public void deactivate() {
-        future.cancel(false);
+        try {
+            future.cancel(false);
+            for (MieleResourceDriverWrapper wrapper : wrappers.values()) {
+                wrapper.close();
+            }
+            wrappers.clear();
+        } catch (IOException e) {
+            log.warn("Exception while closing MieleResourceDriver", e);
+        }
     }
 
     private final Map<Integer, MieleResourceDriverWrapper> wrappers = new HashMap<Integer, MieleResourceDriverWrapper>();
