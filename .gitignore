@@ -33,3 +33,5 @@ deploy
 *.gwt.rpc
 *.nocache.js
 hosted.html
+
+.recommenders/
