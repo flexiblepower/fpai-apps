@@ -66,7 +66,9 @@ public class RefrigeratorWidget implements Widget {
     }
 
     public Update update(Locale locale) {
-        RefrigeratorState state = refrigerator.getLastObservation().getValue();
+
+        RefrigeratorState state = refrigerator.getCurrentState();
+
         if (state == null) {
             return new Update();
         } else {
