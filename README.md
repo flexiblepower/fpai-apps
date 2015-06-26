@@ -16,3 +16,8 @@ This repository contains several resource driver and manager implementation. Thi
 
 NOTE: this is currently work in progress and does not compile. It is expected that this will be fixed by october 2014.
 
+# Fpai-apps Questions?
+[Ask your question here](https://github.com/flexiblepower/flexiblepower-base/issues/new?title=Question:My%20Title&body)
+
+# Bugs
+[See FAN-wiki](https://github.com/flexiblepower/FAN-wiki/wiki/Bug-tracking-process)
