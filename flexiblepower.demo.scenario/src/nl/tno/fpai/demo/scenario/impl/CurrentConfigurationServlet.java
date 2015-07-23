@@ -119,7 +119,16 @@ public class CurrentConfigurationServlet extends HttpServlet {
                             w.print("<p>&nbsp;&nbsp;&nbsp;&nbsp;&lt;");
                             w.print(key);
                             w.print("&gt;");
-                            w.print(value.toString());
+                            if (value.getClass().isArray()) {
+                                Object[] array = (Object[]) value;
+                                for (int i = 0; i < array.length - 1; i++) {
+                                    w.print(array[i].toString());
+                                    w.print(',');
+                                }
+                                w.print(array[array.length - 1]);
+                            } else {
+                                w.print(value.toString());
+                            }
                             w.print("&lt;/");
                             w.print(key);
                             w.print("&gt;</p>");
