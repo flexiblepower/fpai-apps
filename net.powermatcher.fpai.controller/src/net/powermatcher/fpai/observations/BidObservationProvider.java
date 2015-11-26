@@ -2,13 +2,13 @@ package net.powermatcher.fpai.observations;
 
 import java.util.Date;
 
-import net.powermatcher.api.monitoring.events.OutgoingBidUpdateEvent;
-
 import org.flexiblepower.observation.Observation;
 import org.flexiblepower.observation.ext.AbstractObservationProvider;
 import org.flexiblepower.observation.ext.ObservationProviderRegistrationHelper;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
+
+import net.powermatcher.api.monitoring.events.OutgoingBidUpdateEvent;
 
 public class BidObservationProvider extends AbstractObservationProvider<BidObservationProvider.State> {
 
@@ -24,7 +24,7 @@ public class BidObservationProvider extends AbstractObservationProvider<BidObser
             agentId = event.getAgentId();
             clusterId = event.getClusterId();
             bidNumber = event.getBidUpdate().getBidNumber();
-            bid = event.getBidUpdate().getBid().toArrayBid().getDemand();
+            bid = event.getBidUpdate().getBid().getDemand();
         }
 
         public Date getTime() {

@@ -6,9 +6,14 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.flexiblepower.ui.Widget;
+
+import aQute.bnd.annotation.component.Component;
+import aQute.bnd.annotation.component.Reference;
+import aQute.bnd.annotation.metatype.Meta;
 import net.powermatcher.api.data.Bid;
 import net.powermatcher.api.data.MarketBasis;
-import net.powermatcher.api.data.PriceStep;
+import net.powermatcher.api.data.Price;
 import net.powermatcher.api.messages.BidUpdate;
 import net.powermatcher.api.messages.PriceUpdate;
 import net.powermatcher.api.monitoring.AgentObserver;
@@ -19,12 +24,6 @@ import net.powermatcher.api.monitoring.events.IncomingPriceUpdateEvent;
 import net.powermatcher.api.monitoring.events.OutgoingBidUpdateEvent;
 import net.powermatcher.api.monitoring.events.OutgoingPriceUpdateEvent;
 
-import org.flexiblepower.ui.Widget;
-
-import aQute.bnd.annotation.component.Component;
-import aQute.bnd.annotation.component.Reference;
-import aQute.bnd.annotation.metatype.Meta;
-
 @Component(properties = { "widget.type=full", "widget.name=pmfullwidget" },
            provide = Widget.class,
            designate = FullWidget.Config.class)
@@ -33,7 +32,7 @@ public class FullWidget implements Widget, AgentObserver {
 
     public interface Config {
         @Meta.AD(deflt = "", description = "A filter for only showing certain type of observable agents")
-        String agent_target();
+               String agent_target();
     }
 
     @Reference(dynamic = true, multiple = true)
@@ -108,13 +107,13 @@ public class FullWidget implements Widget, AgentObserver {
         }
 
         public void setBid(Bid bid) {
-            double[] demand = bid.toArrayBid().getDemand();
+            double[] demand = bid.getDemand();
 
             double[][] coordinates = new double[demand.length][];
             MarketBasis mb = bid.getMarketBasis();
             maxDemand = 1;
             for (int i = 0; i < demand.length; i++) {
-                coordinates[i] = new double[] { new PriceStep(mb, i).toPrice().getPriceValue(), demand[i] };
+                coordinates[i] = new double[] { Price.fromPriceIndex(mb, i).getPriceValue(), demand[i] };
                 maxDemand = Math.max(Math.abs(demand[i]), maxDemand);
             }
 

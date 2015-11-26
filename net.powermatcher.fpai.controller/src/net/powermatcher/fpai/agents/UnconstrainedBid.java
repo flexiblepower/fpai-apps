@@ -4,10 +4,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.TreeSet;
 
-import net.powermatcher.api.data.ArrayBid;
 import net.powermatcher.api.data.Bid;
 import net.powermatcher.api.data.MarketBasis;
-import net.powermatcher.api.data.PointBid;
 import net.powermatcher.api.data.Price;
 
 /**
@@ -127,12 +125,13 @@ public class UnconstrainedBid {
         double maxPriority = 1.0;
 
         // First make the ideal, continuous bid, that does not care about discrete running modes.
-        rawBid = new PointBid.Builder(marketBasis).add(priceOf(minPriority), maxDemand)
-                                                  .add(priceOf(maxPriority), minDemand)
-                                                  .build();
+        rawBid = Bid.create(marketBasis)
+                    .add(priceOf(minPriority), maxDemand)
+                    .add(priceOf(maxPriority), minDemand)
+                    .build();
 
         // Now construct actual bid
-        double[] rawDemand = rawBid.toArrayBid().getDemand();
+        double[] rawDemand = rawBid.getDemand();
         newBid = new UnconstrainedBidElement[rawDemand.length];
         for (int i = 0; i < rawDemand.length; i++) {
             newBid[i] = getClosest(rawDemand[i]);
@@ -168,7 +167,7 @@ public class UnconstrainedBid {
      */
     private double priceOf(double priceFraction) {
         return marketBasis.getMinimumPrice() + priceFraction
-               * (marketBasis.getMaximumPrice() - marketBasis.getMinimumPrice());
+                                               * (marketBasis.getMaximumPrice() - marketBasis.getMinimumPrice());
     }
 
     /**
@@ -180,7 +179,7 @@ public class UnconstrainedBid {
      * @return the BidElement with RunningMode and Price.
      */
     public UnconstrainedBidElement runningModeForPrice(Price price) {
-        return newBid[price.toPriceStep().getPriceStep()];
+        return newBid[price.getPriceIndex()];
     }
 
     /**
@@ -193,7 +192,7 @@ public class UnconstrainedBid {
         for (int i = 0; i < newBid.length; i++) {
             demand[i] = newBid[i].demandWatt;
         }
-        return new ArrayBid(marketBasis, demand);
+        return new Bid(marketBasis, demand);
     }
 
     @Override

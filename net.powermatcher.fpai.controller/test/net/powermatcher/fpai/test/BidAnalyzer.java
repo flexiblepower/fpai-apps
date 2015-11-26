@@ -10,8 +10,7 @@ import javax.measure.Measurable;
 import javax.measure.quantity.Power;
 
 import net.powermatcher.api.data.Bid;
-import net.powermatcher.api.data.PricePoint;
-import net.powermatcher.api.data.PriceStep;
+import net.powermatcher.api.data.Price;
 
 public final class BidAnalyzer {
     private BidAnalyzer() {
@@ -19,21 +18,25 @@ public final class BidAnalyzer {
 
     public static void assertFlatBid(Bid bid) {
         assertNotNull(bid);
-        assertTrue(demandIsFlat(bid.toArrayBid().getDemand()));
+        assertTrue(demandIsFlat(bid.getDemand()));
     }
 
     public static void assertFlatBidWithValue(Bid bid, Measurable<Power> p) {
         assertNotNull("Expected a bid, but was null", bid);
-        double[] demand = bid.toArrayBid().getDemand();
+        double[] demand = bid.getDemand();
         assertTrue("Expected a flat bid with value " + p + ", but it is not flat", demandIsFlat(demand));
-        assertTrue("Expected a flat bid with value " + p + ", but found value of " + demand[0] + "W",
+        assertTrue("Expected a flat bid with value " + p
+                   + ", but found value of "
+                   + demand[0]
+                   + "W",
                    demand[0] == p.doubleValue(WATT));
     }
 
     public static void assertNonFlatBid(Bid bid) {
         assertNotNull(bid);
-        assertFalse("Expected a non-flat bid, but it was flat with " + bid.getMinimumDemand() + "W",
-                    demandIsFlat(bid.toArrayBid().getDemand()));
+        assertFalse("Expected a non-flat bid, but it was flat with " + bid.getMinimumDemand()
+                    + "W",
+                    demandIsFlat(bid.getDemand()));
     }
 
     /** Asserts that the given bid has a single step. */
@@ -45,7 +48,7 @@ public final class BidAnalyzer {
     public static void assertDemandAtMost(Bid bid, Measurable<Power> demand) {
         assertNotNull(bid);
         double demandWatt = demand.doubleValue(WATT);
-        for (double v : bid.toArrayBid().getDemand()) {
+        for (double v : bid.getDemand()) {
             assertTrue(demandWatt >= v);
         }
     }
@@ -53,8 +56,11 @@ public final class BidAnalyzer {
     public static void assertDemandAtLeast(Bid bid, Measurable<Power> demand) {
         assertNotNull(bid);
         double demandWatt = demand.doubleValue(WATT);
-        for (double v : bid.toArrayBid().getDemand()) {
-            assertTrue("Demand in bid may not be lower than " + demandWatt + " for any price, (was " + v + ")",
+        for (double v : bid.getDemand()) {
+            assertTrue("Demand in bid may not be lower than " + demandWatt
+                       + " for any price, (was "
+                       + v
+                       + ")",
                        demandWatt <= v);
         }
     }
@@ -80,7 +86,7 @@ public final class BidAnalyzer {
     private static boolean isStepBid(Bid bid, Measurable<Power> power1, Measurable<Power> power2, Double price) {
         assertNotNull(bid);
 
-        double[] demand = bid.toArrayBid().getDemand();
+        double[] demand = bid.getDemand();
 
         // check the first power value
         if (power1 != null && power1.doubleValue(WATT) != demand[0]) {
@@ -103,7 +109,7 @@ public final class BidAnalyzer {
 
         // if the price is set, check it, or not if it isn't
         if (price != null) {
-            return new PriceStep(bid.getMarketBasis(), priceIndex).toPrice().getPriceValue() == price;
+            return Price.fromPriceIndex(bid.getMarketBasis(), priceIndex).getPriceValue() == price;
         }
 
         priceIndex += 1;
@@ -123,12 +129,12 @@ public final class BidAnalyzer {
         return true;
     }
 
-    public static double getStepPrice(Bid bid) {
-        assertStepBid(bid);
-
-        PricePoint[] pricePoints = bid.toPointBid().getPricePoints();
-        return pricePoints[0].getPrice().getPriceValue();
-    }
+    // public static double getStepPrice(Bid bid) {
+    // assertStepBid(bid);
+    //
+    // PricePoint[] pricePoints = bid.toPointBid().getPricePoints();
+    // return pricePoints[0].getPrice().getPriceValue();
+    // }
 
     /**
      * Checks if the bid is not entirely null
@@ -138,7 +144,7 @@ public final class BidAnalyzer {
     public static void assertDemandBid(Bid bid) {
         assertNotNull(bid);
 
-        double[] demand = bid.toArrayBid().getDemand();
+        double[] demand = bid.getDemand();
         assertTrue(demand.length >= 1);
         boolean notzero = false;
         for (double v : demand) {
@@ -173,8 +179,8 @@ public final class BidAnalyzer {
 
     public static void assertBidsEqual(Bid bid1, Bid bid2) {
         assertTrue(bid1 != null && bid2 != null);
-        double[] demand1 = bid1.toArrayBid().getDemand();
-        double[] demand2 = bid2.toArrayBid().getDemand();
+        double[] demand1 = bid1.getDemand();
+        double[] demand2 = bid2.getDemand();
         for (int i = 0; i < demand1.length; i++) {
             assertEquals(demand1[i], demand2[i], 0.0001);
         }
@@ -192,11 +198,11 @@ public final class BidAnalyzer {
         }
 
         double sumOne = 0;
-        for (double element : bid1.toArrayBid().getDemand()) {
+        for (double element : bid1.getDemand()) {
             sumOne += element;
         }
         double sumTwo = 0;
-        for (double element : bid2.toArrayBid().getDemand()) {
+        for (double element : bid2.getDemand()) {
             sumTwo += element;
         }
         assertTrue(sumOne > sumTwo);

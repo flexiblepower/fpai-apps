@@ -9,15 +9,6 @@ import java.util.List;
 import javax.measure.quantity.Quantity;
 import javax.measure.unit.SI;
 
-import net.powermatcher.api.AgentEndpoint;
-import net.powermatcher.api.data.Bid;
-import net.powermatcher.api.data.MarketBasis;
-import net.powermatcher.api.data.PointBid;
-import net.powermatcher.api.data.Price;
-import net.powermatcher.api.data.PricePoint;
-import net.powermatcher.fpai.agents.BufferBid.BufferBidElement;
-import net.powermatcher.fpai.controller.AgentMessageSender;
-
 import org.flexiblepower.api.efi.bufferhelper.Buffer;
 import org.flexiblepower.api.efi.bufferhelper.BufferActuator;
 import org.flexiblepower.efi.buffer.ActuatorAllocation;
@@ -36,10 +27,19 @@ import org.flexiblepower.ral.messages.ControlSpaceRevoke;
 import org.flexiblepower.ral.messages.ControlSpaceUpdate;
 import org.flexiblepower.ral.values.Commodity;
 
+import net.powermatcher.api.AgentEndpoint;
+import net.powermatcher.api.data.Bid;
+import net.powermatcher.api.data.MarketBasis;
+import net.powermatcher.api.data.Price;
+import net.powermatcher.api.data.PricePoint;
+import net.powermatcher.fpai.agents.BufferBid.BufferBidElement;
+import net.powermatcher.fpai.controller.AgentMessageSender;
+
 /**
  * The BufferAgent constructs PowerMatcher bids and processes returned prices into allocations for the resource manager.
  *
- * @param <Q>
+ * @param
+ *            <Q>
  *            The physical quantity that this Buffer stores and that belongs to the unit in which the fill level is
  *            expressed.
  */
@@ -144,7 +144,7 @@ public class BufferAgent<Q extends Quantity> extends FpaiAgent {
             LOGGER.warn("Sending zero-bid, because not enough information has been received to form a bid ({}, {}, {})",
                         registration == null ? "registration is missing" : "registration received",
                         bufferHelper.hasReceivedSystemDescription() ? "system description received"
-                                                                   : "system description missing",
+                                                                    : "system description missing",
                         bufferHelper.hasReceivedStateUpdate() ? "state update received" : "state update missing");
             return Bid.flatDemand(marketBasis, 0);
         }
@@ -160,7 +160,7 @@ public class BufferAgent<Q extends Quantity> extends FpaiAgent {
 
         if (runningModes.isEmpty()) {
             LOGGER.error("No reachable running mode found, sending must off bid.");
-            return new PointBid.Builder(marketBasis).add(new PricePoint(marketBasis, 0, 0)).build();
+            return Bid.create(marketBasis).add(new PricePoint(marketBasis, 0, 0)).build();
         }
 
         double fillLevel = bufferHelper.getCurrentFillLevel().doubleValue(registration.getFillLevelUnit());
@@ -198,7 +198,7 @@ public class BufferAgent<Q extends Quantity> extends FpaiAgent {
 
         if (elements.isEmpty()) {
             LOGGER.debug("Due to fill level no reachable running mode was found, sending must off bid.");
-            return new PointBid.Builder(marketBasis).add(new PricePoint(marketBasis, 0, 0)).build();
+            return Bid.create(marketBasis).add(new PricePoint(marketBasis, 0, 0)).build();
         }
 
         // TODO: Check for concurrency problems with lastBid...

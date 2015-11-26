@@ -10,10 +10,8 @@ import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
 import net.powermatcher.api.data.Bid;
 import net.powermatcher.api.data.MarketBasis;
-import net.powermatcher.api.data.PointBid;
 import net.powermatcher.api.data.Price;
 import net.powermatcher.api.data.PricePoint;
-import net.powermatcher.api.data.PriceStep;
 
 public class BidAnalyzerTest extends TestCase {
     private static final MarketBasis MARKET_BASIS = new MarketBasis("Electricity", "EUR", 101, 0, 50);
@@ -25,7 +23,7 @@ public class BidAnalyzerTest extends TestCase {
     /** test for all prices apart from the lowest and the highest */
     public void testBidAnalyzer() {
         for (int priceIndex = 1; priceIndex < MARKET_BASIS.getPriceSteps() - 1; priceIndex++) {
-            Price price = new PriceStep(MARKET_BASIS, priceIndex).toPrice();
+            Price price = Price.fromPriceIndex(MARKET_BASIS, priceIndex);
 
             Bid bid = createBid(power1, power2, price);
 
@@ -45,9 +43,9 @@ public class BidAnalyzerTest extends TestCase {
     /** test that with a must-run bid, the assertion fails */
     public void testAssertStepBidMinimumPrice() {
         try {
-            double price = new PriceStep(MARKET_BASIS, 0).toPrice().getPriceValue();
+            double price = Price.fromPriceIndex(MARKET_BASIS, 0).getPriceValue();
 
-            Bid bid = createBid(power1, power2, new PriceStep(MARKET_BASIS, 0).toPrice());
+            Bid bid = createBid(power1, power2, Price.fromPriceIndex(MARKET_BASIS, 0));
             BidAnalyzer.assertStepBid(bid, power1, power2, price);
             fail("Expected Exception");
         } catch (AssertionFailedError e) {
@@ -57,7 +55,7 @@ public class BidAnalyzerTest extends TestCase {
     /** test that with a must-run bid, the assertion fails */
     public void testAssertStepBidMaximumPrice() {
         try {
-            Price price = new PriceStep(MARKET_BASIS, MARKET_BASIS.getPriceSteps() - 1).toPrice();
+            Price price = Price.fromPriceIndex(MARKET_BASIS, MARKET_BASIS.getPriceSteps() - 1);
 
             Bid bid = createBid(power1, power2, price);
             BidAnalyzer.assertStepBid(bid, power1, power2, price.getPriceValue());
@@ -70,15 +68,20 @@ public class BidAnalyzerTest extends TestCase {
     /** test that with a must-run bid, the assertion fails */
     public void testAssertStepMultiStep() {
         try {
-            Price price1 = new PriceStep(MARKET_BASIS, MARKET_BASIS.getPriceSteps() / 4).toPrice();
-            Price price2 = new PriceStep(MARKET_BASIS, MARKET_BASIS.getPriceSteps() / 4 * 3).toPrice();
+            Price price1 = Price.fromPriceIndex(MARKET_BASIS, MARKET_BASIS.getPriceSteps() / 4);
+            Price price2 = Price.fromPriceIndex(MARKET_BASIS, MARKET_BASIS.getPriceSteps() / 4 * 3);
 
             PricePoint pricePoint1 = new PricePoint(price1, power1.doubleValue(WATT));
             PricePoint pricePoint2 = new PricePoint(price1, power2.doubleValue(WATT));
             PricePoint pricePoint3 = new PricePoint(price2, power2.doubleValue(WATT));
             PricePoint pricePoint4 = new PricePoint(price2, power3.doubleValue(WATT));
 
-            Bid bid = new PointBid(MARKET_BASIS, pricePoint1, pricePoint2, pricePoint3, pricePoint4);
+            Bid bid = Bid.create(MARKET_BASIS)
+                         .add(pricePoint1)
+                         .add(pricePoint2)
+                         .add(pricePoint3)
+                         .add(pricePoint4)
+                         .build();
             BidAnalyzer.assertStepBid(bid);
 
             fail("Expected Exception");
@@ -90,6 +93,6 @@ public class BidAnalyzerTest extends TestCase {
         PricePoint pricePoint1 = new PricePoint(price, power1.doubleValue(WATT));
         PricePoint pricePoint2 = new PricePoint(price, power2.doubleValue(WATT));
 
-        return new PointBid(MARKET_BASIS, pricePoint1, pricePoint2);
+        return Bid.create(MARKET_BASIS).add(pricePoint1).add(pricePoint2).build();
     }
 }

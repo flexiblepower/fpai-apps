@@ -4,10 +4,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.TreeSet;
 
-import net.powermatcher.api.data.ArrayBid;
 import net.powermatcher.api.data.Bid;
 import net.powermatcher.api.data.MarketBasis;
-import net.powermatcher.api.data.PointBid;
 import net.powermatcher.api.data.Price;
 
 /**
@@ -165,13 +163,14 @@ public class BufferBid {
                 maxPriceFraction = priority + 1;
             }
             // First make the ideal, continuous bid, that does not care about discrete running modes.
-            rawBid = new PointBid.Builder(marketBasis).add(priceOf(minPriceFraction), maxDemand)
-                                                      .add(priceOf(maxPriceFraction), minDemand)
-                                                      .build();
+            rawBid = Bid.create(marketBasis)
+                        .add(priceOf(minPriceFraction), maxDemand)
+                        .add(priceOf(maxPriceFraction), minDemand)
+                        .build();
         }
 
         // Now construct actual bid
-        double[] rawDemand = rawBid.toArrayBid().getDemand();
+        double[] rawDemand = rawBid.getDemand();
         bufferBid = new BufferBidElement[rawDemand.length];
         for (int i = 0; i < rawDemand.length; i++) {
             bufferBid[i] = getClosest(rawDemand[i]);
@@ -200,7 +199,7 @@ public class BufferBid {
      */
     private double priceOf(double priceFraction) {
         return marketBasis.getMinimumPrice() + priceFraction
-               * (marketBasis.getMaximumPrice() - marketBasis.getMinimumPrice());
+                                               * (marketBasis.getMaximumPrice() - marketBasis.getMinimumPrice());
     }
 
     public Bid toBid() {
@@ -208,7 +207,7 @@ public class BufferBid {
         for (int i = 0; i < bufferBid.length; i++) {
             demand[i] = bufferBid[i].demandWatt;
         }
-        return new ArrayBid(marketBasis, demand);
+        return new Bid(marketBasis, demand);
     }
 
     /**
@@ -219,7 +218,7 @@ public class BufferBid {
      * @return
      */
     public BufferBidElement runningModeForPrice(Price price) {
-        return bufferBid[price.toPriceStep().getPriceStep()];
+        return bufferBid[price.getPriceIndex()];
     }
 
     @Override

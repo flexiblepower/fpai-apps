@@ -27,7 +27,7 @@ public class SmallWidget implements AgentObserver, Widget {
 
     public interface Config {
         @Meta.AD(deflt = "", description = "A filter for only showing certain type of observable agents")
-        String agent_target();
+               String agent_target();
     }
 
     @Reference(dynamic = true, multiple = true)
@@ -62,7 +62,7 @@ public class SmallWidget implements AgentObserver, Widget {
     }
 
     private String getDemands(OutgoingBidUpdateEvent bid) {
-        double[] demand = bid.getBidUpdate().getBid().toArrayBid().getDemand();
+        double[] demand = bid.getBidUpdate().getBid().getDemand();
         double first = demand[0] / 1000;
         double last = demand[demand.length - 1] / 1000;
 
