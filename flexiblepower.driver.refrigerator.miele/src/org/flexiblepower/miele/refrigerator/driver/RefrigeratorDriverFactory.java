@@ -13,7 +13,7 @@ import aQute.bnd.annotation.component.Reference;
 
 @Component(provide = MieleResourceDriverFactory.class)
 public class RefrigeratorDriverFactory extends
-                                      MieleResourceDriverFactory<RefrigeratorState, RefrigeratorControlParameters, RefrigeratorDriver> {
+                                       MieleResourceDriverFactory<RefrigeratorState, RefrigeratorControlParameters, RefrigeratorDriver> {
 
     public RefrigeratorDriverFactory() {
         super(RefrigeratorState.class);

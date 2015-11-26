@@ -47,9 +47,9 @@ import aQute.bnd.annotation.metatype.Meta;
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 @Port(name = "driver", sends = DishwasherControlParameters.class, accepts = DishwasherState.class)
 public class MieleDishwasherManager
-                                   extends AbstractResourceManager<DishwasherState, DishwasherControlParameters>
-                                                                                                                implements
-                                                                                                                TimeShifterResourceManager {
+                                    extends AbstractResourceManager<DishwasherState, DishwasherControlParameters>
+                                    implements
+                                    TimeShifterResourceManager {
 
     private static final Logger logger = LoggerFactory.getLogger(MieleDishwasherManager.class);
 
@@ -81,7 +81,7 @@ public class MieleDishwasherManager
     @Meta.OCD
     interface Config {
         @Meta.AD(deflt = "MieleDishwasherManager", description = "Unique resourceID")
-        String resourceId();
+               String resourceId();
     }
 
     private FlexiblePowerContext context;
@@ -197,12 +197,21 @@ public class MieleDishwasherManager
                            .electricity(new UncertainMeasure<Power>(500, SI.WATT))
                            .next();
         } else {
-            forecastBuilder.duration(Measure.valueOf(3, HOUR))
-                           .electricity(new UncertainMeasure<Power>(2000, SI.WATT))
-                           .next()
-                           .duration(Measure.valueOf(1, HOUR))
+            forecastBuilder.duration(Measure.valueOf(0, NonSI.MINUTE))
                            .electricity(new UncertainMeasure<Power>(1000, SI.WATT))
+                           .next()
+                           .duration(Measure.valueOf(0, NonSI.MINUTE))
+                           .electricity(new UncertainMeasure<Power>(1500, SI.WATT))
+                           .next()
+                           .duration(Measure.valueOf(0, NonSI.MINUTE))
+                           .electricity(new UncertainMeasure<Power>(500, SI.WATT))
                            .next();
+
+            /*
+             * forecastBuilder.duration(Measure.valueOf(3, HOUR)) .electricity(new UncertainMeasure<Power>(2000,
+             * SI.WATT)) .next() .duration(Measure.valueOf(1, HOUR)) .electricity(new UncertainMeasure<Power>(1000,
+             * SI.WATT)) .next();
+             */
         }
 
         CommodityForecast forecast = forecastBuilder.build();

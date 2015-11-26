@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+    <link rel="stylesheet" href="/css/widget.css" />
+    <link rel="stylesheet" href="/css/tooltip.css" />
+    <link rel="stylesheet" href="style.css" />
+    <script type="text/javascript" src="/js/vendor/jquery.min.js"></script>
+    <script type="text/javascript" src="/js/widget.js"></script>
+    <script type="text/javascript" src="script.js"></script>
+    <title>Windmill</title>
+</head>
+<body class="widget">
+    <img id="icon" src="windmill.png" alt="Windmill Panel" />
+    <img id="loading" src="/img/loading.gif" alt="Loading..." />
+    <!-- Information tooltip -->
+    <a class='tooltip info'>
+        <img src='/img/info.png' />
+        <span>The windmill produces electricity, but considerably more than the pvpanel. The
+            windmill is represented by a software agent in the PowerMatcher virtual market.
+            This agent produces a bid/tender on the market offering its production to the rest
+            of the system. By participating in the market it affects the market price. </span>
+    </a>
+    <p class="error">
+    </p>
+    <p>
+        <label>
+            Supply at</label>
+        <span id="time">...</span>
+    </p>
+    <p>
+        <label>
+            Power Output</label>
+        <span id="supply"></span>&nbsp;Watt</p>
+</body>
+</html>

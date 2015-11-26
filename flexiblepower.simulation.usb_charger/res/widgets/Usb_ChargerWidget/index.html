@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+<head>
+    <link rel="stylesheet" href="/css/widget.css" />
+    <link rel="stylesheet" href="style.css" />
+    <!--<script type="text/javascript" src="/js/vendor/jquery.min.js"></script>-->
+    <script type="text/javascript" src="js/vendor/jquery.min.js"></script>
+    <script type="text/javascript" src="/js/widget.js"></script>
+    <script type="text/javascript" src="script.js"></script>
+    <title>Usbcharger Simulation</title>
+    <style>
+        .price-tag
+        {
+            color: #8d9499;
+            font-size: 46px;
+            text-align: center;
+            position: relative;
+            top: -20px;
+        }
+    </style>
+</head>
+<body class="widget">
+    <div style="position: relative">
+        <img src="charger-usb.png" alt="usb-charger" style="position: absolute; height: 24px;
+            top: 4px; left: 10px;">
+        <h5 class="zen-title">
+            Turn on/off usb charger</h5>
+        <a class='tooltip ' style="position: relative; top: -45px; display: block;">
+            <img src='i.png' class='i'>
+            <span>Connect your Smart Phone and have it put out a bid/tender by a software agent
+                on the PowerMatcher market, You can even control it virtually by turning the agent
+                on or off in this graphical user interface. You will notice that another agent on
+                the market will affect the market price and therefore the other consumer in our
+                market: the Ledstrip.</span> </a>
+    </div>
+    <!--<img id="icon" src="Usbcharger.png" alt="Usbcharger Panel" />-->
+    <img id="loading" class="loading" src="/img/loading.gif" alt="Loading..." />
+    <!-- Information tooltip -->
+    <div class="clear">
+    </div>
+    <div class="price-tag">
+        <span id="consumption">0</span><span class="price">&nbsp;W</span>
+    </div>
+    <div class="buttons-wrap">
+        <button class="column-6  button-on" id="set_charger_on_btn">
+            ON</button>
+        <button class="column-6  button-off" id="set_charger_off_btn">
+            OFF</button>
+    </div>
+</body>
+</html>

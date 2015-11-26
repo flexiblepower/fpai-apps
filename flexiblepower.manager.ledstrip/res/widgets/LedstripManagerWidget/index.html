@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+<head>
+    <link rel="stylesheet" href="/css/widget.css" />
+    <link rel="stylesheet" href="style.css" />
+    <script type="text/javascript" src="/js/vendor/jquery.min.js"></script>
+    <!--<script type="text/javascript" src="file:///E|/Zenodys/SMEs/FlexiblePower Suite_files/jquery.min.js"></script>-->
+    <script type="text/javascript" src="/js/widget.js"></script>
+    <script type="text/javascript" src="script.js"></script>
+    <script type="text/javascript" src="jquery.knob.min.js"></script>
+    <title>Ledstrip Simulation Level</title>
+</head>
+<body class="widget">
+    <div style="position: relative">
+        <img src="ledstrip-icon.png" alt="usb-charger" style="position: absolute; height: 24px;
+            top: 5px; left: 10px;">
+        <h5 class="zen-title">
+            Led Strip</h5>
+        <a class='tooltip ' style="position: relative; top: -45px; display: block;">
+            <img src='i.png' class='i'>
+            <span>The ledstrip represents the flexible demand of our modern household. It symbolizes
+                the washing machine or dishwasher that can be turned on whenever renewable energy
+                is available. But it can also represent an electric vehicle that can charge perfectly
+                well at night. The ledstrip is also represented by a software agent in the PowerMatcher
+                virtual market demanding energy; it will turn on a collection of leds depending
+                on the internal PowerMatcher price.</span> </a>
+    </div>
+    <!--<img id="icon" src="Usbcharger.png" alt="Usbcharger Panel" />-->
+    <img id="loading" class="loading" src="/img/loading.gif" alt="Loading..." />
+    <!-- Information tooltip -->
+    <div class="knob-wrap">
+        <span class="display-information bottom">W </span>
+        <input id="powervalue" data-width="90" data-max="6128" data-fgcolor="#4996b6" data-readonly="true"
+            data-linecap="round" data-skin="tron" data-thickness=".2" type="text" value="5"
+            class="led-stripe-watt knob-widget-info">
+    </div>
+    <script>
+        $(document).ready(function () {
+            $(function () {
+                var ledWatts = $('#powervalue');
+                ledWatts.knob();
+                
+                /*
+                if (parseInt(ledWatts.attr('value')) >= parseInt(ledWatts.attr('data-max'))) {
+                    var newMax = Math.ceil(parseInt(ledWatts.attr('data-max')) + parseInt(ledWatts.attr('value')) * 15 / 100);
+                    alert(newMax)
+
+                    ledWatts.trigger('configure', {
+                        "min": 0,
+                        "max": newMax
+                    }).trigger('change');
+
+                }*/
+            });
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!doctype html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" href="/css/widget.css" />
+    <link rel="stylesheet" href="style.css" />
+
+    <script type="text/javascript" src="/js/vendor/jquery.min.js"></script>
+ <script type="text/javascript" src="jquery.knob.min.js"></script>
+    <script type="text/javascript" src="/js/widget.js"></script>
+    <script type="text/javascript" src="script.js"></script>
+    <title>Zenobox Example</title>
+    <style>
+
+        .widget::-webkit-scrollbar-track {
+            /*-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+            */
+            border-radius: 0px;
+            background-color: #F5F5F5;
+        }
+
+        .widget::-webkit-scrollbar {
+            width: 8px;
+            background-color: rgba(0, 0, 0, .54);
+        }
+
+        .widget::-webkit-scrollbar-thumb {
+            border-radius: 10px;
+            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, .3);
+            background-color: #555;
+        }
+
+        .knob-wrap {
+            width: 100px;
+            margin: 0 auto;
+            display: block;
+            position: relative;
+            overflow: hidden
+        }
+
+        .knob-wrap > div {
+            margin: 0 auto;
+            display: block !important;
+        }
+
+        .degrees.center {
+            position: absolute;
+            display: block;
+            color: #5fb300;
+            font-weight: bold;
+            font-size: 27px;
+            width: 54px;
+            text-align: center;
+            z-index: 10;
+            top: 65px;
+            left: 43px;
+            padding-bottom: 3px;
+            border-bottom: 2px solid #5fb300;
+            padding-left: 62px;
+            line-height: 1;
+            /* margin-right: -16px; */
+        }
+
+        .degrees.bottom {
+            position: absolute;
+            display: block;
+            color: #5fb300;
+            font-weight: 100;
+            font-size: 19px;
+            width: 27px;
+            text-align: center;
+            z-index: 10;
+            top: 42px;
+            left: 35px;
+            padding-bottom: 3px;
+            border-top: 2px solid #5fb300;
+            /* padding-left: 62px; */
+            line-height: 1;
+            /* margin-right: -16px; */
+        }
+
+        .temperature {
+            margin-top: 20px !important;
+        }
+
+        .zen-title {
+            display: block;
+            border-bottom: 1px solid #BCBCBC;
+            border-top: 1px solid #BCBCBC;
+            color: #454e57;
+            text-transform: uppercase;
+            padding: 10px 0px;
+            text-align: center;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-top: 8px;
+            margin-bottom: 8px;
+            line-height: 1;
+            font-size: 11px;
+        }
+
+        .zen-title + .buttons-wrap {
+            position: relative;
+            display: block;
+            top: -16px;
+            border-bottom: 2px solid #BCBCBC;
+        }
+
+        .zen-description {
+            margin-top: 8px;
+            position: relative;
+            display: block;
+            line-height: 1.5;
+        }
+
+        button, .button {
+            border-style: solid;
+            border-width: 0;
+            cursor: pointer;
+            font-weight: bold !important;
+            line-height: normal;
+            margin: 0 0;
+            position: relative;
+            text-decoration: none;
+            text-align: center;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            border-radius: 0;
+            display: inline-block;
+            padding: 8px;
+            font-size: 12px;
+            background: #eaecee;
+            color: #667684;
+            border-color: #2b7ea1;
+            transition: background-color 300ms ease-out;
+        }
+
+        .buttons-wrap {
+            margin-top: 60px;
+        }
+
+        button:hover, button:focus, .button:hover, .button:focus {
+        }
+
+        button:hover, button:focus, .button:hover, .button:focus {
+            color: rgba(255, 255, 255, 0.87);
+
+        }
+
+        button.button-on:hover {
+            background-color: #2eab5b;
+        }
+
+        button.button-off:hover {
+            background-color: #d92026;
+        }
+
+        .column-6 {
+        float:left;
+            width: 50%;
+        }
+
+        body:after {
+            opacity: .07;
+            z-index: -1;
+            display: block;
+            position: absolute;
+            content: '';
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url("zenobox-small_off.png") no-repeat fixed center center;
+            -webkit-filter: blur(5px);
+            -moz-filter: blur(5px);
+            -o-filter: blur(5px);
+            -ms-filter: blur(5px);
+
+            -webkit-background-size: cover;
+            -moz-background-size: cover;
+            -o-background-size: cover;
+            background-size: cover;
+        }
+
+        .first_pannel {
+            float: left;
+            margin: 5px;
+
+            padding: 5px;
+            width: 42%;
+            border: 0px solid lightgray;
+            border-radius: 5px;
+        }
+
+        .second_pannel {
+            float: right;
+            margin: 5px;
+            padding: 5px;
+            width: 42%;
+            border: 0px solid lightgray;
+            border-radius: 5px;
+        }
+
+    </style>
+
+
+</head>
+<body class="widget">
+<!--
+        <div style="width:50%;">
+          <img id="icon" src="zenobox-small_on.png" alt="Zenobox" />
+    </div>
+
+        <a class='tooltip info'>
+            <img src='/img/info.png' class="info_icon"/>
+            <span>
+                Temperature measurement / 1-wire / LCD demonstration with ZenoBox
+            </span>
+        </a>
+
+
+
+
+    <img id="loading" src="/img/loading.gif" alt="Loading..." />
+
+    <p class="error"></p>
+    <p><label>Current Temperature:</label><span id="c_temp"></span></p>
+    <p><label>Light:</label><button id="set_light_on_btn">ON</button><button id="set_light_off_btn">OFF</button></p>
+
+-->
+
+<div style="width:50%;">
+    <!-- <img id="icon" src="zenobox-small_on.png" alt="Zenobox" /> -->
+</div>
+
+<!--
+<a class="tooltip info"><img class="info_icon" src="zenodys-logo.png" alt="Zenodys Logo"/>
+            <span class="zen-description">
+                Temperature measurement / 1-wire / LCD demonstration with ZenoBox
+            </span>
+</a>
+-->
+
+<p style="display: none;" class="error"></p>
+
+<div class="offline">
+    <h1 style="font-size: 300%;
+               text-align: center;
+               margin-top: 50px;
+               color: red;">OFFLINE</h1>
+</div>
+
+<div class="online">
+    <div class="first_pannel">
+        <h5 class="zen-title">Current Temperature</h5>
+
+        <div class="knob-wrap" style="height:85px;">
+            <span class="degrees bottom">°C </span>
+            <input id="c_temp" data-width="82" data-fgColor="#5fb300" data-readonly=true data-linecap=round data-skin="tron"
+                   data-thickness=".3" type="text" value="87" class="temperature">
+        </div>
+    </div>
+
+    <div class="second_pannel">
+        <h5 class="zen-title" style="padding-bottom: 15px; padding-top: 15px;">Ligth</h5>
+
+        <div class="buttons-wrap">
+            <button class="column-6  button-on" id="set_light_on_btn">ON</button>
+            <button class="column-6  button-off" id="set_light_off_btn">OFF</button>
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function () {
+        $(function () {
+            $(".temperature").knob({
+                "min":18,
+                "max":38
+            });
+        });
+
+    });
+
+</script>
+</body>
+</html>

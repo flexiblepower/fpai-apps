@@ -1,0 +1,36 @@
+#loading {
+    position: absolute;
+    left: 45%;
+    top: 40%;
+}
+
+#icon {
+    position: absolute;
+    bottom: 0;
+    right: 1em;
+}
+
+.info_icon {
+    width: 24px;
+    height: 24px;
+    right: 1em;
+    float: left;
+    margin-right: 5px;
+}
+
+/*
+#weather {
+    position: absolute;
+    bottom: 0;
+    left: 1em;
+}
+
+#button {
+    display: none;
+    margin-top: 2em;
+}
+*/
+p {
+    height: 1.2em;
+    display: none;
+}

@@ -23,7 +23,7 @@
 		    cache=${workspace}/cnf/cache,\
 		aQute.bnd.deployer.repository.FixedIndexedRepo;\
 		    name=FPAI Core (snapshot);\
-		    locations=http://fpai-ci.sensorlab.tno.nl/builds/fpai-core/development/LATEST/repo/index.xml;\
+		    locations=http://fpai-ci.sensorlab.tno.nl/builds/fpai-core/rexheinsberg/LATEST/repo/index.xml;\
 		    cache=${workspace}/cnf/cache,\
 		aQute.bnd.deployer.repository.FixedIndexedRepo;\
 		    name=PowerMatcher (snapshot);\

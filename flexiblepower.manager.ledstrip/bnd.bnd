@@ -1,0 +1,9 @@
+-buildpath: \
+	${fpai-buildpath},\
+	flexiblepower.ui;version=latest,\
+	flexiblepower.simulation.ledstrip;version=latest
+
+Bundle-Version: 2.0.0.${qualifier}
+Export-Package: org.flexiblepower.ledstrip.manager
+Service-Component: org.flexiblepower.ledstrip.manager.*
+-runee: JavaSE-1.6

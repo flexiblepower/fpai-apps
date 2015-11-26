@@ -1,0 +1,451 @@
+#loading {
+	position: absolute;
+	left: 45%;
+	top: 40%;
+}
+
+#icon {
+	position: absolute;
+	bottom: 30px;
+	right: 4em;
+	height: 120px;
+	z-index: -10;
+}
+
+p {
+	height: 1.2em;
+	line-height: 16px;
+	display: none;
+	z-index: 5;
+	left: 100px;
+	top: 125px;
+	position: absolute;
+}
+
+#powervalue {
+	border:2px solid #000;
+}
+
+/** Tooltip CSS **/
+.i {
+	width: 25px;
+	height: 25px;
+	float:right;
+}
+
+.tooltip {
+    text-decoration: none;
+	outline:none; 
+} 
+
+a.tooltip strong {
+	line-height:30px;
+	}
+a.tooltip:hover {
+	text-decoration:none;
+	}
+a.tooltip span {
+	z-index:10;
+	display:none;
+	line-height:16px;
+	padding:4px 2px;
+	}
+a.tooltip:hover span{
+	display:inline;
+	position:absolute;
+	color:#111;
+	border:1px solid #DCA;
+	background:#ffffff;
+	}
+.callout {
+	z-index:20;
+	position:absolute;
+	border:0;
+	left:-12px;
+	}
+
+/*CSS3 extras*/ 
+a.tooltip span { border-radius:4px; -moz-border-radius: 4px; -webkit-border-radius: 4px; -moz-box-shadow: 5px 5px 8px #CCC; -webkit-box-shadow: 5px 5px 8px #CCC; box-shadow: 5px 5px 8px #CCC; }
+
+a.righttooltip span {
+	margin-left:12px;
+	}
+a.lefttooltip span {
+	margin-right:37px;
+	}
+	
+	
+	
+	/* Zenodys*/
+	/* http://meyerweb.com/eric/tools/css/reset/
+   v2.0b1 | 201101
+   NOTE: WORK IN PROGRESS
+   USE WITH CAUTION AND TEST WITH ABANDON */
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section, summary,
+time, mark, audio, video {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    font-size: 100%;
+    font: inherit;
+    vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+    display: block;
+}
+body {
+    line-height: 1;
+}
+ol, ul {
+    list-style: none;
+}
+blockquote, q {
+    quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+    content: '';
+    content: none;
+}
+
+/* remember to define visible focus styles!
+:focus {
+    outline: ?????;
+} */
+
+/* remember to highlight inserts somehow! */
+ins {
+    text-decoration: none;
+}
+del {
+    text-decoration: line-through;
+}
+
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+/* Standard styles */
+@font-face {
+        font-family: 'DINCond-Bold';
+        src: url('fonts/dincond-bold.eot');
+        src: url('fonts/dincond-bold.eot?#iefix') format('embedded-opentype'),
+                 url('fonts/dincond-bold.woff') format('woff'),
+                 url('fonts/dincond-bold.ttf') format('truetype'),
+                 url('fonts/dincond-bold.svg#dincond-bold') format('svg');
+        font-weight: normal;
+        font-style: normal;
+}
+
+@font-face {
+        font-family: 'HelveticaNeueLTPro-Bd';
+        src: url('fonts/helveticaneueltpro-bd.eot');
+        src: url('fonts/helveticaneueltpro-bd.eot?#iefix') format('embedded-opentype'),
+                 url('fonts/helveticaneueltpro-bd.woff') format('woff'),
+                 url('fonts/helveticaneueltpro-bd.ttf') format('truetype'),
+                 url('fonts/helveticaneueltpro-bd.svg#helveticaneueltpro-bd') format('svg');
+        font-weight: normal;
+        font-style: normal;
+}
+
+body {
+    background: white; /* 373737 26d014 */
+    font-family: 'Tahoma', Arial, Helvetica sans-serif;
+    font-size: 13px;
+    color: #434343;
+}
+
+.clear {
+    clear: both;
+}
+
+.center {
+    margin: 0 auto;
+    width: 960px;
+}
+
+h1, h2, h3 {
+    font-family: 'DINCond-Bold';
+}
+
+.button {
+    display: inline-block;
+    height: 22px;
+    padding: 5px 25px 0 25px;
+    font-size: 16px;
+    color: #fff;
+    background: #ff0000;
+    text-decoration: none;
+    font-family: 'DINCond-Bold';
+    text-transform: uppercase;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+    /* bevel embos */
+    -webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -1px 0 rgba(0,0,0,.25), inset 0 -1px 0 rgba(255,255,255,.2), 0 1px 0 rgba(0,0,0,.1);
+    -moz-box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -1px 0 rgba(0,0,0,.25), inset 0 -1px 0 rgba(255,255,255,.2), 0 1px 0 rgba(0,0,0,.1);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -1px 0 rgba(0,0,0,.25), inset 0 -1px 0 rgba(255,255,255,.2), 0 1px 0 rgba(0,0,0,.1);
+
+}
+.button.large {
+    height: 35px;
+    line-height: 35px;
+    padding: 0 40px 0 40px;
+    font-size: 20px;
+}
+.button:hover {
+    color: #000;
+}
+.button.green {
+    background: rgb(79,217,64); /* Old browsers */
+    background: -moz-linear-gradient(top,  rgba(79,217,64,1) 0%, rgba(32,170,17,1) 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(79,217,64,1)), color-stop(100%,rgba(32,170,17,1))); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  rgba(79,217,64,1) 0%,rgba(32,170,17,1) 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  rgba(79,217,64,1) 0%,rgba(32,170,17,1) 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  rgba(79,217,64,1) 0%,rgba(32,170,17,1) 100%); /* IE10+ */
+    background: linear-gradient(to bottom,  rgba(79,217,64,1) 0%,rgba(32,170,17,1) 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#4fd940', endColorstr='#20aa11',GradientType=0 ); /* IE6-9 */
+}
+.button.grey {
+    background: rgb(47,47,47); /* Old browsers */
+    background: -moz-linear-gradient(top,  rgba(47,47,47,1) 0%, rgba(86,86,86,1) 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(47,47,47,1)), color-stop(100%,rgba(86,86,86,1))); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  rgba(47,47,47,1) 0%,rgba(86,86,86,1) 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  rgba(47,47,47,1) 0%,rgba(86,86,86,1) 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  rgba(47,47,47,1) 0%,rgba(86,86,86,1) 100%); /* IE10+ */
+    background: linear-gradient(to bottom,  rgba(47,47,47,1) 0%,rgba(86,86,86,1) 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#2f2f2f', endColorstr='#565656',GradientType=0 ); /* IE6-9 */
+
+}
+.button.back {
+    background: #131313; /* Old browsers */
+    background: -moz-linear-gradient(top,  #131313 0%, #424242 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#131313), color-stop(100%,#424242)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  #131313 0%,#424242 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  #131313 0%,#424242 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  #131313 0%,#424242 100%); /* IE10+ */
+    background: linear-gradient(to bottom,  #131313 0%,#424242 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#131313', endColorstr='#424242',GradientType=0 ); /* IE6-9 */
+}
+.button.white {
+    color: #3d3d3d;
+    background: rgb(255,255,255); /* Old browsers */
+    background: -moz-linear-gradient(top,  rgba(255,255,255,1) 0%, rgba(235,235,235,1) 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(255,255,255,1)), color-stop(100%,rgba(235,235,235,1))); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  rgba(255,255,255,1) 0%,rgba(235,235,235,1) 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  rgba(255,255,255,1) 0%,rgba(235,235,235,1) 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  rgba(255,255,255,1) 0%,rgba(235,235,235,1) 100%); /* IE10+ */
+    background: linear-gradient(to bottom,  rgba(255,255,255,1) 0%,rgba(235,235,235,1) 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#ebebeb',GradientType=0 ); /* IE6-9 */
+}
+.button.white:hover {
+    color: #24c113;
+}
+.button.back span {
+    display: block;
+    float: left;
+    margin: 5px 4px 0 0;
+    width: 8px;
+    height: 7px;
+    background: url(../img/arrow_left.png) no-repeat;
+}
+.button.back:hover {
+    color: #fff;
+}
+
+/* Widget specific stuff */
+p {
+    line-height: 1em;
+    margin: .5em;
+    clear: both;
+}
+
+p label {
+    display: block;
+    float: left;
+    width: 40%;
+    font-weight: bold;
+}
+
+	
+	 .widget::-webkit-scrollbar-track {
+            /*-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+            */
+            border-radius: 0px;
+            background-color: #F5F5F5;
+        }
+
+        .widget::-webkit-scrollbar {
+            width: 8px;
+            background-color: rgba(0, 0, 0, .54);
+        }
+
+        .widget::-webkit-scrollbar-thumb {
+            border-radius: 10px;
+            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, .3);
+            background-color: #555;
+        }
+
+        .knob-wrap {
+            width: 200px;
+            margin: 0 auto;
+            display: block;
+            position: relative;
+            overflow: hidden
+        }
+
+        .knob-wrap > div {
+            margin: 0 auto;
+            display: block !important;
+        }
+
+        .display-information.center {
+            position: absolute;
+            display: block;
+            color: #4996b6;
+            font-weight: bold;
+            font-size: 27px;
+            width: 54px;
+            text-align: center;
+            z-index: 10;
+            top: 65px;
+            left: 43px;
+            padding-bottom: 3px;
+            border-bottom: 2px solid #4996b6;
+            padding-left: 62px;
+            line-height: 1;
+            /* margin-right: -16px; */
+        }
+
+        .display-information.bottom {
+               position: absolute;
+    display: block;
+    color: #4996b6;
+    font-weight: 100;
+    font-size: 20px;
+    width: 43px;
+    text-align: center;
+    z-index: 10;
+    top: 46px;
+    left: 79px;
+    padding-top: 2px;
+    border-top: 2px solid #4996b6;
+    /* padding-left: 62px; */
+    line-height: 1;
+    /* margin-right: -16px; */
+        }
+
+        .knob-widget-info {
+            margin-top: 20px !important;
+        }
+
+        .zen-title {
+            display: block;
+            border-bottom: 1px solid #D7D7D7;
+            border-top: 1px solid #D7D7D7;
+            color: #454e57;
+            text-transform: uppercase;
+            padding: 10px 0px;
+            text-align: center;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-top: 8px;
+            margin-bottom: 16px;
+            line-height: 1;
+            font-size: 11px;
+        }
+
+        .zen-title + .buttons-wrap {
+            position: relative;
+            display: block;
+            top: -16px;
+            border-bottom: 1px solid #D7D7D7;
+        }
+
+        .zen-description {
+            margin-top: 8px;
+            position: relative;
+            display: block;
+            line-height: 1.5;
+        }
+
+        button, .button {
+            border-style: solid;
+            border-width: 0;
+            cursor: pointer;
+            font-weight: bold !important;
+            line-height: normal;
+            margin: 0 0;
+            position: relative;
+            text-decoration: none;
+            text-align: center;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            border-radius: 0;
+            display: inline-block;
+            padding: 8px;
+            font-size: 12px;
+            background: #eaecee;
+            color: #667684;
+            border-color: #2b7ea1;
+            transition: background-color 300ms ease-out;
+        }
+
+        button:hover, button:focus, .button:hover, .button:focus {
+        }
+
+        button:hover, button:focus, .button:hover, .button:focus {
+            color: rgba(255, 255, 255, 0.87);
+
+        }
+
+        button.button-on:hover {
+            background-color: #2eab5b;
+        }
+
+        button.button-off:hover {
+            background-color: #d92026;
+        }
+
+        .column-6 {
+            float: left;
+            width: 50%;
+        }
+
+        body:after {
+            opacity: .07;
+            z-index: -1;
+            display: block;
+            position: absolute;
+            content: '';
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url("zenobox-small_off.png") no-repeat fixed center center;
+            -webkit-filter: blur(5px);
+            -moz-filter: blur(5px);
+            -o-filter: blur(5px);
+            -ms-filter: blur(5px);
+            -webkit-background-size: cover;
+            -moz-background-size: cover;
+            -o-background-size: cover;
+            background-size: cover;
+        }
+
+body{ overflow:hidden}

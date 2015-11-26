@@ -3,12 +3,11 @@ package nl.tno.fpai.demo.scenario.impl;
 import java.util.Locale;
 import java.util.Set;
 
-import nl.tno.fpai.demo.scenario.ScenarioManager;
-
 import org.flexiblepower.ui.Widget;
 
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Reference;
+import nl.tno.fpai.demo.scenario.ScenarioManager;
 
 @Component(properties = "widget.ranking=999999")
 public class ScenarioWidget implements Widget {

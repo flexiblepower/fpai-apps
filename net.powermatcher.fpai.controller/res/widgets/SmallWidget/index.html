@@ -1,31 +1,47 @@
 <!doctype html>
 <html>
 <head>
-	<link rel="stylesheet" href="/css/widget.css" />
-	<link rel="stylesheet" href="/css/tooltip.css" />
-	<link rel="stylesheet" href="style.css" />
-	<script type="text/javascript" src="/js/vendor/jquery.min.js"></script>
-	<script type="text/javascript" src="/js/widget.js"></script>
-	<script type="text/javascript" src="script.js"></script>
-	<title>PowerMatcher Controller</title>
+    <link rel="stylesheet" href="/css/widget.css" />
+    <link rel="stylesheet" href="/css/tooltip.css" />
+    <link rel="stylesheet" href="style.css" />
+    <script type="text/javascript" src="/js/vendor/jquery.min.js"></script>
+    <script type="text/javascript" src="/js/widget.js"></script>
+    <script type="text/javascript" src="script.js"></script>
+    <title>PowerMatcher Controller</title>
+    <style>
+        .price-tag
+        {
+            color: #8d9499;
+            font-size: 46px;
+            text-align: center;
+        }
+    </style>
 </head>
 <body class="widget">
-	<img id="icon" src="pm.png" alt="PowerMatcher" />
-	<a class='tooltip info' href="http://fpai-ci.sensorlab.tno.nl/builds/powermatcher-documentation/master/html/" target="_blank">
-		<img src='/img/info.png' />
-		<span>
-			This widget shows background information of the PowerMatcher. Click to go to the documentation.
-		</span>
-	</a>
-	<img id="loading" src="/img/loading.gif" alt="Loading..." />
-
-	<p class="price"><label>Market Price</label>&euro; <span id="marketprice">&nbsp;</span></p>
-	<p class="time"><label>Updated on</label> <span id="timestamp">&nbsp;</span></p>
-	<div id="agents">
-		<!--
+    <img id="icon" src="pm.png" alt="PowerMatcher" />
+    <a class='tooltip info'>
+        <img src='/img/info.png' />
+        <span>The PowerMatcher is an open source smart grid coordination mechanism. It balances
+            distributed energy resources (DER) and (flexible) loads. It can also be herded among
+            Demand Response systems, but with a radical new vision. A vision that we call Smart
+            Transactive Energy. </span></a>
+    <img id="loading" src="/img/loading.gif" alt="Loading..." />
+    <p class="price">
+        <label>
+            Internal PM Price:</label>&euro; <span id="marketprice">&nbsp;</span></p>
+    <p class="time">
+        <label>
+            Updated on</label>
+        <span id="timestamp">&nbsp;</span>
+    </p>
+    <div class="price-tag">
+        <span id="agents">0,00
+            <!--
 		<p><label>$type</label> <span>$demand</span></p> *
 		 -->
-	</div>
-	<p class="error"></p>
+        </span><span class="price">&euro;</span>
+    </div>
+    <p class="error">
+    </p>
 </body>
 </html>

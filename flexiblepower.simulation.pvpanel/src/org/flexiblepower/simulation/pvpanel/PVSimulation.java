@@ -3,6 +3,7 @@ package org.flexiblepower.simulation.pvpanel;
 import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 
 import javax.measure.Measurable;
@@ -10,6 +11,11 @@ import javax.measure.Measure;
 import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.flexiblepower.context.FlexiblePowerContext;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.observation.Observation;
@@ -32,9 +38,10 @@ import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceControlParameters>
-                                                                                               implements
-                                                                                               UncontrollableDriver,
-                                                                                               Runnable {
+                          implements
+                          UncontrollableDriver,
+                          Runnable,
+                          MqttCallback {
 
     public final static class PowerStateImpl implements PowerState {
         private final Measurable<Power> demand;
@@ -68,26 +75,24 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
 
     @Meta.OCD
     interface Config {
-        @Meta.AD(deflt = "5", description = "Delay between updates will be send out in seconds")
-        int updateDelay();
-
-        @Meta.AD(deflt = "0", description = "Generated Power when inverter is in stand by")
-        double powerWhenStandBy();
-
-        @Meta.AD(deflt = "200", description = "Generated Power when cloudy weather")
-        int powerWhenCloudy();
-
-        @Meta.AD(deflt = "1500", description = "Generated Power when sunny weather")
-        int powerWhenSunny();
+        @Meta.AD(deflt = "1", description = "Delay between updates will be send out in seconds")
+            int updateDelay();
 
         @Meta.AD(deflt = "pvpanel", description = "Resource identifier")
-        String resourceId();
+               String resourceId();
+
+        @Meta.AD(deflt = "tcp://130.211.82.48:1883", description = "URL to the MQTT broker")
+               String brokerUrl();
+
+        @Meta.AD(deflt = "/FpaiPvPanelRequest", description = "Mqtt request topic to zenobox")
+               String panelMqttRequestTopic();
+
+        @Meta.AD(deflt = "/FpaiPvPanelResponse", description = "Mqtt response topic to zenobox")
+               String panelMqttResponseTopic();
     }
 
-    private double demand = -0.01;
-    private double cloudy = 200;
-    private double sunny = 1500;
-    private volatile Weather weather = Weather.moon;
+    private MqttClient mqttClient;
+    public double demand = -0.01;
     private int updateDelay = 0;
 
     private PVWidget widget;
@@ -96,13 +101,33 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
     private Config config;
     private SimpleObservationProvider<PowerState> observationProvider;
 
+    @Override
+    public synchronized void run() {
+        try {
+
+            publishState(getCurrentState());
+            observationProvider.publish(Observation.create(context.currentTime(),
+                                                           getCurrentState()));
+
+        } catch (Exception e) {
+            logger.error("Error while running PVSimulation", e);
+        }
+    }
+
     @Activate
-    public void activate(BundleContext bundleContext, Map<String, Object> properties) {
+    public void activate(BundleContext bundleContext, Map<String, Object> properties) throws MqttException {
+
         try {
             config = Configurable.createConfigurable(Config.class, properties);
             updateDelay = config.updateDelay();
-            cloudy = config.powerWhenCloudy();
-            sunny = config.powerWhenSunny();
+
+            if (mqttClient == null) {
+                mqttClient = new MqttClient(config.brokerUrl(), UUID.randomUUID().toString());
+                mqttClient.setCallback(this);
+                mqttClient.connect();
+
+                mqttClient.subscribe(config.panelMqttResponseTopic());
+            }
 
             observationProvider = SimpleObservationProvider.create(this, PowerState.class)
                                                            .observationOf("simulated pv")
@@ -118,6 +143,35 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
             throw ex;
         }
     }
+
+    // *************MQTT CALLBACK METHODS START**********************
+    @Override
+    public void connectionLost(Throwable arg0) {
+        try {
+            if (!mqttClient.isConnected()) {
+                mqttClient.connect();
+                mqttClient.subscribe(config.panelMqttResponseTopic());
+            }
+        } catch (MqttException e) {
+
+        }
+    }
+
+    @Override
+    public void deliveryComplete(IMqttDeliveryToken arg0) {
+
+    }
+
+    @Override
+    public void messageArrived(String arg0, MqttMessage arg1) throws Exception {
+
+        if (arg0.equals(config.panelMqttResponseTopic())) {
+            logger.info("ZENODYS PV : " + arg1.toString());
+            demand = -5000 * Double.valueOf(arg1.toString());
+
+        }
+    }
+    // *************MQTT CALLBACK METHODS END**********************
 
     @Deactivate
     public void deactivate() {
@@ -140,32 +194,6 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
     @Reference
     public void setContext(FlexiblePowerContext context) {
         this.context = context;
-    }
-
-    @Override
-    public synchronized void run() {
-        try {
-            demand = -(weather.getProduction(Math.random(), cloudy, sunny));
-            logger.info("new demand has been set to: {}", demand);
-
-            if (demand < 0.1 && demand > -0.1 && config.powerWhenStandBy() > 0) {
-                demand = config.powerWhenStandBy();
-            }
-
-            publishState(getCurrentState());
-            observationProvider.publish(Observation.create(context.currentTime(), getCurrentState()));
-        } catch (Exception e) {
-            logger.error("Error while running PVSimulation", e);
-        }
-    }
-
-    public Weather getWeather() {
-        return weather;
-    }
-
-    public void setWeather(Weather weather) {
-        this.weather = weather;
-        run();
     }
 
     @Override

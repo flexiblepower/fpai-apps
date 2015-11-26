@@ -1,0 +1,4 @@
+-buildpath: ${fpai-buildpath}
+Bundle-Version: 1.1.0.${qualifier}
+Service-Component: *
+Export-Package:  org.flexiblepower.heatpump.manager.daikin

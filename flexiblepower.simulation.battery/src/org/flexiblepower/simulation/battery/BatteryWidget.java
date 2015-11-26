@@ -8,6 +8,12 @@ import org.flexiblepower.ral.drivers.battery.BatteryMode;
 import org.flexiblepower.ral.drivers.battery.BatteryState;
 import org.flexiblepower.ui.Widget;
 
+/**
+ * 
+ * @author bafkrstulovic
+ * 
+ */
+
 public class BatteryWidget implements Widget {
     public static class Update {
         private final int soc;

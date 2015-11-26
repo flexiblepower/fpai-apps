@@ -5,6 +5,7 @@ import static javax.measure.unit.SI.WATT;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 
 import javax.measure.Measurable;
@@ -14,6 +15,11 @@ import javax.measure.quantity.Energy;
 import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.flexiblepower.context.FlexiblePowerContext;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.ral.drivers.battery.BatteryControlParameters;
@@ -38,16 +44,17 @@ import aQute.bnd.annotation.metatype.Meta;
 
 /**
  * TODO Uit BatteryState weghalen van de charge en discharge efficiency
- *
- * @author waaijbdvd
- *
+ * 
+ * @author bafkrstulovic
+ * 
  */
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 public class BatterySimulation
                               extends AbstractResourceDriver<BatteryState, BatteryControlParameters>
                                                                                                     implements
                                                                                                     BatteryDriver,
-                                                                                                    Runnable {
+                                                                                                    Runnable,
+                                                                                                    MqttCallback {
 
     interface Config {
         @Meta.AD(deflt = "5", description = "Interval between state updates [s]")
@@ -73,6 +80,15 @@ public class BatterySimulation
 
         @Meta.AD(deflt = "50", description = "Self discharge power [W]")
         long selfDischargePower();
+
+        @Meta.AD(deflt = "tcp://130.211.82.48:1883", description = "URL to the MQTT broker")
+        String brokerUrl();
+
+        @Meta.AD(deflt = "/FpaiBatteryRequest", description = "Mqtt request topic to zenobox")
+        String batteryMqttRequestTopic();
+
+        @Meta.AD(deflt = "/FpaiBatteryResponse", description = "Mqtt response topic to zenobox")
+        String batteryMqttResponseTopic();
     }
 
     class State implements BatteryState {
@@ -161,6 +177,7 @@ public class BatterySimulation
     private Measurable<Duration> minTimeOn;
     private Measurable<Duration> minTimeOff;
 
+    private MqttClient mqttClient;
     private BatteryMode mode;
     private Date lastUpdatedTime;
     private Config configuration;
@@ -177,7 +194,7 @@ public class BatterySimulation
     @Reference
     public void setContext(FlexiblePowerContext context) {
         this.context = context;
-        lastUpdatedTime = context.currentTime();
+        // lastUpdatedTime = context.currentTime();
     }
 
     @Activate
@@ -194,6 +211,14 @@ public class BatterySimulation
             minTimeOff = Measure.valueOf(0, SI.SECOND);
             mode = BatteryMode.IDLE;
 
+            if (mqttClient == null) {
+                mqttClient = new MqttClient(configuration.brokerUrl(), UUID.randomUUID().toString());
+                mqttClient.setCallback(this);
+                mqttClient.connect();
+
+                mqttClient.subscribe(configuration.batteryMqttResponseTopic());
+            }
+
             publishState(new State(stateOfCharge, mode));
 
             scheduledFuture = this.context.scheduleAtFixedRate(this,
@@ -209,6 +234,77 @@ public class BatterySimulation
             throw ex;
         }
     }
+
+    // *************MQTT CALLBACK METHODS START**********************
+    @Override
+    public void connectionLost(Throwable arg0) {
+        try {
+            if (!mqttClient.isConnected()) {
+                mqttClient.connect();
+                mqttClient.subscribe(configuration.batteryMqttResponseTopic());
+            }
+        } catch (MqttException e) {
+
+        }
+    }
+
+    @Override
+    public void deliveryComplete(IMqttDeliveryToken arg0) {
+
+    }
+
+    @Override
+    public void messageArrived(String arg0, MqttMessage arg1) throws Exception {
+
+        if (arg0.equals(configuration.batteryMqttResponseTopic())) {
+            logger.info("ZENODYS BAT : " + arg1.toString());
+
+            if (lastUpdatedTime == null) {
+                lastUpdatedTime = context.currentTime();
+            }
+
+            Date currentTime = context.currentTime();
+            double durationSinceLastUpdate = (currentTime.getTime() - lastUpdatedTime.getTime()) / 1000.0; // in seconds
+            lastUpdatedTime = currentTime;
+
+            double dd = Double.valueOf(arg1.toString().replace(',', '.'));
+            double deltaI = dd - 0.2;
+            double deltaP = 0.0033 * durationSinceLastUpdate * deltaI * 5;
+
+            // Mode handling
+            if (dd <= 0.18) {
+                mode = BatteryMode.DISCHARGE;
+            } else if (dd > 0.18 && dd <= 0.23) {
+                mode = BatteryMode.IDLE;
+            } else {
+                mode = BatteryMode.CHARGE;
+            }
+
+            // Je full
+            if (stateOfCharge >= 1.0) {
+                if (deltaP < 0) {
+                    stateOfCharge = stateOfCharge + deltaP;
+                } else {
+                    mode = BatteryMode.IDLE;
+                }
+
+                // Je empty
+            } else if (stateOfCharge <= 0.0) {
+                if (deltaP > 0) {
+                    stateOfCharge = stateOfCharge + deltaP;
+                    mode = BatteryMode.CHARGE;
+                } else {
+                    mode = BatteryMode.IDLE;
+                }
+
+                // Je vmes
+            } else {
+                stateOfCharge = stateOfCharge + deltaP;
+            }
+        }
+    }
+
+    // *************MQTT CALLBACK METHODS END**********************
 
     @Deactivate
     public void deactivate() {
@@ -244,57 +340,14 @@ public class BatterySimulation
 
     @Override
     public synchronized void run() {
-        Date currentTime = context.currentTime();
-        double durationSinceLastUpdate = (currentTime.getTime() - lastUpdatedTime.getTime()) / 1000.0; // in seconds
-        lastUpdatedTime = currentTime;
-        double amountOfChargeInWatt = 0;
-
-        logger.debug("Battery simulation step. Mode={} Timestep={}s", mode, durationSinceLastUpdate);
-        if (durationSinceLastUpdate > 0) {
-            switch (mode) {
-            case IDLE:
-                amountOfChargeInWatt = 0;
-                break;
-            case CHARGE:
-                amountOfChargeInWatt = chargeSpeedInWatt.doubleValue(WATT);
-                break;
-            case DISCHARGE:
-                amountOfChargeInWatt = -dischargeSpeedInWatt.doubleValue(WATT);
-                break;
-            default:
-                throw new AssertionError();
-            }
-            // always also self discharge
-            double changeInW = amountOfChargeInWatt - selfDischargeSpeedInWatt.doubleValue(WATT);
-            double changeInWS = changeInW * durationSinceLastUpdate;
-            double changeinKWH = changeInWS / (1000.0 * 3600.0);
-
-            double newStateOfCharge = stateOfCharge + (changeinKWH / totalCapacityInKWh.doubleValue(KWH));
-
-            // check if the stateOfCharge is not outside the limits of the battery
-            if (newStateOfCharge < 0.0) {
-                newStateOfCharge = 0.0;
-                // indicate that battery has stopped discharging
-                mode = BatteryMode.IDLE;
-            } else {
-                if (newStateOfCharge > 1.0) {
-                    newStateOfCharge = 1.0;
-                    // indicate that battery has stopped charging
-                    mode = BatteryMode.IDLE;
-                }
-            }
-
-            State state = new State(newStateOfCharge, mode);
-            logger.debug("Publishing state {}", state);
-            publishState(state);
-
-            stateOfCharge = newStateOfCharge;
-        }
+        State state = new State(stateOfCharge, mode);
+        logger.debug("Publishing state {}", state);
+        publishState(state);
     }
 
     @Override
     protected void handleControlParameters(BatteryControlParameters controlParameters) {
-        mode = controlParameters.getMode();
+        // mode = controlParameters.getMode();
     }
 
     protected State getCurrentState() {

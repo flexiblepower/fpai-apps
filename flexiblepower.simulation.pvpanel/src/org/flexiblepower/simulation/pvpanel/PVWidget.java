@@ -45,24 +45,12 @@ public class PVWidget implements Widget {
     public Update update() {
         PowerStateImpl state = simulation.getCurrentState();
         return new Update(FORMATTER.format(state.getTime()),
-                          Integer.toString((int) -state.getCurrentUsage().doubleValue(SI.WATT)),
-                          simulation.getWeather().toString());
+                          Integer.toString((int) state.getCurrentUsage().doubleValue(SI.WATT)),
+                          String.valueOf(simulation.demand));
     }
 
     public Update changeWeather() {
-        Weather oldWeather = simulation.getWeather();
-        Weather newWeather = null;
-        switch (oldWeather) {
-        case moon:
-            newWeather = Weather.clouds;
-            break;
-        case clouds:
-            newWeather = Weather.sun;
-            break;
-        default:
-            newWeather = Weather.moon;
-        }
-        simulation.setWeather(newWeather);
+
         return update();
     }
 

@@ -1,23 +1,23 @@
-$(window).load(function() {
-	w = new widget("update", 1000, function(data) {
-		$("#loading").detach();
-		$(".error").hide();
-		$("#marketprice").text(data.price);
-		$("#timestamp").text(data.timestamp);
+$(window).load(function () {
+    w = new widget("update", 1000, function (data) {
+        $("#loading").detach();
+        $(".error").hide();
+        $("#marketprice").text(data.price);
+        $("#timestamp").text(data.timestamp);
 
-		$("#agents").empty();
+        $("#agents").text(data.price);
 
-		for(id in data.demands){
-			$("#agents").append("<p><label>"+ id +"</label> <span>" + data.demands[id] + "</span></p>");
-		}
+        /*for(id in data.demands){
+        $("#agents").append("<p><label>"+ id +"</label> <span>" + data.demands[id] + "</span></p>");
+        }
+        */
+        $("p").show();
+    });
 
-		$("p").show();
-	});
-	
-	w.error = function(msg) {
-		$("#loading").detach();
-		// $("p").hide();
-		$(".error").show();
-		$(".error").text(msg);
-	}
+    w.error = function (msg) {
+        $("#loading").detach();
+        // $("p").hide();
+        $(".error").show();
+        $(".error").text(msg);
+    }
 });

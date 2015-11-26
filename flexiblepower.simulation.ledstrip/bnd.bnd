@@ -1,0 +1,8 @@
+-buildpath: \
+	${fpai-buildpath},\
+	org.eclipse.paho.client.mqttv3
+Service-Component: *
+Bundle-Version: 1.0.0.${qualifier}
+Export-Package: org.flexiblepower.driver.ledstrip
+Private-Package:  org.flexiblepower.simulation.ledstrip
+Require-Capability: flexiblepower.context;filter:="(runtime=fpai)"
