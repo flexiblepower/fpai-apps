@@ -270,7 +270,7 @@ public class BatterySimulation
             lastUpdatedTime = currentTime;
 
             // Split message into SoC and Mode
-            String[] parts = arg1.toString().split("|");
+            String[] parts = arg1.toString().split(";");
             String partSoc = parts[0];
             String partMode = parts[1];
             logger.info("Incoming Battery SoC:" + partSoc + "Battery Mode:" + partMode);
@@ -293,7 +293,7 @@ public class BatterySimulation
 
         }
     }
-    // *************MQTT CALLBACK METHODS END**********************
+          // *************MQTT CALLBACK METHODS END**********************
 
     State getCurrentState() {
         return currentState;

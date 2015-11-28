@@ -34,7 +34,9 @@
 	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.windmill)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.manager.dishwasher.miele)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.profile.timeshifter)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.usb_charger)'
+	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.usb_charger)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.heatpump.daikin)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.manager.heatpump.daikin)'
 	
 -resolve: auto
 -runbundles: \
@@ -47,6 +49,7 @@
 	flexiblepower.manager.battery;version=snapshot,\
 	flexiblepower.manager.dishwasher.miele;version=snapshot,\
 	flexiblepower.manager.generator;version=snapshot,\
+	flexiblepower.manager.heatpump.daikin;version=snapshot,\
 	flexiblepower.manager.ledstrip;version=snapshot,\
 	flexiblepower.manager.uncontrolled;version=snapshot,\
 	flexiblepower.ral;version='[1.0.0,1.0.1)',\
@@ -57,6 +60,7 @@
 	flexiblepower.simulation.battery;version=snapshot,\
 	flexiblepower.simulation.dishwasher;version=snapshot,\
 	flexiblepower.simulation.generator;version=snapshot,\
+	flexiblepower.simulation.heatpump.daikin;version=snapshot,\
 	flexiblepower.simulation.ledstrip;version=snapshot,\
 	flexiblepower.simulation.profile.timeshifter;version=snapshot,\
 	flexiblepower.simulation.pvpanel;version=snapshot,\

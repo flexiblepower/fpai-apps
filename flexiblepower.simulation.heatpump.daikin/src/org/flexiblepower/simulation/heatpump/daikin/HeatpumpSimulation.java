@@ -35,7 +35,7 @@ import aQute.bnd.annotation.metatype.Meta;
 
 @Port(name = "manager", accepts = HeatpumpControlParameters.class, sends = HeatpumpState.class)
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
-public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, HeatpumpControlParameters> implements
+public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, HeatpumpControlParameters>implements
                                 Runnable,
                                 MqttCallback {
     private static final Logger logger = LoggerFactory.getLogger(HeatpumpSimulation.class);
@@ -47,10 +47,10 @@ public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, He
         @Meta.AD(deflt = "DaikinHeatpump", description = "Resource identifier")
                String resourceId();
 
-        @Meta.AD(deflt = "initialTemperature", description = "initial temperature")
+        @Meta.AD(deflt = "20.2", description = "initial temperature")
                double initialTemperature();
 
-        @Meta.AD(deflt = "tcp://192.168.1.9:1883", description = "URL to the MQTT broker")
+        @Meta.AD(deflt = "tcp://130.211.82.48:1883", description = "URL to the MQTT broker")
                String brokerUrl();
 
         @Meta.AD(deflt = "1", description = "Frequency with which updates will be sent out in seconds")

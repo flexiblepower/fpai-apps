@@ -35,3 +35,4 @@ deploy
 hosted.html
 
 .recommenders/
+*.lck

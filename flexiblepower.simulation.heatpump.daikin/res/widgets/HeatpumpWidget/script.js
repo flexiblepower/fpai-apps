@@ -1,4 +1,5 @@
 $(window).load(function() {
+    alert('aaa');
 	w = new widget("update", 1000, function(data) {
 		$("#loading").detach();
 		$("p").show();
