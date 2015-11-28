@@ -5,4 +5,4 @@
 
 Service-Component: *
 Bundle-Version:  2.0.0.${qualifier}
-Private-Package: org.flexiblepower.simulation.battery
+Private-Package: org.flexiblepower.simulation.heatpump.daikin

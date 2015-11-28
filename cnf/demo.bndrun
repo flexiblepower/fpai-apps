@@ -3,7 +3,7 @@
 -runvm: -Dlogback.configurationFile=../cnf/logback.xml
 -resolve: auto
 
--runrequires:  \
+-runrequires: \
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.configadmin)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.eventadmin)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.http.jetty)',\
@@ -15,44 +15,40 @@
 	osgi.identity;filter:='(osgi.identity=flexiblepower.demo.scenario)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.runtime)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.manager.battery)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.manager.dishwasher.miele)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.manager.uncontrolled)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.battery)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.dishwasher)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.pvpanel)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.ui.connectionspage)',\
 	osgi.identity;filter:='(osgi.identity=net.powermatcher.fpai.controller)',\
 	osgi.identity;filter:='(osgi.identity=net.powermatcher.visualisation)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.uncontrolled)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.protocol.miele.gateway)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.driver.refrigerator.miele)'
+	osgi.identity;filter:='(osgi.identity=flexiblepower.manager.heatpump.daikin)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.heatpump.daikin)'
 
--runbundles:  \
+-runbundles: \
 	biz.aQute.bnd.annotation;version='[2.4.0,2.4.1)',\
 	ch.qos.logback.classic;version='[1.1.2,1.1.3)',\
 	ch.qos.logback.core;version='[1.1.2,1.1.3)',\
 	com.google.gson;version='[2.2.4,2.2.5)',\
 	flexiblepower.api;version='[3.0.0,3.0.1)',\
-	flexiblepower.demo.scenario;version=latest,\
-	flexiblepower.driver.refrigerator.miele;version=latest,\
-	flexiblepower.manager.battery;version=latest,\
-	flexiblepower.manager.dishwasher.miele;version=latest,\
-	flexiblepower.manager.uncontrolled;version=latest,\
-	flexiblepower.protocol.miele.gateway;version=latest,\
+	flexiblepower.demo.scenario;version=snapshot,\
+	flexiblepower.manager.battery;version=snapshot,\
+	flexiblepower.manager.heatpump.daikin;version=snapshot,\
+	flexiblepower.manager.uncontrolled;version=snapshot,\
 	flexiblepower.ral;version='[1.0.0,1.0.1)',\
 	flexiblepower.ral.efi;version='[1.0.0,1.0.1)',\
 	flexiblepower.ral.efi.utils;version='[1.0.0,1.0.1)',\
 	flexiblepower.ral.ext;version='[1.0.0,1.0.1)',\
 	flexiblepower.runtime;version='[3.0.0,3.0.1)',\
-	flexiblepower.simulation.battery;version=latest,\
-	flexiblepower.simulation.dishwasher;version=latest,\
-	flexiblepower.simulation.pvpanel;version=latest,\
-	flexiblepower.simulation.uncontrolled;version=latest,\
+	flexiblepower.simulation.battery;version=snapshot,\
+	flexiblepower.simulation.heatpump.daikin;version=snapshot,\
+	flexiblepower.simulation.pvpanel;version=snapshot,\
+	flexiblepower.simulation.uncontrolled;version=snapshot,\
 	flexiblepower.ui;version='[1.2.0,1.2.1)',\
 	flexiblepower.ui.connectionspage;version='[1.0.0,1.0.1)',\
 	net.powermatcher.api;version='[2.0.1,2.0.2)',\
 	net.powermatcher.core;version='[2.0.1,2.0.2)',\
-	net.powermatcher.fpai.controller;version=latest,\
+	net.powermatcher.fpai.controller;version=snapshot,\
 	net.powermatcher.runtime;version='[2.0.1,2.0.2)',\
 	net.powermatcher.visualisation;version='[2.0.1,2.0.2)',\
 	org.apache.felix.configadmin;version='[1.8.0,1.8.1)',\
@@ -65,5 +61,6 @@
 	org.apache.felix.scr;version='[1.8.2,1.8.3)',\
 	org.apache.felix.webconsole;version='[4.2.2,4.2.3)',\
 	org.apache.felix.webconsole.plugins.ds;version='[1.0.0,1.0.1)',\
+	org.eclipse.paho.client.mqttv3;version='[1.0.2,1.0.3)',\
 	org.slf4j.osgi-over-slf4j;version='[1.7.7,1.7.8)',\
 	slf4j.api;version='[1.7.7,1.7.8)'

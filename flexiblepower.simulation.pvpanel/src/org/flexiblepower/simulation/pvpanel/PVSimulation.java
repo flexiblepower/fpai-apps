@@ -84,11 +84,11 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
         @Meta.AD(deflt = "tcp://130.211.82.48:1883", description = "URL to the MQTT broker")
                String brokerUrl();
 
-        @Meta.AD(deflt = "/FpaiPvPanelRequest", description = "Mqtt request topic to zenobox")
-               String panelMqttRequestTopic();
+        @Meta.AD(deflt = "/HeinsbergPvPanelRequest", description = "Mqtt request topic to zenobox")
+               String heinsbergPvPanelRequest();
 
-        @Meta.AD(deflt = "/FpaiPvPanelResponse", description = "Mqtt response topic to zenobox")
-               String panelMqttResponseTopic();
+        @Meta.AD(deflt = "/HeinsbergPvPanelResponse", description = "Mqtt response topic to zenobox")
+               String heinsbergPvPanelResponse();
     }
 
     private MqttClient mqttClient;
@@ -126,7 +126,7 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
                 mqttClient.setCallback(this);
                 mqttClient.connect();
 
-                mqttClient.subscribe(config.panelMqttResponseTopic());
+                mqttClient.subscribe(config.heinsbergPvPanelResponse());
             }
 
             observationProvider = SimpleObservationProvider.create(this, PowerState.class)
@@ -150,7 +150,7 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
         try {
             if (!mqttClient.isConnected()) {
                 mqttClient.connect();
-                mqttClient.subscribe(config.panelMqttResponseTopic());
+                mqttClient.subscribe(config.heinsbergPvPanelResponse());
             }
         } catch (MqttException e) {
 
@@ -165,7 +165,7 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
     @Override
     public void messageArrived(String arg0, MqttMessage arg1) throws Exception {
 
-        if (arg0.equals(config.panelMqttResponseTopic())) {
+        if (arg0.equals(config.heinsbergPvPanelResponse())) {
             logger.info("ZENODYS PV : " + arg1.toString());
             demand = -5000 * Double.valueOf(arg1.toString());
 
