@@ -7,6 +7,8 @@ import javax.measure.quantity.Temperature;
 
 import org.flexiblepower.ral.drivers.heatpump.HeatpumpState;
 import org.flexiblepower.ui.Widget;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HeatpumpWidget implements Widget {
     public static class Update {
@@ -27,6 +29,7 @@ public class HeatpumpWidget implements Widget {
         }
     }
 
+    private static final Logger logger = LoggerFactory.getLogger(HeatpumpSimulation.class);
     private final HeatpumpSimulation simulation;
 
     public HeatpumpWidget(HeatpumpSimulation simulation) {
@@ -44,7 +47,8 @@ public class HeatpumpWidget implements Widget {
         if (mode = false) {
             dispMode = "Idle";
         }
-
+        logger.info("temp : " + temp);
+        logger.info("dMode : " + dispMode);
         return new Update(temp, dispMode);
     }
 

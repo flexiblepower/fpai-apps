@@ -21,7 +21,9 @@ import org.flexiblepower.ral.drivers.heatpump.HeatpumpControlParameters;
 import org.flexiblepower.ral.drivers.heatpump.HeatpumpState;
 import org.flexiblepower.ral.ext.AbstractResourceDriver;
 import org.flexiblepower.simulation.heatpump.daikin.HeatpumpSimulation.Config;
+import org.flexiblepower.ui.Widget;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,41 +37,31 @@ import aQute.bnd.annotation.metatype.Meta;
 
 @Port(name = "manager", accepts = HeatpumpControlParameters.class, sends = HeatpumpState.class)
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
-public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, HeatpumpControlParameters>implements
-                                Runnable,
-                                MqttCallback {
-    private static final Logger logger = LoggerFactory.getLogger(HeatpumpSimulation.class);
-
+public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, HeatpumpControlParameters> implements
+                                                                                                        Runnable,
+                                                                                                        MqttCallback {
     private static final String Boolean = null;
 
     @Meta.OCD
     interface Config {
         @Meta.AD(deflt = "DaikinHeatpump", description = "Resource identifier")
-               String resourceId();
+        String resourceId();
 
         @Meta.AD(deflt = "20.2", description = "initial temperature")
-               double initialTemperature();
+        double initialTemperature();
 
         @Meta.AD(deflt = "tcp://130.211.82.48:1883", description = "URL to the MQTT broker")
-               String brokerUrl();
+        String brokerUrl();
 
         @Meta.AD(deflt = "1", description = "Frequency with which updates will be sent out in seconds")
-            int updateFrequency();
+        int updateFrequency();
 
         @Meta.AD(deflt = "/HeinsbergHeatpumpModeRequest", description = "Mqtt request topic to zenobox")
-               String heinsbergHeatpumpModeRequest();
+        String heinsbergHeatpumpModeRequest();
 
         @Meta.AD(deflt = "/HeinsbergHeatpumpResponse", description = "Mqtt response topic to zenobox")
-               String heinsbergHeatpumpResponse();
+        String heinsbergHeatpumpResponse();
     }
-
-    private MqttClient mqttClient;
-
-    private ScheduledFuture<?> scheduledFuture;
-    private Config config;
-    private HeatpumpControlParameters controlParameterQueue = null;
-
-    private volatile State currentState;
 
     class State implements HeatpumpState {
         private final boolean isConnected;
@@ -116,6 +108,19 @@ public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, He
         }
 
     }
+
+    private static final Logger logger = LoggerFactory.getLogger(HeatpumpSimulation.class);
+    private HeatpumpControlParameters controlParameterQueue = null;
+
+    private MqttClient mqttClient;
+    private Config config;
+
+    private volatile State currentState;
+    private ScheduledFuture<?> scheduledFuture;
+
+    private ServiceRegistration<Widget> widgetRegistration;
+    private HeatpumpWidget widget;
+    private FlexiblePowerContext fpContext;
 
     // *************MQTT CALLBACK METHODS START**********************
     @Override
@@ -214,12 +219,16 @@ public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, He
 
                 mqttClient.subscribe(config.heinsbergHeatpumpResponse());
             }
+
+            Measurable<Temperature> initTemp = Measure.valueOf(config.initialTemperature(), null);
+            publishState(new State(true, initTemp, null, null, false));
+
             scheduledFuture = fpContext.scheduleAtFixedRate(this,
                                                             Measure.valueOf(0, SI.SECOND),
                                                             Measure.valueOf(config.updateFrequency(), SI.SECOND));
 
-            Measurable<Temperature> initTemp = Measure.valueOf(config.initialTemperature(), null);
-            publishState(new State(true, initTemp, null, null, false));
+            widget = new HeatpumpWidget(this);
+            widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
 
         } catch (RuntimeException ex) {
             logger.error("Error during initialization of the generator simulation: " + ex.getMessage(), ex);
@@ -253,8 +262,6 @@ public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, He
         logger.debug("Publishing state {}", currentState);
         publishState(currentState);
     }
-
-    private FlexiblePowerContext fpContext;
 
     @Reference
     public void setContext(FlexiblePowerContext fpContext) {
