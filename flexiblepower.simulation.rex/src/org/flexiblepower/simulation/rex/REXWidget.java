@@ -42,6 +42,11 @@ public class REXWidget implements Widget {
         this.simulation = simulation;
     }
 
+    public Update setPrice(String price) {
+        simulation.setPrice(price);
+        return new Update("", price, "");
+    }
+
     public Update update() {
         PowerStateImpl state = simulation.getCurrentState();
         return new Update(FORMATTER.format(state.getTime()),

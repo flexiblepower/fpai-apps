@@ -7,28 +7,25 @@
     <script type="text/javascript" src="/js/vendor/jquery.min.js"></script>
     <script type="text/javascript" src="/js/widget.js"></script>
     <script type="text/javascript" src="script.js"></script>
-    <title>Simulated PV Panel</title>
+    <title>REX Panel</title>
 </head>
 <body class="widget">
-    <img id="icon" src="pv.png" alt="PV Panel" />
+    <img id="icon" src="rex.jpg" style="width:125px;height:53px;" alt="Rex Panel" />
     <img id="loading" src="/img/loading.gif" alt="Loading..." />
     <!-- Information tooltip -->
     <a class='tooltip info'>
         <img src='/img/info.png' />
-        <span>The pvpanels produce electricity. The pvpanels are represented by a software agent
-            in the PowerMatcher virtual market. This agent produces a bid/tender on the market
-            offering its production to the rest of the system. By participating in the market
-            it affects the market price. </span></a>
+        <span>REX</span></a>
     <p class="error">
     </p>
+    
     <p>
         <label>
-            Supply at</label>
-        <span id="time">...</span>
-    </p>
-    <p>
-        <label>
-            Power Output</label>
+            Price</label>
         <span id="supply"></span>&nbsp;Watt</p>
+        <br/><br/>
+        <button id="set_price">
+        	Set price</button>
+            <input type='text' id='txtPrice' style="width:50px" />
 </body>
 </html>

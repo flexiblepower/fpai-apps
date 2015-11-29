@@ -35,7 +35,8 @@
 	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.profile.timeshifter)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.usb_charger)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.heatpump.daikin)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.manager.heatpump.daikin)'
+	osgi.identity;filter:='(osgi.identity=flexiblepower.manager.heatpump.daikin)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.rex)'
 	
 -resolve: auto
 -runbundles: \
@@ -62,6 +63,7 @@
 	flexiblepower.simulation.ledstrip;version=snapshot,\
 	flexiblepower.simulation.profile.timeshifter;version=snapshot,\
 	flexiblepower.simulation.pvpanel;version=snapshot,\
+	flexiblepower.simulation.rex;version=snapshot,\
 	flexiblepower.simulation.usb_charger;version=snapshot,\
 	flexiblepower.simulation.windmill;version=snapshot,\
 	flexiblepower.ui;version='[1.2.0,1.2.1)',\
