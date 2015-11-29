@@ -160,10 +160,10 @@ public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, He
             String[] parts = arg1.toString().split(";");
             String hpStatus = parts[0];
             String hpState = parts[1];
-            String hpTemperature = parts[1];
+            String hpTemperature = parts[2];
 
             Measurable<Temperature> currentTemp = Measure.valueOf(Double.valueOf(hpTemperature.replace(',', '.')),
-                                                                  null);
+                                                                  SI.CELSIUS);
 
             currentState = new State(true, currentTemp, null, null, true);
         }

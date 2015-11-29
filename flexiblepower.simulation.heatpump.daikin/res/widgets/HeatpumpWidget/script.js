@@ -5,7 +5,7 @@ $(window).load(function () {
         if (data != null)
         {
         	console.log(data);
-        	$("#temp").text(data.temp + "C");
+        	$("#temp").text(data.temp);
         	$("#mode").text(data.mode);
         }
         $("#icon").attr("src", "1.png");
