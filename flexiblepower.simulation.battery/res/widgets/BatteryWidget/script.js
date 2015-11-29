@@ -1,5 +1,8 @@
 $(window).load(function () {
     w = new widget("update", 1000, function (data) {
+        if (data == null)
+            return;
+
         $("#loading").detach();
         $("p").show();
         $("#soc").text(data.soc + "%");
