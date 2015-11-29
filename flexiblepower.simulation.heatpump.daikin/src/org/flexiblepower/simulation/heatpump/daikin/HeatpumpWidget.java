@@ -4,6 +4,7 @@ import java.util.Locale;
 
 import javax.measure.Measurable;
 import javax.measure.quantity.Temperature;
+import javax.measure.unit.SI;
 
 import org.flexiblepower.ral.drivers.heatpump.HeatpumpState;
 import org.flexiblepower.ui.Widget;
@@ -12,15 +13,15 @@ import org.slf4j.LoggerFactory;
 
 public class HeatpumpWidget implements Widget {
     public static class Update {
-        private final Measurable<Temperature> temp;
+        private final double temp;
         private final String mode;
 
         public Update(Measurable<Temperature> temp, String mode) {
-            this.temp = temp;
+            this.temp = temp.doubleValue(SI.CELSIUS);
             this.mode = mode;
         }
 
-        public Measurable<Temperature> getTemp() {
+        public Double getTemp() {
             return temp;
         }
 
