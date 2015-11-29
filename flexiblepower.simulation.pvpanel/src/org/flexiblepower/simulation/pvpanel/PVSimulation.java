@@ -167,7 +167,7 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
 
         if (arg0.equals(config.heinsbergPvPanelResponse())) {
             logger.info("ZENODYS PV : " + arg1.toString());
-            demand = -5000 * Double.valueOf(arg1.toString());
+            demand = -Double.valueOf(arg1.toString());
 
         }
     }
