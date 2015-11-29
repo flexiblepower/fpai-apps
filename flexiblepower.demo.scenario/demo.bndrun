@@ -12,7 +12,6 @@
 	osgi.identity;filter:='(osgi.identity=flexiblepower.ui)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.demo.scenario)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.battery)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.dishwasher)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.pvpanel)',\
 	osgi.identity;filter:='(osgi.identity=net.powermatcher.fpai.controller)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.manager.generator)',\
@@ -58,7 +57,6 @@
 	flexiblepower.ral.ext;version='[1.0.0,1.0.1)',\
 	flexiblepower.runtime;version='[3.0.0,3.0.1)',\
 	flexiblepower.simulation.battery;version=snapshot,\
-	flexiblepower.simulation.dishwasher;version=snapshot,\
 	flexiblepower.simulation.generator;version=snapshot,\
 	flexiblepower.simulation.heatpump.daikin;version=snapshot,\
 	flexiblepower.simulation.ledstrip;version=snapshot,\

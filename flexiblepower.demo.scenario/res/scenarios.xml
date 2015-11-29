@@ -75,7 +75,9 @@
     <updateFrequency>1</updateFrequency>
 
     <resourceId>DaikinHeatpump</resourceId>
-
+	
+	<unitId>0</unitId>
+    
     <initialTemperature>20.2</initialTemperature>
 
 </config>
