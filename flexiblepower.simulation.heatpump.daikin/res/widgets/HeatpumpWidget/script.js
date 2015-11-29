@@ -1,12 +1,13 @@
-$(window).load(function() {
-    alert('aaa');
-	w = new widget("update", 1000, function(data) {
-		$("#loading").detach();
-		$("p").show();
-		$("#temp").text(data.temp + "C");
-		$("#mode").text(data.mode);
-		
-		$("#icon").attr("src", "1.png");
-		}
-	});
-
+$(window).load(function () {
+    w = new widget("update", 1000, function (data) {
+        $("#loading").detach();
+        $("p").show();
+        if (data != null)
+        {
+        	console.log(data);
+        	$("#temp").text(data.temp + "C");
+        	$("#mode").text(data.mode);
+        }
+        $("#icon").attr("src", "1.png");
+    });
+});

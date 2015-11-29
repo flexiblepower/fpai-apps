@@ -38,6 +38,10 @@ public class HeatpumpWidget implements Widget {
 
     public Update update() {
         HeatpumpState state = simulation.getCurrentState();
+        if (state == null) {
+            return null;
+        }
+
         Measurable<Temperature> temp = state.getCurrentTemperature();
         boolean mode = state.getHeatMode();
         String dispMode = "";

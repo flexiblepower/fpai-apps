@@ -1,5 +1,6 @@
 package org.flexiblepower.simulation.heatpump.daikin;
 
+import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
@@ -37,30 +38,33 @@ import aQute.bnd.annotation.metatype.Meta;
 
 @Port(name = "manager", accepts = HeatpumpControlParameters.class, sends = HeatpumpState.class)
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
-public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, HeatpumpControlParameters> implements
-                                                                                                        Runnable,
-                                                                                                        MqttCallback {
+public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, HeatpumpControlParameters>implements
+                                Runnable,
+                                MqttCallback {
     private static final String Boolean = null;
 
     @Meta.OCD
     interface Config {
         @Meta.AD(deflt = "DaikinHeatpump", description = "Resource identifier")
-        String resourceId();
+               String resourceId();
 
         @Meta.AD(deflt = "20.2", description = "initial temperature")
-        double initialTemperature();
+               double initialTemperature();
 
         @Meta.AD(deflt = "tcp://130.211.82.48:1883", description = "URL to the MQTT broker")
-        String brokerUrl();
+               String brokerUrl();
 
         @Meta.AD(deflt = "1", description = "Frequency with which updates will be sent out in seconds")
-        int updateFrequency();
+            int updateFrequency();
 
         @Meta.AD(deflt = "/HeinsbergHeatpumpModeRequest", description = "Mqtt request topic to zenobox")
-        String heinsbergHeatpumpModeRequest();
+               String heinsbergHeatpumpModeRequest();
 
         @Meta.AD(deflt = "/HeinsbergHeatpumpResponse", description = "Mqtt response topic to zenobox")
-        String heinsbergHeatpumpResponse();
+               String heinsbergHeatpumpResponse();
+
+        @Meta.AD(deflt = "0", description = "Id of Unit")
+               String unitId();
     }
 
     class State implements HeatpumpState {
@@ -112,6 +116,8 @@ public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, He
     private static final Logger logger = LoggerFactory.getLogger(HeatpumpSimulation.class);
     private HeatpumpControlParameters controlParameterQueue = null;
 
+    private Date lastUpdatedTime;
+
     private MqttClient mqttClient;
     private Config config;
 
@@ -128,7 +134,7 @@ public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, He
         try {
             if (!mqttClient.isConnected()) {
                 mqttClient.connect();
-                mqttClient.subscribe(config.heinsbergHeatpumpResponse());
+                mqttClient.subscribe(config.heinsbergHeatpumpResponse() + config.unitId());
             }
         } catch (MqttException e) {
 
@@ -142,62 +148,24 @@ public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, He
 
     @Override
     public void messageArrived(String arg0, MqttMessage arg1) throws Exception {
-
-        // if (arg0.equals(FPAI_PV_PANEL_RESPONSE)) {
-        // demand = Double.valueOf(arg1.toString());
-        // IsZenoboxResponded = true;
-
-        // parse data from message
-
-        // if (arg0.equals(configuration.heinsbergBatteryResponse())) {
-        // logger.info("Incoming Battery : " + arg1.toString());
-        //
-        // if (lastUpdatedTime == null) {
-        // lastUpdatedTime = context.currentTime();
-        // }
-        //
-        // Date currentTime = context.currentTime();
-        // lastUpdatedTime = currentTime;
-        //
-        // // Split message into SoC and Mode
-        // String[] parts = arg1.toString().split("|");
-        // String partSoc = parts[0];
-        // String partMode = parts[1];
-        // logger.info("Incoming Battery SoC:" + partSoc + "Battery Mode:" + partMode);
-        //
-        // double stateOfCharge = Double.valueOf(partSoc.replace(',', '.')) / 100;
-        //
-        // switch (Integer.valueOf(partMode)) {
-        // case 0:
-        // mode = HeatpumpMode.IDLE
-        // break;
-        // case 1:
-        // mode = HeatpumpMode.HEATING;
-        // break;
-        // case 2:
-        // mode = HeatpumpMode.COOL;
-        // break;
-        // }
-        //
-        // currentState = new State(stateOfCharge, mode);
-
-        if (arg0.equals(config.heinsbergHeatpumpResponse())) {
+        if (arg0.equals(config.heinsbergHeatpumpResponse() + config.unitId())) {
             logger.info("Heatpump : " + arg1.toString());
 
-            // if (lastUpdatedTime == null) {
-            // lastUpdatedTime = context.currentTime();
-            // }
-            //
-            // Date currentTime = context.currentTime();
-            // double durationSinceLastUpdate = (currentTime.getTime() - lastUpdatedTime.getTime()) / 1000.0; // in
-            // seconds
-            // lastUpdatedTime = currentTime;
+            if (lastUpdatedTime == null) {
+                lastUpdatedTime = fpContext.currentTime();
+            }
+            Date currentTime = fpContext.currentTime();
+            lastUpdatedTime = currentTime;
 
-            Measurable<Temperature> currentTemp = Measure.valueOf(Double.valueOf(arg1.toString().replace(',', '.')),
+            String[] parts = arg1.toString().split(";");
+            String hpStatus = parts[0];
+            String hpState = parts[1];
+            String hpTemperature = parts[1];
+
+            Measurable<Temperature> currentTemp = Measure.valueOf(Double.valueOf(hpTemperature.replace(',', '.')),
                                                                   null);
 
             currentState = new State(true, currentTemp, null, null, true);
-
         }
     }
 
@@ -217,7 +185,7 @@ public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, He
                 mqttClient.setCallback(this);
                 mqttClient.connect();
 
-                mqttClient.subscribe(config.heinsbergHeatpumpResponse());
+                mqttClient.subscribe(config.heinsbergHeatpumpResponse() + config.unitId());
             }
 
             Measurable<Temperature> initTemp = Measure.valueOf(config.initialTemperature(), null);
@@ -268,16 +236,6 @@ public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, He
         this.fpContext = fpContext;
     }
 
-    private byte[] toByta(double data) {
-        return toByta(Double.doubleToRawLongBits(data));
-    }
-
-    /*
-     * private byte[] toByta(double[] data) { if (data == null) { return null; } byte[] byts = new byte[data.length *
-     * 8]; for (int i = 0; i < data.length; i++) { System.arraycopy(toByta(data[i]), 0, byts, i * 8, 8); } return byts;
-     * }
-     */
-
     @Override
     protected void handleControlParameters(HeatpumpControlParameters controlParameters) {
         // Send values to the Raspberry
@@ -298,13 +256,12 @@ public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, He
                 try {
                     MqttMessage msg = new MqttMessage();
 
-                    String dd = "turnon";
-
-                    msg.setPayload(dd.getBytes());
+                    String msgToSend = config.unitId() + ";turnon";
+                    msg.setPayload(msgToSend.getBytes());
 
                     mqttClient.publish(config.heinsbergHeatpumpModeRequest(), msg);
 
-                    logger.debug("Result of turning heat mode on: " + dd);
+                    logger.debug("Result of turning heat mode on: " + msgToSend);
 
                     // Invalidate the currentState
                     currentState = null;
@@ -320,13 +277,12 @@ public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, He
                 try {
                     MqttMessage msg = new MqttMessage();
 
-                    String dd = "turnoff";
-
-                    msg.setPayload(dd.getBytes());
+                    String msgToSend = config.unitId() + ";turnoff";
+                    msg.setPayload(msgToSend.getBytes());
 
                     mqttClient.publish(config.heinsbergHeatpumpModeRequest(), msg);
 
-                    logger.debug("Result of truning supercool mode off: " + dd);
+                    logger.debug("Result of truning supercool mode off: " + msgToSend);
 
                     // Invalidate the currentState
                     currentState = null;
