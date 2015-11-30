@@ -46,7 +46,6 @@ public class BatteryWidget implements Widget {
             int socPercentage = (int) (soc * 100.0);
             double capacity = state.getTotalCapacity().doubleValue(KWH);
             BatteryMode mode = state.getCurrentMode();
-            System.out.println("ZEN_BAT " + String.valueOf(socPercentage));
             return new Update(socPercentage, String.format("%2.1f kWh", capacity), mode.toString());
         }
         return null;

@@ -49,7 +49,7 @@ public class HeatpumpWidget implements Widget {
         if (mode) {
             dispMode = "Heating";
         }
-        if (mode = false) {
+        if (mode == false) {
             dispMode = "Idle";
         }
         logger.info("temp : " + temp);

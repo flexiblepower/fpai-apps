@@ -390,7 +390,7 @@ public class BatterySimulation
                         controlMode = "RELEASE";
                         chargingPower = new Long(0);
                     }
-                    chargingPower = new Long(-25);
+
                     logger.debug("BAT-MODE: " + chargingMode);
                     logger.debug("BAT-CTRL: " + controlMode);
                     logger.debug("BAT-PWR: " + Integer.toHexString(Math.round(chargingPower)));
