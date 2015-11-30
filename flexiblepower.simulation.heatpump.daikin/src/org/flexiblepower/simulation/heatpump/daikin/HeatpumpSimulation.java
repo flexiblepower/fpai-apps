@@ -38,7 +38,7 @@ import aQute.bnd.annotation.metatype.Meta;
 
 @Port(name = "manager", accepts = HeatpumpControlParameters.class, sends = HeatpumpState.class)
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
-public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, HeatpumpControlParameters> implements
+public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, HeatpumpControlParameters>implements
                                 Runnable,
                                 MqttCallback {
     private static final String Boolean = null;
@@ -161,6 +161,7 @@ public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, He
             Integer hpMode = Integer.parseInt(parts[0]); // 0 = Cooling, 1 = Heating
             Integer hpState = Integer.parseInt(parts[1]); // 0 == Turned Off, 2 = Turned On
             String hpTemperature = parts[2];
+            String hpSetpointTemperature = parts[3];
 
             boolean heatMode = false;
             if (hpMode.equals(1)) {
@@ -172,7 +173,14 @@ public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, He
             Measurable<Temperature> currentTemp = Measure.valueOf(Double.valueOf(hpTemperature.replace(',', '.')),
                                                                   SI.CELSIUS);
 
-            currentState = new State(true, currentTemp, null, null, heatMode);
+            Measurable<Temperature> minTemp = Measure.valueOf(15,
+                                                              SI.CELSIUS);
+
+            Measurable<Temperature> setpointTemp = Measure.valueOf(Double.valueOf(hpSetpointTemperature.replace(',',
+                                                                                                                '.')),
+                                                                   SI.CELSIUS);
+
+            currentState = new State(true, currentTemp, setpointTemp, minTemp, heatMode);
 
             if (controlParameterQueue != null) {
                 HeatpumpControlParameters temp = controlParameterQueue;
@@ -201,8 +209,11 @@ public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, He
                 mqttClient.subscribe(config.heinsbergHeatpumpResponse() + config.unitId());
             }
 
-            Measurable<Temperature> initTemp = Measure.valueOf(config.initialTemperature(), null);
-            currentState = new State(true, initTemp, null, null, false);
+            Measurable<Temperature> initTemp = Measure.valueOf(config.initialTemperature(), SI.CELSIUS);
+            Measurable<Temperature> minTemp = Measure.valueOf(18, SI.CELSIUS);
+            Measurable<Temperature> curTemp = Measure.valueOf(18, SI.CELSIUS);
+            currentState = new State(true, initTemp, minTemp, curTemp, false);
+
             publishState(currentState);
 
             scheduledFuture = fpContext.scheduleAtFixedRate(this,
