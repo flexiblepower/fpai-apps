@@ -1,4 +1,4 @@
-package org.flexiblepower.simulation.rex;
+package org.flexiblepower.simulation.rexManual;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -6,10 +6,10 @@ import java.util.Locale;
 
 import javax.measure.unit.SI;
 
-import org.flexiblepower.simulation.rex.REXSimulation.PowerStateImpl;
+import org.flexiblepower.simulation.rexManual.REXManualSimulation.PowerStateImpl;
 import org.flexiblepower.ui.Widget;
 
-public class REXWidget implements Widget {
+public class REXManualWidget implements Widget {
     public static class Update {
         private final String dateTime;
         private final String supply;
@@ -36,9 +36,9 @@ public class REXWidget implements Widget {
 
     private static final DateFormat FORMATTER = new SimpleDateFormat("HH:mm:ss");
 
-    private final REXSimulation simulation;
+    private final REXManualSimulation simulation;
 
-    public REXWidget(REXSimulation simulation) {
+    public REXManualWidget(REXManualSimulation simulation) {
         this.simulation = simulation;
     }
 
