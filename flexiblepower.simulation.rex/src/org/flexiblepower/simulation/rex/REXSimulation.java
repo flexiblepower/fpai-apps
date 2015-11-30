@@ -18,8 +18,6 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.flexiblepower.context.FlexiblePowerContext;
 import org.flexiblepower.messaging.Endpoint;
-import org.flexiblepower.observation.Observation;
-import org.flexiblepower.observation.ext.SimpleObservationProvider;
 import org.flexiblepower.ral.ResourceControlParameters;
 import org.flexiblepower.ral.drivers.uncontrolled.PowerState;
 import org.flexiblepower.ral.drivers.uncontrolled.UncontrollableDriver;
@@ -45,11 +43,13 @@ public class REXSimulation extends AbstractResourceDriver<PowerState, ResourceCo
 
     public final static class PowerStateImpl implements PowerState {
         private final Measurable<Power> demand;
+        private final double currentPrice;
 
         private final Date currentTime;
 
-        private PowerStateImpl(Measurable<Power> demand, Date currentTime) {
+        private PowerStateImpl(Measurable<Power> demand, double price, Date currentTime) {
             this.demand = demand;
+            currentPrice = price;
             this.currentTime = currentTime;
         }
 
@@ -63,7 +63,7 @@ public class REXSimulation extends AbstractResourceDriver<PowerState, ResourceCo
             return demand;
         }
 
-        public String getPrice() {
+        public Double getPrice() {
             return currentPrice;
         }
 
@@ -73,7 +73,12 @@ public class REXSimulation extends AbstractResourceDriver<PowerState, ResourceCo
 
         @Override
         public String toString() {
-            return "PowerStateImpl [demand=" + demand + ", currentTime=" + currentTime + "]";
+            return "PowerStateImpl [demand=" + demand
+                   + ", price="
+                   + currentPrice
+                   + ", currentTime="
+                   + currentTime
+                   + "]";
         }
     }
 
@@ -96,24 +101,20 @@ public class REXSimulation extends AbstractResourceDriver<PowerState, ResourceCo
 
     }
 
+    private volatile PowerStateImpl currentPowerState;
     private MqttClient mqttClient;
-    public double demand = -0.01;
     private int updateDelay = 0;
 
-    private static String currentPrice = "";
     private REXWidget widget;
     private ScheduledFuture<?> scheduledFuture;
     private ServiceRegistration<Widget> widgetRegistration;
     private Config config;
-    private SimpleObservationProvider<PowerState> observationProvider;
 
     @Override
     public synchronized void run() {
         try {
 
-            publishState(getCurrentState());
-            observationProvider.publish(Observation.create(context.currentTime(),
-                                                           getCurrentState()));
+            publishState(currentPowerState);
 
         } catch (Exception e) {
             logger.error("Error while running REXSimulation", e);
@@ -135,9 +136,6 @@ public class REXSimulation extends AbstractResourceDriver<PowerState, ResourceCo
                 mqttClient.subscribe(config.heinsbergREXResponse());
             }
 
-            observationProvider = SimpleObservationProvider.create(this, PowerState.class)
-                                                           .observationOf("simulated rex")
-                                                           .build();
             scheduledFuture = context.scheduleAtFixedRate(this,
                                                           Measure.valueOf(0, SI.SECOND),
                                                           Measure.valueOf(updateDelay, SI.SECOND));
@@ -176,8 +174,12 @@ public class REXSimulation extends AbstractResourceDriver<PowerState, ResourceCo
             String price = parts[0];
             String power = parts[1];
             logger.info("REX : " + arg1.toString());
-            demand = Double.valueOf(power.replace(',', '.'));
-            currentPrice = price;
+            double demand = Double.valueOf(power.replace(',', '.'));
+            double currentPrice = Double.valueOf(price.replace(',', '.'));
+
+            currentPowerState = new PowerStateImpl(Measure.valueOf(demand, SI.WATT),
+                                                   currentPrice,
+                                                   context.currentTime());
         }
     }
 
@@ -185,10 +187,7 @@ public class REXSimulation extends AbstractResourceDriver<PowerState, ResourceCo
 
     @Deactivate
     public void deactivate() {
-        if (observationProvider != null) {
-            observationProvider.close();
-            observationProvider = null;
-        }
+
         if (widgetRegistration != null) {
             widgetRegistration.unregister();
             widgetRegistration = null;
@@ -217,11 +216,8 @@ public class REXSimulation extends AbstractResourceDriver<PowerState, ResourceCo
         return Double.valueOf(twoDForm.format(d));
     }
 
-    protected PowerStateImpl getCurrentState() {
-        return new PowerStateImpl(Measure.valueOf(demand, SI.WATT), context.currentTime());
+    PowerStateImpl getCurrentState() {
+        return currentPowerState;
     }
 
-    public void setPrice(final String price) {
-        demand = Double.valueOf(price);
-    }
 }

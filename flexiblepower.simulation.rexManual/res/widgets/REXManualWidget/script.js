@@ -3,11 +3,10 @@ $(window).load(function() {
 		$("#loading").detach();
 		$("p").show();
 		$(".error").hide();
-		$("#supply").text(data.weather);
 	});
 	
-	$("#set_price").click(function () 
+	$("#set_demand").click(function () 
 	{
-		w.call("setPrice", $("#txtPrice").val(), w.callback);
+		w.call("setDemand", $("#txtDemand").val(), w.callback);
     });
 });

@@ -4,6 +4,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
+import javax.measure.Measurable;
+import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 
 import org.flexiblepower.simulation.rex.REXSimulation.PowerStateImpl;
@@ -11,27 +13,22 @@ import org.flexiblepower.ui.Widget;
 
 public class REXWidget implements Widget {
     public static class Update {
-        private final String dateTime;
-        private final String supply;
-        private final String weather;
+        private final double price;
+        private final double demand;
 
-        public Update(String dateTime, String supply, String weather) {
-            this.dateTime = dateTime;
-            this.supply = supply;
-            this.weather = weather;
+        public Update(double price, Measurable<Power> demand) {
+            this.price = price;
+            this.demand = demand.doubleValue(SI.WATT);
         }
 
-        public String getDateTime() {
-            return dateTime;
+        public double getPrice() {
+            return price;
         }
 
-        public String getSupply() {
-            return supply;
+        public double getDemand() {
+            return demand;
         }
 
-        public String getWeather() {
-            return weather;
-        }
     }
 
     private static final DateFormat FORMATTER = new SimpleDateFormat("HH:mm:ss");
@@ -42,25 +39,21 @@ public class REXWidget implements Widget {
         this.simulation = simulation;
     }
 
-    public Update setPrice(String price) {
-        simulation.setPrice(price);
-        return new Update("", price, "");
-    }
-
     public Update update() {
         PowerStateImpl state = simulation.getCurrentState();
-        return new Update(FORMATTER.format(state.getTime()),
-                          Integer.toString((int) state.getCurrentUsage().doubleValue(SI.WATT)),
-                          state.getPrice());
-    }
 
-    public Update changeWeather() {
+        if (state == null) {
+            return null;
+        }
 
-        return update();
+        double price = state.getPrice();
+        Measurable<Power> demand = state.getCurrentUsage();
+
+        return new Update(price, demand);
     }
 
     @Override
     public String getTitle(Locale locale) {
-        return "REX Controller";
+        return "R.E.X. Controller";
     }
 }
