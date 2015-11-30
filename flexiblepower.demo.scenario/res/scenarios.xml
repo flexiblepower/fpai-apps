@@ -6,35 +6,93 @@
 		
 	
 
-<config bundleId="net.powermatcher.core" factoryId="net.powermatcher.core.auctioneer.Auctioneer">
+<config bundleId="flexiblepower.simulation.pvpanel" factoryId="org.flexiblepower.simulation.pvpanel.PVSimulation" ref="pvsimulation-1">
 
-    <priceSteps>100</priceSteps>
+    <updateDelay>1</updateDelay>
 
-    <commodity>electricity</commodity>
+    <brokerUrl>tcp://130.211.82.48:1883</brokerUrl>
 
-    <minimumPrice>0.0</minimumPrice>
+    <heinsbergPvPanelResponse>/HeinsbergPvPanelResponse</heinsbergPvPanelResponse>
 
-    <minTimeBetweenPriceUpdates>1000</minTimeBetweenPriceUpdates>
+    <resourceId>pvpanel</resourceId>
 
-    <maximumPrice>1.0</maximumPrice>
-
-    <clusterId>DefaultCluster</clusterId>
-
-    <currency>EUR</currency>
-
-    <agentId>auctioneer</agentId>
+    <heinsbergPvPanelRequest>/HeinsbergPvPanelRequest</heinsbergPvPanelRequest>
 
 </config>
 
-<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.controller.PowerMatcherController" ref="powermatchercontroller-1">
+<config bundleId="flexiblepower.manager.uncontrolled" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager" ref="uncontrolledmanager-2">
 
-    <agentIdPrefix>fpai-agent-</agentIdPrefix>
+    <expirationTime>20</expirationTime>
 
-    <desiredParent>auctioneer</desiredParent>
+    <showWidget>false</showWidget>
+
+    <resourceId>pvpanel</resourceId>
 
 </config>
 
-<config bundleId="flexiblepower.manager.heatpump.daikin" factoryId="org.flexiblepower.heatpump.manager.daikin.DaikinHeatpumpManager" ref="daikinheatpumpmanager-2">
+<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.widget.FullWidget">
+
+    <agent.target></agent.target>
+
+</config>
+
+<config bundleId="flexiblepower.simulation.rex" factoryId="org.flexiblepower.simulation.rex.REXSimulation" ref="rexsimulation-3">
+
+    <heinsbergREXRequest>/HeinsbergREXRequest</heinsbergREXRequest>
+
+    <updateDelay>1</updateDelay>
+
+    <brokerUrl>tcp://130.211.82.48:1883</brokerUrl>
+
+    <heinsbergREXResponse>/HeinsbergREXResponse</heinsbergREXResponse>
+
+    <resourceId>REX</resourceId>
+
+</config>
+
+<config bundleId="flexiblepower.simulation.rexManual" factoryId="org.flexiblepower.simulation.rexManual.REXManualSimulation" ref="rexmanualsimulation-4">
+
+    <updateDelay>1</updateDelay>
+
+    <resourceId>REX</resourceId>
+
+</config>
+
+<config bundleId="flexiblepower.manager.battery" factoryId="org.flexiblepower.battery.manager.BatteryManager" ref="batterymanager-5">
+
+    <resourceId>BatteryManager</resourceId>
+
+</config>
+
+<config bundleId="flexiblepower.simulation.heatpump.daikin" factoryId="org.flexiblepower.simulation.heatpump.daikin.HeatpumpSimulation" ref="heatpumpsimulation-6">
+
+    <heinsbergHeatpumpModeRequest>/HeinsbergHeatpumpModeRequest</heinsbergHeatpumpModeRequest>
+
+    <unitId>12</unitId>
+
+    <brokerUrl>tcp://130.211.82.48:1883</brokerUrl>
+
+    <updateFrequency>1</updateFrequency>
+
+    <resourceId>DaikinHeatpump</resourceId>
+
+    <heinsbergHeatpumpResponse>/HeinsbergHeatpumpResponse</heinsbergHeatpumpResponse>
+
+    <initialTemperature>20.2</initialTemperature>
+
+</config>
+
+<config bundleId="flexiblepower.manager.uncontrolled" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager" ref="uncontrolledmanager-7">
+
+    <expirationTime>20</expirationTime>
+
+    <showWidget>false</showWidget>
+
+    <resourceId>uncontrolled</resourceId>
+
+</config>
+
+<config bundleId="flexiblepower.manager.heatpump.daikin" factoryId="org.flexiblepower.heatpump.manager.daikin.DaikinHeatpumpManager" ref="daikinheatpumpmanager-8">
 
     <maximumTemperature>20.0</maximumTemperature>
 
@@ -50,7 +108,7 @@
 
 </config>
 
-<config bundleId="flexiblepower.manager.heatpump.daikin" factoryId="org.flexiblepower.heatpump.manager.daikin.DaikinHeatpumpManager" ref="daikinheatpumpmanager-3">
+<config bundleId="flexiblepower.manager.heatpump.daikin" factoryId="org.flexiblepower.heatpump.manager.daikin.DaikinHeatpumpManager" ref="daikinheatpumpmanager-9">
 
     <maximumTemperature>20.0</maximumTemperature>
 
@@ -66,7 +124,7 @@
 
 </config>
 
-<config bundleId="flexiblepower.simulation.heatpump.daikin" factoryId="org.flexiblepower.simulation.heatpump.daikin.HeatpumpSimulation" ref="heatpumpsimulation-4">
+<config bundleId="flexiblepower.simulation.heatpump.daikin" factoryId="org.flexiblepower.simulation.heatpump.daikin.HeatpumpSimulation" ref="heatpumpsimulation-10">
 
     <heinsbergHeatpumpModeRequest>/HeinsbergHeatpumpModeRequest</heinsbergHeatpumpModeRequest>
 
@@ -81,110 +139,6 @@
     <heinsbergHeatpumpResponse>/HeinsbergHeatpumpResponse</heinsbergHeatpumpResponse>
 
     <initialTemperature>20.2</initialTemperature>
-
-</config>
-
-<config bundleId="flexiblepower.manager.uncontrolled" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager" ref="uncontrolledmanager-5">
-
-    <expirationTime>20</expirationTime>
-
-    <showWidget>false</showWidget>
-
-    <resourceId>pvpanel</resourceId>
-
-</config>
-
-<config bundleId="flexiblepower.simulation.battery" factoryId="org.flexiblepower.simulation.battery.BatterySimulation" ref="batterysimulation-6">
-
-    <selfDischargePower>25</selfDischargePower>
-
-    <totalCapacity>6.0</totalCapacity>
-
-    <brokerUrl>tcp://130.211.82.48:1883</brokerUrl>
-
-    <chargeEfficiency>0.9</chargeEfficiency>
-
-    <heinsbergBatteryResponse>/HeinsbergBatteryResponse</heinsbergBatteryResponse>
-
-    <initialStateOfCharge>0.95</initialStateOfCharge>
-
-    <heinsbergBatteryModeRequest>/HeinsbergBatteryModeRequest</heinsbergBatteryModeRequest>
-
-    <dischargePower>150</dischargePower>
-
-    <chargePower>150</chargePower>
-
-    <updateInterval>1</updateInterval>
-
-    <dischargeEfficiency>0.9</dischargeEfficiency>
-
-</config>
-
-<config bundleId="flexiblepower.simulation.heatpump.daikin" factoryId="org.flexiblepower.simulation.heatpump.daikin.HeatpumpSimulation" ref="heatpumpsimulation-7">
-
-    <heinsbergHeatpumpModeRequest>/HeinsbergHeatpumpModeRequest</heinsbergHeatpumpModeRequest>
-
-    <unitId>0</unitId>
-
-    <brokerUrl>tcp://130.211.82.48:1883</brokerUrl>
-
-    <updateFrequency>1</updateFrequency>
-
-    <resourceId>DaikinHeatpump</resourceId>
-
-    <heinsbergHeatpumpResponse>/HeinsbergHeatpumpResponse</heinsbergHeatpumpResponse>
-
-    <initialTemperature>20.2</initialTemperature>
-
-</config>
-
-<config bundleId="flexiblepower.manager.uncontrolled" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager" ref="uncontrolledmanager-8">
-
-    <expirationTime>20</expirationTime>
-
-    <showWidget>false</showWidget>
-
-    <resourceId>uncontrolled</resourceId>
-
-</config>
-
-<config bundleId="flexiblepower.simulation.heatpump.daikin" factoryId="org.flexiblepower.simulation.heatpump.daikin.HeatpumpSimulation" ref="heatpumpsimulation-9">
-
-    <heinsbergHeatpumpModeRequest>/HeinsbergHeatpumpModeRequest</heinsbergHeatpumpModeRequest>
-
-    <unitId>1</unitId>
-
-    <brokerUrl>tcp://130.211.82.48:1883</brokerUrl>
-
-    <updateFrequency>1</updateFrequency>
-
-    <resourceId>DaikinHeatpump</resourceId>
-
-    <heinsbergHeatpumpResponse>/HeinsbergHeatpumpResponse</heinsbergHeatpumpResponse>
-
-    <initialTemperature>20.2</initialTemperature>
-
-</config>
-
-<config bundleId="flexiblepower.simulation.rex" factoryId="org.flexiblepower.simulation.rex.REXSimulation" ref="rexsimulation-10">
-
-    <heinsbergREXRequest>/HeinsbergREXRequest</heinsbergREXRequest>
-
-    <updateDelay>1</updateDelay>
-
-    <brokerUrl>tcp://130.211.82.48:1883</brokerUrl>
-
-    <heinsbergREXResponse>/HeinsbergREXResponse</heinsbergREXResponse>
-
-    <resourceId>REX</resourceId>
-
-</config>
-
-<config bundleId="flexiblepower.ui.connectionspage" factoryId="org.flexiblepower.runtime.ui.connectionspage.ConnectionsPage">
-
-    <felixPluginActive>true</felixPluginActive>
-
-    <dashboardWidgetActive>true</dashboardWidgetActive>
 
 </config>
 
@@ -210,41 +164,7 @@
 
 </config>
 
-<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.widget.FullWidget">
-
-    <agent.target></agent.target>
-
-</config>
-
-<config bundleId="flexiblepower.simulation.pvpanel" factoryId="org.flexiblepower.simulation.pvpanel.PVSimulation" ref="pvsimulation-12">
-
-    <updateDelay>1</updateDelay>
-
-    <brokerUrl>tcp://130.211.82.48:1883</brokerUrl>
-
-    <heinsbergPvPanelResponse>/HeinsbergPvPanelResponse</heinsbergPvPanelResponse>
-
-    <resourceId>pvpanel</resourceId>
-
-    <heinsbergPvPanelRequest>/HeinsbergPvPanelRequest</heinsbergPvPanelRequest>
-
-</config>
-
-<config bundleId="flexiblepower.simulation.rexManual" factoryId="org.flexiblepower.simulation.rexManual.REXManualSimulation" ref="rexmanualsimulation-13">
-
-    <updateDelay>1</updateDelay>
-
-    <resourceId>REX</resourceId>
-
-</config>
-
-<config bundleId="flexiblepower.manager.battery" factoryId="org.flexiblepower.battery.manager.BatteryManager" ref="batterymanager-14">
-
-    <resourceId>BatteryManager</resourceId>
-
-</config>
-
-<config bundleId="flexiblepower.manager.uncontrolled" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager" ref="uncontrolledmanager-15">
+<config bundleId="flexiblepower.manager.uncontrolled" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager" ref="uncontrolledmanager-12">
 
     <expirationTime>20</expirationTime>
 
@@ -254,35 +174,114 @@
 
 </config>
 
-<connection from="powermatchercontroller-1:uncontrolled" to="uncontrolledmanager-15:controller" />
+<config bundleId="flexiblepower.simulation.battery" factoryId="org.flexiblepower.simulation.battery.BatterySimulation" ref="batterysimulation-13">
 
-<connection from="powermatchercontroller-1:buffer" to="batterymanager-14:controller" />
+    <selfDischargePower>25</selfDischargePower>
 
-<connection from="powermatchercontroller-1:buffer" to="daikinheatpumpmanager-2:controller" />
+    <totalCapacity>6.0</totalCapacity>
 
-<connection from="batterymanager-14:driver" to="batterysimulation-6:manager" />
+    <brokerUrl>tcp://130.211.82.48:1883</brokerUrl>
 
-<connection from="powermatchercontroller-1:buffer" to="daikinheatpumpmanager-11:controller" />
+    <chargeEfficiency>0.9</chargeEfficiency>
 
-<connection from="powermatchercontroller-1:buffer" to="daikinheatpumpmanager-3:controller" />
+    <heinsbergBatteryResponse>/HeinsbergBatteryResponse</heinsbergBatteryResponse>
 
-<connection from="powermatchercontroller-1:uncontrolled" to="uncontrolledmanager-8:controller" />
+    <initialStateOfCharge>0.95</initialStateOfCharge>
 
-<connection from="rexmanualsimulation-13:manager" to="uncontrolledmanager-15:driver" />
+    <heinsbergBatteryModeRequest>/HeinsbergBatteryModeRequest</heinsbergBatteryModeRequest>
 
-<connection from="rexsimulation-10:manager" to="uncontrolledmanager-8:driver" />
+    <dischargePower>150</dischargePower>
 
-<connection from="powermatchercontroller-1:uncontrolled" to="uncontrolledmanager-5:controller" />
+    <chargePower>150</chargePower>
 
-<connection from="daikinheatpumpmanager-2:driver" to="heatpumpsimulation-7:manager" />
+    <updateInterval>1</updateInterval>
 
-<connection from="pvsimulation-12:manager" to="uncontrolledmanager-5:driver" />
+    <dischargeEfficiency>0.9</dischargeEfficiency>
 
-<connection from="daikinheatpumpmanager-3:driver" to="heatpumpsimulation-4:manager" />
+</config>
 
-<connection from="daikinheatpumpmanager-11:driver" to="heatpumpsimulation-9:manager" />
+<config bundleId="net.powermatcher.core" factoryId="net.powermatcher.core.auctioneer.Auctioneer">
+
+    <priceSteps>100</priceSteps>
+
+    <commodity>electricity</commodity>
+
+    <minimumPrice>0.0</minimumPrice>
+
+    <minTimeBetweenPriceUpdates>1000</minTimeBetweenPriceUpdates>
+
+    <maximumPrice>1.0</maximumPrice>
+
+    <clusterId>DefaultCluster</clusterId>
+
+    <currency>EUR</currency>
+
+    <agentId>auctioneer</agentId>
+
+</config>
+
+<config bundleId="flexiblepower.ui.connectionspage" factoryId="org.flexiblepower.runtime.ui.connectionspage.ConnectionsPage">
+
+    <felixPluginActive>true</felixPluginActive>
+
+    <dashboardWidgetActive>true</dashboardWidgetActive>
+
+</config>
+
+<config bundleId="flexiblepower.simulation.heatpump.daikin" factoryId="org.flexiblepower.simulation.heatpump.daikin.HeatpumpSimulation" ref="heatpumpsimulation-14">
+
+    <heinsbergHeatpumpModeRequest>/HeinsbergHeatpumpModeRequest</heinsbergHeatpumpModeRequest>
+
+    <unitId>11</unitId>
+
+    <brokerUrl>tcp://130.211.82.48:1883</brokerUrl>
+
+    <updateFrequency>1</updateFrequency>
+
+    <resourceId>DaikinHeatpump</resourceId>
+
+    <heinsbergHeatpumpResponse>/HeinsbergHeatpumpResponse</heinsbergHeatpumpResponse>
+
+    <initialTemperature>20.2</initialTemperature>
+
+</config>
+
+<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.controller.PowerMatcherController" ref="powermatchercontroller-15">
+
+    <agentIdPrefix>fpai-agent-</agentIdPrefix>
+
+    <desiredParent>auctioneer</desiredParent>
+
+</config>
+
+<connection from="powermatchercontroller-15:uncontrolled" to="uncontrolledmanager-7:controller" />
+
+<connection from="powermatchercontroller-15:uncontrolled" to="uncontrolledmanager-2:controller" />
+
+<connection from="powermatchercontroller-15:buffer" to="daikinheatpumpmanager-9:controller" />
+
+<connection from="daikinheatpumpmanager-8:driver" to="heatpumpsimulation-14:manager" />
+
+<connection from="powermatchercontroller-15:buffer" to="daikinheatpumpmanager-8:controller" />
+
+<connection from="batterymanager-5:driver" to="batterysimulation-13:manager" />
+
+<connection from="pvsimulation-1:manager" to="uncontrolledmanager-2:driver" />
+
+<connection from="powermatchercontroller-15:buffer" to="batterymanager-5:controller" />
+
+<connection from="daikinheatpumpmanager-9:driver" to="heatpumpsimulation-6:manager" />
+
+<connection from="powermatchercontroller-15:buffer" to="daikinheatpumpmanager-11:controller" />
+
+<connection from="daikinheatpumpmanager-11:driver" to="heatpumpsimulation-10:manager" />
+
+<connection from="rexsimulation-3:manager" to="uncontrolledmanager-7:driver" />
+
+<connection from="rexmanualsimulation-4:manager" to="uncontrolledmanager-12:driver" />
+
+<connection from="powermatchercontroller-15:uncontrolled" to="uncontrolledmanager-12:controller" />
 	
-
 	</scenario>
 
 </scenarios>
