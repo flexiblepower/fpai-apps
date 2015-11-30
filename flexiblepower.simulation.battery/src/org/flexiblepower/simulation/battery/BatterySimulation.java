@@ -354,12 +354,21 @@ public class BatterySimulation
                     String controlMode = "";
                     Long chargingPower = new Long(0); // in Watts
 
+                    // Handle the battery depending on PowerMatcher request...
                     switch (controlParameters.getMode()) {
 
                     // When Power matcher is telling battery to stay IDLE...
                     case IDLE:
-                        controlMode = "CONTROL";
-                        chargingPower = new Long(25);
+                        // When current battery charge is more than e.g.27%
+                        if (true /* more % than standard.. */) {
+                            controlMode = "CONTROL";
+                            chargingPower = new Long(25);
+
+                            // When current battery charge is <= 27%, release the battery
+                        } else {
+                            controlMode = "RELEASE";
+                            chargingPower = new Long(0);
+                        }
                         break;
 
                     // When PM is telling battery to CHARGE...
@@ -377,6 +386,8 @@ public class BatterySimulation
                     // In case of unexpected...
                     default:
                         chargingMode = BatteryMode.IDLE.toString();
+                        controlMode = "RELEASE";
+                        chargingPower = new Long(0);
                     }
                     chargingPower = new Long(-25);
                     logger.debug("BAT-MODE: " + chargingMode);
