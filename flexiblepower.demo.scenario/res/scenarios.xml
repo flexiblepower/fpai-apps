@@ -230,7 +230,7 @@
 
 <config bundleId="flexiblepower.simulation.battery" factoryId="org.flexiblepower.simulation.battery.BatterySimulation" ref="batterysimulation-15">
 
-    <selfDischargePower>50</selfDischargePower>
+    <selfDischargePower>25</selfDischargePower>
 
     <totalCapacity>6.0</totalCapacity>
 
@@ -244,9 +244,9 @@
 
     <heinsbergBatteryModeRequest>/HeinsbergBatteryModeRequest</heinsbergBatteryModeRequest>
 
-    <dischargePower>1500</dischargePower>
+    <dischargePower>150</dischargePower>
 
-    <chargePower>1500</chargePower>
+    <chargePower>150</chargePower>
 
     <updateInterval>1</updateInterval>
 
