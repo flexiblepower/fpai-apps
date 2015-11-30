@@ -5,8 +5,13 @@
 	<scenario name="REX">
 		
 	
+<<<<<<< HEAD
 
 <config bundleId="flexiblepower.manager.uncontrolled" factoryId="org.flexiblepower.uncontrolled.manager.UncontrolledManager" ref="uncontrolledmanager-1">
+=======
+<!--  
+<config bundleId="flexiblepower.manager.heatpump.daikin" factoryId="org.flexiblepower.heatpump.manager.daikin.DaikinHeatpumpManager" ref="daikinheatpumpmanager-1">
+>>>>>>> made fixes to heatpump messagearrived method (updated currentstate with mode)
 
     <expirationTime>20</expirationTime>
 
@@ -15,6 +20,7 @@
     <resourceId>uncontrolled</resourceId>
 
 </config>
+-->
 
 <config bundleId="flexiblepower.manager.heatpump.daikin" factoryId="org.flexiblepower.heatpump.manager.daikin.DaikinHeatpumpManager" ref="daikinheatpumpmanager-2">
 
@@ -32,7 +38,12 @@
 
 </config>
 
+<<<<<<< HEAD
 <config bundleId="flexiblepower.simulation.pvpanel" factoryId="org.flexiblepower.simulation.pvpanel.PVSimulation" ref="pvsimulation-3">
+=======
+<!-- 
+<config bundleId="flexiblepower.manager.heatpump.daikin" factoryId="org.flexiblepower.heatpump.manager.daikin.DaikinHeatpumpManager" ref="daikinheatpumpmanager-3">
+>>>>>>> made fixes to heatpump messagearrived method (updated currentstate with mode)
 
     <updateDelay>1</updateDelay>
 
@@ -45,6 +56,7 @@
     <heinsbergPvPanelRequest>/HeinsbergPvPanelRequest</heinsbergPvPanelRequest>
 
 </config>
+ -->
 
 <config bundleId="flexiblepower.simulation.heatpump.daikin" factoryId="org.flexiblepower.simulation.heatpump.daikin.HeatpumpSimulation" ref="heatpumpsimulation-4">
 

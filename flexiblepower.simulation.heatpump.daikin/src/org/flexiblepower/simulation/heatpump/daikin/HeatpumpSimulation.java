@@ -38,7 +38,7 @@ import aQute.bnd.annotation.metatype.Meta;
 
 @Port(name = "manager", accepts = HeatpumpControlParameters.class, sends = HeatpumpState.class)
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
-public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, HeatpumpControlParameters>implements
+public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, HeatpumpControlParameters> implements
                                 Runnable,
                                 MqttCallback {
     private static final String Boolean = null;
@@ -158,14 +158,21 @@ public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, He
             lastUpdatedTime = currentTime;
 
             String[] parts = arg1.toString().split(";");
-            String hpStatus = parts[0];
-            String hpState = parts[1];
+            Integer hpMode = Integer.parseInt(parts[0]); // 0 = Cooling, 1 = Heating
+            Integer hpState = Integer.parseInt(parts[1]); // 0 == Turned Off, 2 = Turned On
             String hpTemperature = parts[2];
+
+            boolean heatMode = false;
+            if (hpMode.equals(1)) {
+                if (hpState.equals(1)) {
+                    heatMode = true;
+                }
+            }
 
             Measurable<Temperature> currentTemp = Measure.valueOf(Double.valueOf(hpTemperature.replace(',', '.')),
                                                                   SI.CELSIUS);
 
-            currentState = new State(true, currentTemp, null, null, true);
+            currentState = new State(true, currentTemp, null, null, heatMode);
         }
     }
 
