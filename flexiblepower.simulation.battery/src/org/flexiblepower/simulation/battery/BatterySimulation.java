@@ -1,4 +1,3 @@
-
 package org.flexiblepower.simulation.battery;
 
 import static javax.measure.unit.NonSI.KWH;
@@ -51,45 +50,45 @@ import aQute.bnd.annotation.metatype.Meta;
  */
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 public class BatterySimulation
-                               extends AbstractResourceDriver<BatteryState, BatteryControlParameters>
-                               implements
-                               BatteryDriver,
-                               Runnable,
-                               MqttCallback {
+                              extends AbstractResourceDriver<BatteryState, BatteryControlParameters>
+                                                                                                    implements
+                                                                                                    BatteryDriver,
+                                                                                                    Runnable,
+                                                                                                    MqttCallback {
 
     interface Config {
         @Meta.AD(deflt = "5", description = "Interval between state updates [s]")
-             long updateInterval();
+        long updateInterval();
 
         @Meta.AD(deflt = "4", description = "Total capacity [kWh]")
-               double totalCapacity();
+        double totalCapacity();
 
         @Meta.AD(deflt = "0.5", description = "Initial state of charge (from 0 to 1)")
-               double initialStateOfCharge();
+        double initialStateOfCharge();
 
-        @Meta.AD(deflt = "1500", description = "Charge power [W]")
-             long chargePower();
+        @Meta.AD(deflt = "150", description = "Charge power [W]")
+        long chargePower();
 
-        @Meta.AD(deflt = "1500", description = "Discharge power [W]")
-             long dischargePower();
+        @Meta.AD(deflt = "150", description = "Discharge power [W]")
+        long dischargePower();
 
         @Meta.AD(deflt = "0.9", description = "Charge efficiency (from 0 to 1)")
-               double chargeEfficiency();
+        double chargeEfficiency();
 
         @Meta.AD(deflt = "0.9", description = "Discharge efficiency (from 0 to 1)")
-               double dischargeEfficiency();
+        double dischargeEfficiency();
 
-        @Meta.AD(deflt = "50", description = "Self discharge power [W]")
-             long selfDischargePower();
+        @Meta.AD(deflt = "25", description = "Self discharge power [W]")
+        long selfDischargePower();
 
         @Meta.AD(deflt = "tcp://130.211.82.48:1883", description = "URL to the MQTT broker")
-               String brokerUrl();
+        String brokerUrl();
 
         @Meta.AD(deflt = "/HeinsbergBatteryResponse", description = "Mqtt response topic to zenobox")
-               String heinsbergBatteryResponse();
+        String heinsbergBatteryResponse();
 
         @Meta.AD(deflt = "/HeinsbergBatteryModeRequest", description = "Mqtt response topic to zenobox")
-               String heinsbergBatteryModeRequest();
+        String heinsbergBatteryModeRequest();
     }
 
     class State implements BatteryState {
@@ -293,7 +292,8 @@ public class BatterySimulation
 
         }
     }
-          // *************MQTT CALLBACK METHODS END**********************
+
+    // *************MQTT CALLBACK METHODS END**********************
 
     State getCurrentState() {
         return currentState;
@@ -335,6 +335,8 @@ public class BatterySimulation
         // Send values to the Zenobox
         // ledstripLevel = controlParameters.getLevel();
 
+        // TODO
+
         if (currentState == null) {
             // no valid state, queue this controlParameter
             // TODO DIT DOET NOG NIKS
@@ -342,19 +344,48 @@ public class BatterySimulation
         } else {
             // Execute the Control Parameter
 
-            // TODO add currentTEmp != targetTemp
-
             if (currentState.mode != controlParameters.getMode()) {
                 // Charge battery
                 logger.debug("Switch mode to" + controlParameters.getMode().toString());
 
                 try {
+                    String chargingMode = controlParameters.getMode().toString();
+                    String controlMode = "";
+                    Long chargingPower = new Long(0); // in Watts
+
+                    switch (controlParameters.getMode()) {
+
+                    // When Power matcher is telling battery to stay IDLE...
+                    case IDLE:
+                        controlMode = "CONTROL";
+                        chargingPower = new Long(25);
+                        break;
+
+                    // When PM is telling battery to CHARGE...
+                    case CHARGE:
+                        controlMode = "CONTROL";
+                        chargingPower = configuration.chargePower();
+                        break;
+
+                    // When PM is telling battery to DISCHARGE...
+                    case DISCHARGE:
+                        controlMode = "CONTROL";
+                        chargingPower = configuration.dischargePower();
+                        break;
+
+                    // In case of unexpected...
+                    default:
+                        chargingMode = BatteryMode.IDLE.toString();
+                    }
+
+                    logger.debug("BAT-MODE: " + chargingMode);
+                    logger.debug("BAT-CTRL: " + controlMode);
+                    logger.debug("BAT-PWR: " + Long.toHexString(chargingPower.shortValue()));
+
+                    // TODO : Replace this MQTT message with charging instruction
                     MqttMessage msg = new MqttMessage();
-
                     String dd = controlParameters.getMode().toString();
-
                     msg.setPayload(dd.getBytes());
-
                     mqttClient.publish(configuration.heinsbergBatteryModeRequest(), msg);
 
                     logger.debug("Result of turning heat mode on: " + dd);
