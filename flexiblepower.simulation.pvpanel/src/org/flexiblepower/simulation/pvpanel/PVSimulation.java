@@ -167,8 +167,13 @@ public class PVSimulation extends AbstractResourceDriver<PowerState, ResourceCon
 
         if (arg0.equals(config.heinsbergPvPanelResponse())) {
             logger.info("ZENODYS PV : " + arg1.toString());
-            demand = -Double.valueOf(arg1.toString());
 
+            demand = Double.valueOf(arg1.toString());
+            if (demand == -655360 || demand == 655360) {
+                demand = 0;
+            } else {
+                demand = -demand;
+            }
         }
     }
     // *************MQTT CALLBACK METHODS END**********************
