@@ -173,6 +173,12 @@ public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, He
                                                                   SI.CELSIUS);
 
             currentState = new State(true, currentTemp, null, null, heatMode);
+
+            if (controlParameterQueue != null) {
+                HeatpumpControlParameters temp = controlParameterQueue;
+                controlParameterQueue = null;
+                handleControlParameters(temp);
+            }
         }
     }
 
@@ -196,7 +202,8 @@ public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, He
             }
 
             Measurable<Temperature> initTemp = Measure.valueOf(config.initialTemperature(), null);
-            publishState(new State(true, initTemp, null, null, false));
+            currentState = new State(true, initTemp, null, null, false);
+            publishState(currentState);
 
             scheduledFuture = fpContext.scheduleAtFixedRate(this,
                                                             Measure.valueOf(0, SI.SECOND),
