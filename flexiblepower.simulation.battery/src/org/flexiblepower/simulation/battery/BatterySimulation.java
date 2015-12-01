@@ -358,7 +358,7 @@ public class BatterySimulation
                         // When current battery charge is more than e.g.27%
                         if (mStateOfCharge > 0.27) {
                             controlMode = "CONTROL";
-                            chargingPower = new Long(25);
+                            chargingPower = new Long(-25);
 
                             // When current battery charge is <= 27%, release the battery
                         } else {
@@ -370,7 +370,7 @@ public class BatterySimulation
                     // When PM is telling battery to CHARGE...
                     case CHARGE:
                         controlMode = "CONTROL";
-                        chargingPower = configuration.chargePower();
+                        chargingPower = -1 * configuration.chargePower();
                         break;
 
                     // When PM is telling battery to DISCHARGE...
@@ -392,10 +392,15 @@ public class BatterySimulation
 
                     // TODO : Replace this MQTT message with charging instruction
                     MqttMessage msg = new MqttMessage();
+                    String sPower = Long.toHexString(chargingPower);
+                    if (sPower.length() >= 8) {
+                        sPower = sPower.substring(8);
+                    }
+
                     String message = controlParameters.getMode().toString() + ";"
                                      + controlMode
                                      + ";"
-                                     + Integer.toHexString(Math.round(chargingPower));
+                                     + sPower;
                     msg.setPayload(message.getBytes());
                     mqttClient.publish(configuration.heinsbergBatteryModeRequest(), msg);
 
