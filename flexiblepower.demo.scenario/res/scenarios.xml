@@ -169,7 +169,7 @@
 
     <heinsbergLoadResponse>/HeinsbergLoadResponse</heinsbergLoadResponse>
 
-    <updateDelay>1</updateDelay>
+    <updateDelay> 1 </updateDelay>
 
     <brokerUrl>tcp://130.211.82.48:1883</brokerUrl>
 
