@@ -158,8 +158,9 @@ public class HeatpumpSimulation extends AbstractResourceDriver<HeatpumpState, He
             lastUpdatedTime = currentTime;
 
             String[] parts = arg1.toString().split(";");
-            Integer hpMode = Integer.parseInt(parts[0]); // 0 = Cooling, 1 = Heating
-            Integer hpState = Integer.parseInt(parts[1]); // 0 == Turned Off, 2 = Turned On
+
+            Integer hpState = Integer.parseInt(parts[0]); // 0 == Turned Off, 2 = Turned On
+            Integer hpMode = Integer.parseInt(parts[1]); // 0 = Cooling, 1 = Heating
             String hpTemperature = parts[2];
             String hpSetpointTemperature = parts[3];
 
