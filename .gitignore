@@ -36,3 +36,4 @@ hosted.html
 
 .recommenders/
 *.lck
+*.msg

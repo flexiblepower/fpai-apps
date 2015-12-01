@@ -4,6 +4,7 @@
     <link rel="stylesheet" href="/css/widget.css" />
     <link rel="stylesheet" href="/css/tooltip.css" />
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="switch.css" />
     <script type="text/javascript" src="/js/vendor/jquery.min.js"></script>
     <script type="text/javascript" src="/js/widget.js"></script>
     <script type="text/javascript" src="script.js"></script>
@@ -23,5 +24,18 @@
         <button id="set_demand">
         	Set Imbalance Demand</button>
             <input type='text' id='txtDemand' style="width:50px" />
+            <br/><br/>
+            <div class="switch-toggle switch-3 switch-candy">
+    <input id="on" name="state-d" type="radio" checked="">
+    <label for="on" onclick="">LOW PRICE</label>
+
+    <input id="na" name="state-d" type="radio" disabled checked="checked">
+        <label for="na" onclick="">N/A</label>
+
+    <input id="off" name="state-d" type="radio">
+    <label for="off" onclick="">HIGH PRICE</label>
+
+    <a></a>
+</div>
 </body>
 </html>
