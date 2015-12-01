@@ -87,7 +87,7 @@ public class DaikinHeatpumpManager extends
         @Meta.AD(deflt = "18", description = "Minimum Temperature in C")
                double minimumTemperature();
 
-        @Meta.AD(deflt = "20", description = "Maximum Temperature in C")
+        @Meta.AD(deflt = "30", description = "Maximum Temperature in C")
                double maximumTemperature();
 
         @Meta.AD(deflt = "0.02", description = "Fill rate in C per second")

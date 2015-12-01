@@ -106,7 +106,7 @@
 
 <config bundleId="flexiblepower.manager.heatpump.daikin" factoryId="org.flexiblepower.heatpump.manager.daikin.DaikinHeatpumpManager" ref="daikinheatpumpmanager-6">
 
-    <maximumTemperature>20.0</maximumTemperature>
+    <maximumTemperature>30.0</maximumTemperature>
 
     <minimumTemperature>18.0</minimumTemperature>
 
