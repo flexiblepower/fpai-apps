@@ -13,6 +13,10 @@ $(window).load(function () {
     $("#on").click(function () {
         w.call("setDemand", "-100000", w.callback);
     });
+    
+    $("#na").click(function () {
+        w.call("setDemand", "0", w.callback);
+    });
 
     $("#off").click(function () {
         w.call("setDemand", "100000", w.callback);
