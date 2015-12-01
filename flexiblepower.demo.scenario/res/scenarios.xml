@@ -10,7 +10,7 @@
 
     <updateDelay>1</updateDelay>
 
-    <brokerUrl>tcp://130.211.82.48:1883</brokerUrl>
+    <brokerUrl>tcp://localhost:1883</brokerUrl>
 
     <heinsbergPvPanelResponse>/HeinsbergPvPanelResponse</heinsbergPvPanelResponse>
 
@@ -42,7 +42,7 @@
 
     <updateDelay>1</updateDelay>
 
-    <brokerUrl>tcp://130.211.82.48:1883</brokerUrl>
+    <brokerUrl>tcp://localhost:1883</brokerUrl>
 
     <heinsbergREXResponse>/HeinsbergREXResponse</heinsbergREXResponse>
 
@@ -70,7 +70,7 @@
 
     <unitId>12</unitId>
 
-    <brokerUrl>tcp://130.211.82.48:1883</brokerUrl>
+    <brokerUrl>tcp://localhost:1883</brokerUrl>
 
     <updateFrequency>1</updateFrequency>
 
@@ -130,7 +130,7 @@
 
     <unitId>2</unitId>
 
-    <brokerUrl>tcp://130.211.82.48:1883</brokerUrl>
+    <brokerUrl>tcp://localhost:1883</brokerUrl>
 
     <updateFrequency>1</updateFrequency>
 
@@ -180,7 +180,7 @@
 
     <totalCapacity>6.0</totalCapacity>
 
-    <brokerUrl>tcp://130.211.82.48:1883</brokerUrl>
+    <brokerUrl>tcp://localhost:1883</brokerUrl>
 
     <chargeEfficiency>0.9</chargeEfficiency>
 
@@ -234,7 +234,7 @@
 
     <unitId>11</unitId>
 
-    <brokerUrl>tcp://130.211.82.48:1883</brokerUrl>
+    <brokerUrl>tcp://localhost:1883</brokerUrl>
 
     <updateFrequency>1</updateFrequency>
 
