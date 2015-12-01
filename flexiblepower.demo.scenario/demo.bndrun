@@ -37,7 +37,8 @@
 	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.heatpump.daikin)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.manager.heatpump.daikin)',\
 	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.rexManual)',\
-	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.rex)'
+	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.rex)',\
+	osgi.identity;filter:='(osgi.identity=flexiblepower.simulation.load)'
 	
 -resolve: auto
 -runbundles: \
@@ -62,6 +63,7 @@
 	flexiblepower.simulation.generator;version=snapshot,\
 	flexiblepower.simulation.heatpump.daikin;version=snapshot,\
 	flexiblepower.simulation.ledstrip;version=snapshot,\
+	flexiblepower.simulation.load;version=snapshot,\
 	flexiblepower.simulation.profile.timeshifter;version=snapshot,\
 	flexiblepower.simulation.pvpanel;version=snapshot,\
 	flexiblepower.simulation.rex;version=snapshot,\
