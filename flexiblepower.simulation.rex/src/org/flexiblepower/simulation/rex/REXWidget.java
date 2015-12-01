@@ -1,7 +1,5 @@
 package org.flexiblepower.simulation.rex;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Locale;
 
 import javax.measure.Measurable;
@@ -11,6 +9,9 @@ import javax.measure.unit.SI;
 import org.flexiblepower.simulation.rex.REXSimulation.PowerStateImpl;
 import org.flexiblepower.ui.Widget;
 
+import aQute.bnd.annotation.component.Component;
+
+@Component(provide = Widget.class, properties = "widget.ranking=99")
 public class REXWidget implements Widget {
     public static class Update {
         private final double price;
@@ -31,7 +32,7 @@ public class REXWidget implements Widget {
 
     }
 
-    private static final DateFormat FORMATTER = new SimpleDateFormat("HH:mm:ss");
+    // private static final DateFormat FORMATTER = new SimpleDateFormat("HH:mm:ss");
 
     private final REXSimulation simulation;
 
@@ -56,4 +57,5 @@ public class REXWidget implements Widget {
     public String getTitle(Locale locale) {
         return "R.E.X. Controller";
     }
+
 }

@@ -10,18 +10,42 @@
 	right: 1em;
 }
 
-#weather {
-	position: absolute;
-	bottom: 0;
-	left: 1em;
-}
-
 #button {
 	display: none;
 	margin-top: 2em;
 }
 
 p {
-	height: 1.2em;
+	height: 1em;
 	display: none;
 }
+
+p label {
+	width: 50%;
+}
+
+#agents label {
+	color: #8CC63F;
+	font-weight: bold;
+}
+
+p.time {
+	margin-bottom: 1em;
+}
+
+p.price label, p.time label {
+	color: #6A747C;
+	font-weight: bold;
+}
+
+span.negative {
+	color: red;
+}
+
+span.positive {
+	color: green;
+}
+}
+}
+
+.price-tag{ color:#8d9499; font-size:46px; text-align:center}

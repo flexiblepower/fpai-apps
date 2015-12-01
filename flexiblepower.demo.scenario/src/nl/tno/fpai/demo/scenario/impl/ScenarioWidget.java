@@ -10,7 +10,8 @@ import org.flexiblepower.ui.Widget;
 import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Reference;
 
-@Component(properties = "widget.ranking=999999")
+@Component(properties = "widget.ranking=1")
+// was 999999
 public class ScenarioWidget implements Widget {
 
     private ScenarioManagerImpl scenarioManager;

@@ -17,7 +17,7 @@ import aQute.bnd.annotation.component.Component;
 import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Meta;
 
-@Component(provide = Widget.class, designateFactory = SmallWidget.Config.class)
+@Component(provide = Widget.class, designateFactory = SmallWidget.Config.class, properties = "widget.ranking=98")
 public class SmallWidget implements AgentObserver, Widget {
     private static final DateFormat DF = DateFormat.getTimeInstance(DateFormat.LONG);
 
