@@ -1,0 +1,8 @@
+-buildpath: \
+	${fpai-buildpath},\
+	flexiblepower.ui,\
+	org.eclipse.paho.client.mqttv3
+Bundle-Version: 2.1.0.${qualifier}
+Service-Component: *
+Export-Package: org.flexiblepower.simulation.rexManual
+Require-Capability: flexiblepower.context;filter:="(runtime=fpai)"
