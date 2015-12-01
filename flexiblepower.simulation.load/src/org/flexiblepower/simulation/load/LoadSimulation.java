@@ -38,10 +38,10 @@ import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 public class LoadSimulation extends AbstractResourceDriver<PowerState, ResourceControlParameters>
-                            implements
-                            UncontrollableDriver,
-                            Runnable,
-                            MqttCallback {
+                                                                                                 implements
+                                                                                                 UncontrollableDriver,
+                                                                                                 Runnable,
+                                                                                                 MqttCallback {
 
     public final static class PowerStateImpl implements PowerState {
         private final Measurable<Power> demand;
@@ -76,19 +76,20 @@ public class LoadSimulation extends AbstractResourceDriver<PowerState, ResourceC
     @Meta.OCD
     interface Config {
         @Meta.AD(deflt = "1", description = "Delay between updates will be send out in seconds")
-            int updateDelay();
+        int updateDelay();
 
         @Meta.AD(deflt = "load", description = "Resource identifier")
-               String resourceId();
+        String resourceId();
 
-        @Meta.AD(deflt = "tcp://130.211.82.48:1883", description = "URL to the MQTT broker")
-               String brokerUrl();
+        @Meta.AD(deflt = /* "tcp://130.211.82.48:1883" */"tcp://localhost:1883", description = "URL to the MQTT broker")
+                String
+                brokerUrl();
 
-        @Meta.AD(deflt = "/HeinsbergLoadPanelRequest", description = "Mqtt request topic to zenobox")
-               String heinsbergLoadPanelRequest();
+        @Meta.AD(deflt = "/HeinsbergLoadRequest", description = "Mqtt request topic to zenobox")
+        String heinsbergLoadRequest();
 
-        @Meta.AD(deflt = "/HeinsbergLoadPanelResponse", description = "Mqtt response topic to zenobox")
-               String heinsbergLoadPanelResponse();
+        @Meta.AD(deflt = "/HeinsbergLoadResponse", description = "Mqtt response topic to zenobox")
+        String heinsbergLoadResponse();
     }
 
     private MqttClient mqttClient;
@@ -126,7 +127,7 @@ public class LoadSimulation extends AbstractResourceDriver<PowerState, ResourceC
                 mqttClient.setCallback(this);
                 mqttClient.connect();
 
-                mqttClient.subscribe(config.heinsbergLoadPanelResponse());
+                mqttClient.subscribe(config.heinsbergLoadResponse());
             }
 
             observationProvider = SimpleObservationProvider.create(this, PowerState.class)
@@ -150,7 +151,7 @@ public class LoadSimulation extends AbstractResourceDriver<PowerState, ResourceC
         try {
             if (!mqttClient.isConnected()) {
                 mqttClient.connect();
-                mqttClient.subscribe(config.heinsbergLoadPanelResponse());
+                mqttClient.subscribe(config.heinsbergLoadResponse());
             }
         } catch (MqttException e) {
 
@@ -165,17 +166,13 @@ public class LoadSimulation extends AbstractResourceDriver<PowerState, ResourceC
     @Override
     public void messageArrived(String arg0, MqttMessage arg1) throws Exception {
 
-        if (arg0.equals(config.heinsbergLoadPanelResponse())) {
+        if (arg0.equals(config.heinsbergLoadResponse())) {
             logger.info("ZENODYS Load : " + arg1.toString());
 
             demand = Double.valueOf(arg1.toString());
-            if (demand == -655360 || demand == 655360) {
-                demand = 0;
-            } else {
-                demand = -demand;
-            }
         }
     }
+
     // *************MQTT CALLBACK METHODS END**********************
 
     @Deactivate

@@ -36,10 +36,10 @@ import aQute.bnd.annotation.metatype.Meta;
 
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 public class REXSimulation extends AbstractResourceDriver<PowerState, ResourceControlParameters>
-                           implements
-                           UncontrollableDriver,
-                           Runnable,
-                           MqttCallback {
+                                                                                                implements
+                                                                                                UncontrollableDriver,
+                                                                                                Runnable,
+                                                                                                MqttCallback {
 
     public final static class PowerStateImpl implements PowerState {
         private final Measurable<Power> demand;
@@ -85,19 +85,19 @@ public class REXSimulation extends AbstractResourceDriver<PowerState, ResourceCo
     @Meta.OCD
     interface Config {
         @Meta.AD(deflt = "1", description = "Delay between updates will be send out in seconds")
-            int updateDelay();
+        int updateDelay();
 
         @Meta.AD(deflt = "REX", description = "Resource identifier")
-               String resourceId();
+        String resourceId();
 
         @Meta.AD(deflt = "tcp://130.211.82.48:1883", description = "URL to the MQTT broker")
-               String brokerUrl();
+        String brokerUrl();
 
         @Meta.AD(deflt = "/HeinsbergREXRequest", description = "Mqtt request topic to zenobox")
-               String heinsbergREXRequest();
+        String heinsbergREXRequest();
 
         @Meta.AD(deflt = "/HeinsbergREXResponse", description = "Mqtt response topic to zenobox")
-               String heinsbergREXResponse();
+        String heinsbergREXResponse();
 
     }
 
@@ -174,7 +174,7 @@ public class REXSimulation extends AbstractResourceDriver<PowerState, ResourceCo
             String price = parts[0];
             String power = parts[1];
             logger.info("REX : " + arg1.toString());
-            double demand = Double.valueOf(power.replace(',', '.')) * 1000;
+            double demand = Double.valueOf(power.replace(',', '.')) * -1000;
             double currentPrice = Double.valueOf(price.replace(',', '.'));
 
             currentPowerState = new PowerStateImpl(Measure.valueOf(demand, SI.WATT),
