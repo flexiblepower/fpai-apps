@@ -41,7 +41,7 @@
 
     <heinsbergPvPanelResponse>/HeinsbergPvPanelResponse</heinsbergPvPanelResponse>
 
-    <resourceId>pvpanel</resourceId>
+    <resourceId>PV_SIMULATION</resourceId>
 
     <heinsbergPvPanelRequest>/HeinsbergPvPanelRequest</heinsbergPvPanelRequest>
 
@@ -53,7 +53,7 @@
 
     <showWidget>false</showWidget>
 
-    <resourceId>rex-manual</resourceId>
+    <resourceId>REX_IMBALANCE</resourceId>
 
 </config>
 
@@ -67,7 +67,7 @@
 
     <heinsbergREXResponse>/HeinsbergREXResponse</heinsbergREXResponse>
 
-    <resourceId>REX</resourceId>
+    <resourceId>REX_IMBALANCE_SIMULATION</resourceId>
 
 </config>
 
@@ -91,7 +91,7 @@
 
     <fillRate>0.02</fillRate>
 
-    <resourceId>DaikinHeatpumpManager</resourceId>
+    <resourceId>HEATPUMP</resourceId>
 
 </config>
 
@@ -105,7 +105,7 @@
 
     <updateFrequency>1</updateFrequency>
 
-    <resourceId>DaikinHeatpump</resourceId>
+    <resourceId>HEATPUMP_SIMULATION</resourceId>
 
     <heinsbergHeatpumpResponse>/HeinsbergHeatpumpResponse</heinsbergHeatpumpResponse>
 
@@ -175,7 +175,7 @@
 
     <heinsbergLoadRequest>/HeinsbergLoadRequest</heinsbergLoadRequest>
 
-    <resourceId>load</resourceId>
+    <resourceId>LOAD_SIMULATION</resourceId>
 
 </config>
 
@@ -185,7 +185,7 @@
 
     <showWidget>false</showWidget>
 
-    <resourceId>pvpanel</resourceId>
+    <resourceId>PV</resourceId>
 
 </config>
 
@@ -199,13 +199,13 @@
 
     <heinsbergREXResponse>/HeinsbergREXResponse</heinsbergREXResponse>
 
-    <resourceId>REX</resourceId>
+    <resourceId>REX_SIMULATOIN</resourceId>
 
 </config>
 
 <config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.controller.PowerMatcherController" ref="powermatchercontroller-12">
 
-    <agentIdPrefix>fpai-agent-</agentIdPrefix>
+    <!-- <agentIdPrefix>fpai-agent-</agentIdPrefix>  --> <agentIdPrefix></agentIdPrefix>
 
     <desiredParent>auctioneer</desiredParent>
 
@@ -213,7 +213,7 @@
 
 <config bundleId="flexiblepower.manager.battery" factoryId="org.flexiblepower.battery.manager.BatteryManager" ref="batterymanager-13">
 
-    <resourceId>BatteryManager</resourceId>
+    <resourceId>BATTERY</resourceId>
 
 </config>
 
