@@ -28,9 +28,9 @@
 
     <heinsbergBatteryModeRequest>/HeinsbergBatteryModeRequest</heinsbergBatteryModeRequest>
 
-    <dischargePower>150</dischargePower>
+    <dischargePower>500</dischargePower>
 
-    <chargePower>150</chargePower>
+    <chargePower>500</chargePower>
 
     <updateInterval>1</updateInterval>
 

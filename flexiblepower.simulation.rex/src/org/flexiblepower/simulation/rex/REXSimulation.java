@@ -174,7 +174,7 @@ public class REXSimulation extends AbstractResourceDriver<PowerState, ResourceCo
             String price = parts[0];
             String power = parts[1];
             logger.info("REX : " + arg1.toString());
-            double demand = Double.valueOf(power.replace(',', '.'));
+            double demand = Double.valueOf(power.replace(',', '.')) * 1000;
             double currentPrice = Double.valueOf(price.replace(',', '.'));
 
             currentPowerState = new PowerStateImpl(Measure.valueOf(demand, SI.WATT),

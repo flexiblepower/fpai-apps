@@ -4,6 +4,6 @@ $(window).load(function() {
 		$("p").show();
 		$(".error").hide();
 		$("#price").text(data.price);
-		$("#demand").text(data.demand);
+		$("#demand").text(data.demand / 1000);
 	});
 });
