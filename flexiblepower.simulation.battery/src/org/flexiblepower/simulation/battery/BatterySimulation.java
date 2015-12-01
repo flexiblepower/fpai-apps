@@ -50,45 +50,45 @@ import aQute.bnd.annotation.metatype.Meta;
  */
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 public class BatterySimulation
-                              extends AbstractResourceDriver<BatteryState, BatteryControlParameters>
-                                                                                                    implements
-                                                                                                    BatteryDriver,
-                                                                                                    Runnable,
-                                                                                                    MqttCallback {
+                               extends AbstractResourceDriver<BatteryState, BatteryControlParameters>
+                               implements
+                               BatteryDriver,
+                               Runnable,
+                               MqttCallback {
 
     interface Config {
         @Meta.AD(deflt = "5", description = "Interval between state updates [s]")
-        long updateInterval();
+             long updateInterval();
 
         @Meta.AD(deflt = "4", description = "Total capacity [kWh]")
-        double totalCapacity();
+               double totalCapacity();
 
         @Meta.AD(deflt = "0.5", description = "Initial state of charge (from 0 to 1)")
-        double initialStateOfCharge();
+               double initialStateOfCharge();
 
         @Meta.AD(deflt = "150", description = "Charge power [W]")
-        long chargePower();
+             long chargePower();
 
         @Meta.AD(deflt = "150", description = "Discharge power [W]")
-        long dischargePower();
+             long dischargePower();
 
         @Meta.AD(deflt = "0.9", description = "Charge efficiency (from 0 to 1)")
-        double chargeEfficiency();
+               double chargeEfficiency();
 
         @Meta.AD(deflt = "0.9", description = "Discharge efficiency (from 0 to 1)")
-        double dischargeEfficiency();
+               double dischargeEfficiency();
 
         @Meta.AD(deflt = "25", description = "Self discharge power [W]")
-        long selfDischargePower();
+             long selfDischargePower();
 
         @Meta.AD(deflt = "tcp://130.211.82.48:1883", description = "URL to the MQTT broker")
-        String brokerUrl();
+               String brokerUrl();
 
         @Meta.AD(deflt = "/HeinsbergBatteryResponse", description = "Mqtt response topic to zenobox")
-        String heinsbergBatteryResponse();
+               String heinsbergBatteryResponse();
 
         @Meta.AD(deflt = "/HeinsbergBatteryModeRequest", description = "Mqtt response topic to zenobox")
-        String heinsbergBatteryModeRequest();
+               String heinsbergBatteryModeRequest();
     }
 
     class State implements BatteryState {
@@ -279,13 +279,13 @@ public class BatterySimulation
 
             switch (Integer.valueOf(partMode)) {
             case 0:
-                mode = BatteryMode.IDLE;
-                break;
-            case 1:
                 mode = BatteryMode.CHARGE;
                 break;
-            case 2:
+            case 1:
                 mode = BatteryMode.DISCHARGE;
+                break;
+            case 2:
+                mode = BatteryMode.IDLE;
                 break;
             }
 
@@ -332,11 +332,6 @@ public class BatterySimulation
 
     @Override
     protected void handleControlParameters(BatteryControlParameters controlParameters) {
-
-        // Send values to the Zenobox
-        // ledstripLevel = controlParameters.getLevel();
-
-        // TODO
 
         if (currentState == null) {
             // no valid state, queue this controlParameter
