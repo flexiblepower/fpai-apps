@@ -9,9 +9,7 @@ import javax.measure.unit.SI;
 import org.flexiblepower.simulation.rex.REXSimulation.PowerStateImpl;
 import org.flexiblepower.ui.Widget;
 
-import aQute.bnd.annotation.component.Component;
-
-@Component(provide = Widget.class, properties = "widget.ranking=99")
+//@Component(provide = Widget.class, properties = "widget.ranking=99")
 public class REXWidget implements Widget {
     public static class Update {
         private final double price;
