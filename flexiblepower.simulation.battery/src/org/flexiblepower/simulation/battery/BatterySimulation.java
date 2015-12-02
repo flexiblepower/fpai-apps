@@ -50,45 +50,45 @@ import aQute.bnd.annotation.metatype.Meta;
  */
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 public class BatterySimulation
-                               extends AbstractResourceDriver<BatteryState, BatteryControlParameters>
-                               implements
-                               BatteryDriver,
-                               Runnable,
-                               MqttCallback {
+                              extends AbstractResourceDriver<BatteryState, BatteryControlParameters>
+                                                                                                    implements
+                                                                                                    BatteryDriver,
+                                                                                                    Runnable,
+                                                                                                    MqttCallback {
 
     interface Config {
         @Meta.AD(deflt = "5", description = "Interval between state updates [s]")
-             long updateInterval();
+        long updateInterval();
 
         @Meta.AD(deflt = "4", description = "Total capacity [kWh]")
-               double totalCapacity();
+        double totalCapacity();
 
         @Meta.AD(deflt = "0.5", description = "Initial state of charge (from 0 to 1)")
-               double initialStateOfCharge();
+        double initialStateOfCharge();
 
         @Meta.AD(deflt = "150", description = "Charge power [W]")
-             long chargePower();
+        long chargePower();
 
         @Meta.AD(deflt = "150", description = "Discharge power [W]")
-             long dischargePower();
+        long dischargePower();
 
         @Meta.AD(deflt = "0.9", description = "Charge efficiency (from 0 to 1)")
-               double chargeEfficiency();
+        double chargeEfficiency();
 
         @Meta.AD(deflt = "0.9", description = "Discharge efficiency (from 0 to 1)")
-               double dischargeEfficiency();
+        double dischargeEfficiency();
 
         @Meta.AD(deflt = "25", description = "Self discharge power [W]")
-             long selfDischargePower();
+        long selfDischargePower();
 
         @Meta.AD(deflt = "tcp://130.211.82.48:1883", description = "URL to the MQTT broker")
-               String brokerUrl();
+        String brokerUrl();
 
         @Meta.AD(deflt = "/HeinsbergBatteryResponse", description = "Mqtt response topic to zenobox")
-               String heinsbergBatteryResponse();
+        String heinsbergBatteryResponse();
 
         @Meta.AD(deflt = "/HeinsbergBatteryModeRequest", description = "Mqtt response topic to zenobox")
-               String heinsbergBatteryModeRequest();
+        String heinsbergBatteryModeRequest();
     }
 
     class State implements BatteryState {
@@ -340,7 +340,10 @@ public class BatterySimulation
         } else {
             // Execute the Control Parameter
 
-            if (currentState.mode != controlParameters.getMode()) {
+            // BATTERY SANITY CHECK - Do !!NOT!! tell battery to overcharge/discharge
+            boolean safetyRelease = (mStateOfCharge > 0.95 || mStateOfCharge < 0.20) ? true : false;
+
+            if (currentState.mode != controlParameters.getMode() || safetyRelease == true) {
 
                 // Charge battery
                 logger.debug("Switch mode to" + controlParameters.getMode().toString());
@@ -350,40 +353,46 @@ public class BatterySimulation
                     String controlMode = "";
                     Long chargingPower = new Long(0); // in Watts
 
-                    // Handle the battery depending on PowerMatcher request...
-                    switch (controlParameters.getMode()) {
+                    if (safetyRelease == true) {
+                        controlMode = "RELEASE";
+                        chargingPower = new Long(0);
+                    } else {
 
-                    // When Power matcher is telling battery to stay IDLE...
-                    case IDLE:
-                        // When current battery charge is more than e.g.27%
-                        if (mStateOfCharge > 0.27) {
+                        // Handle the battery depending on PowerMatcher request...
+                        switch (controlParameters.getMode()) {
+
+                        // When Power matcher is telling battery to stay IDLE...
+                        case IDLE:
+                            // When current battery charge is more than e.g.27%
+                            if (mStateOfCharge > 0.27) {
+                                controlMode = "CONTROL";
+                                chargingPower = new Long(-25);
+
+                                // When current battery charge is <= 27%, release the battery
+                            } else {
+                                controlMode = "RELEASE";
+                                chargingPower = new Long(0);
+                            }
+                            break;
+
+                        // When PM is telling battery to CHARGE...
+                        case CHARGE:
                             controlMode = "CONTROL";
-                            chargingPower = new Long(-25);
+                            chargingPower = -1 * configuration.chargePower();
+                            break;
 
-                            // When current battery charge is <= 27%, release the battery
-                        } else {
+                        // When PM is telling battery to DISCHARGE...
+                        case DISCHARGE:
+                            controlMode = "CONTROL";
+                            chargingPower = configuration.dischargePower();
+                            break;
+
+                        // In case of unexpected...
+                        default:
+                            chargingMode = BatteryMode.IDLE.toString();
                             controlMode = "RELEASE";
                             chargingPower = new Long(0);
                         }
-                        break;
-
-                    // When PM is telling battery to CHARGE...
-                    case CHARGE:
-                        controlMode = "CONTROL";
-                        chargingPower = -1 * configuration.chargePower();
-                        break;
-
-                    // When PM is telling battery to DISCHARGE...
-                    case DISCHARGE:
-                        controlMode = "CONTROL";
-                        chargingPower = configuration.dischargePower();
-                        break;
-
-                    // In case of unexpected...
-                    default:
-                        chargingMode = BatteryMode.IDLE.toString();
-                        controlMode = "RELEASE";
-                        chargingPower = new Long(0);
                     }
 
                     logger.debug("BAT-MODE: " + chargingMode);
