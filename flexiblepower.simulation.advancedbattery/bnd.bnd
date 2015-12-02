@@ -1,0 +1,5 @@
+-buildpath: ${fpai-buildpath}, flexiblepower.ui;version=latest
+
+Service-Component: *
+Bundle-Version: 2.0.0.${qualifier}
+Private-Package: org.flexiblepower.simulation.advancedbattery
