@@ -18,6 +18,7 @@ import javax.measure.quantity.Duration;
 import javax.measure.quantity.Energy;
 import javax.measure.quantity.Money;
 import javax.measure.quantity.Power;
+import javax.measure.unit.AlternateUnit;
 import javax.measure.unit.NonSI;
 import javax.measure.unit.SI;
 import javax.measure.unit.Unit;
@@ -66,17 +67,20 @@ import aQute.bnd.annotation.metatype.Meta;
 @Component(designateFactory = Config.class, provide = Endpoint.class, immediate = true)
 @Ports(@Port(name = "driver", sends = BatteryControlParameters.class, accepts = BatteryState.class))
 public class BatteryManager extends AbstractResourceManager<BatteryState, BatteryControlParameters>
-                                                                                                   implements
-                                                                                                   BufferResourceManager {
+                            implements
+                            BufferResourceManager {
+    private static final int MINIMUM_BUFFER_LEVEL = 0;
+    private static final AlternateUnit<Energy> UNIT_JOULE = JOULE;
     private static final Unit<Duration> MS = SI.MILLI(SECOND);
     private static final Logger logger = LoggerFactory.getLogger(BatteryManager.class);
 
     private static final int BATTERY_ACTUATOR_ID = 1; // self chosen id for the actuator
+    private static final double CONSUMPTION_WHEN_IDLE_IN_WATTS = 0;
 
     @Meta.OCD
     interface Config {
         @Meta.AD(deflt = "BatteryManager", description = "Unique resourceID")
-        String resourceId();
+               String resourceId();
     }
 
     private Config configuration;
@@ -101,23 +105,21 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
                                        "Battery",
                                        CommoditySet.onlyElectricity);
         // create a buffer registration message
-        Set<Actuator> actuators = new HashSet<Actuator>();
-        actuators.add(batteryActuator);
         batteryBufferRegistration = new BufferRegistration<Energy>(configuration.resourceId(),
                                                                    changedStateTimestamp,
                                                                    Measure.zero(SECOND),
                                                                    "Battery level",
-                                                                   JOULE,
-                                                                   actuators);
+                                                                   UNIT_JOULE,
+                                                                   Collections.<Actuator> singleton(batteryActuator));
 
         // ---- Buffer system description ----
         // create a behavior of the battery
         ActuatorBehaviour batteryActuatorBehaviour = makeBatteryActuatorBehaviour(batteryActuator.getActuatorId(),
                                                                                   batteryState);
         // create the leakage function of the battery
-        FillLevelFunction<LeakageRate> bufferLeakageFunction = FillLevelFunction.<LeakageRate> create(0)
+        FillLevelFunction<LeakageRate> bufferLeakageFunction = FillLevelFunction.<LeakageRate> create(MINIMUM_BUFFER_LEVEL)
                                                                                 .add(batteryState.getTotalCapacity()
-                                                                                                 .doubleValue(JOULE),
+                                                                                                 .doubleValue(UNIT_JOULE),
                                                                                      new LeakageRate(batteryState.getSelfDischargeSpeed()
                                                                                                                  .doubleValue(WATT)))
                                                                                 .build();
@@ -285,29 +287,33 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
         dischargeTransition.add(toIdleTransition);
         dischargeTransition.add(toChargingTransition);
 
-        FillLevelFunction<RunningModeBehaviour> chargeFillLevelFunctions, idleFillLevelFunctions, dischargeFillLevelFunctions;
+        FillLevelFunction<RunningModeBehaviour> chargeFillLevelFunctions, idleFillLevelFunctions,
+                dischargeFillLevelFunctions;
 
-        double totalCapacity = state.getTotalCapacity().doubleValue(JOULE);
+        double totalCapacity = state.getTotalCapacity().doubleValue(UNIT_JOULE);
         Measurable<Power> chargeSpeed = state.getChargeSpeed();
 
-        chargeFillLevelFunctions = FillLevelFunction.<RunningModeBehaviour> create(0)
+        chargeFillLevelFunctions = FillLevelFunction.<RunningModeBehaviour> create(MINIMUM_BUFFER_LEVEL)
                                                     .add(totalCapacity,
-                                                         new RunningModeBehaviour(chargeSpeed.doubleValue(WATT) * state.getChargeEfficiency(),
+                                                         new RunningModeBehaviour(chargeSpeed.doubleValue(WATT)
+                                                                                  * state.getChargeEfficiency(),
                                                                                   CommodityMeasurables.electricity(chargeSpeed),
                                                                                   Measure.zero(NonSI.EUR_PER_HOUR)))
                                                     .build();
 
-        idleFillLevelFunctions = FillLevelFunction.<RunningModeBehaviour> create(0)
+        idleFillLevelFunctions = FillLevelFunction.<RunningModeBehaviour> create(MINIMUM_BUFFER_LEVEL)
                                                   .add(totalCapacity,
-                                                       new RunningModeBehaviour(0,
+                                                       new RunningModeBehaviour(CONSUMPTION_WHEN_IDLE_IN_WATTS,
                                                                                 CommodityMeasurables.electricity(Measure.zero(WATT)),
                                                                                 Measure.zero(NonSI.EUR_PER_HOUR)))
                                                   .build();
 
         Measurable<Power> dischargeSpeed = state.getDischargeSpeed();
-        dischargeFillLevelFunctions = FillLevelFunction.<RunningModeBehaviour> create(0)
+        // TODO: Check if discharge speed is the fill level change and the discharge/efficiency is correct...
+        dischargeFillLevelFunctions = FillLevelFunction.<RunningModeBehaviour> create(MINIMUM_BUFFER_LEVEL)
                                                        .add(totalCapacity,
-                                                            new RunningModeBehaviour(-dischargeSpeed.doubleValue(WATT) / state.getDischargeEfficiency(),
+                                                            new RunningModeBehaviour(-dischargeSpeed.doubleValue(WATT)
+                                                                                     / state.getDischargeEfficiency(),
                                                                                      CommodityMeasurables.electricity(Measure.valueOf(-dischargeSpeed.doubleValue(WATT),
                                                                                                                                       WATT)),
                                                                                      Measure.zero(NonSI.EUR_PER_HOUR)))
@@ -365,10 +371,7 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
      * @return
      */
     private Set<ActuatorUpdate> makeBatteryRunningModes(int actuatorId, BatteryMode batteryMode) {
-        Set<ActuatorUpdate> runningModes = new HashSet<ActuatorUpdate>();
-        ActuatorUpdate actuatorUpdate = new ActuatorUpdate(actuatorId, batteryMode.ordinal(), null);
-        runningModes.add(actuatorUpdate);
-        return runningModes;
+        return Collections.<ActuatorUpdate> singleton(new ActuatorUpdate(actuatorId, batteryMode.ordinal(), null));
     }
 
     /**
@@ -380,7 +383,7 @@ public class BatteryManager extends AbstractResourceManager<BatteryState, Batter
     private Measure<Double, Energy> getCurrentFillLevel(BatteryState batteryState) {
         double stateOfCharge = batteryState.getStateOfCharge();
         Measurable<Energy> totalCapacity = batteryState.getTotalCapacity();
-        return Measure.valueOf(stateOfCharge * totalCapacity.doubleValue(JOULE), JOULE);
+        return Measure.valueOf(stateOfCharge * totalCapacity.doubleValue(UNIT_JOULE), UNIT_JOULE);
     }
 
     @Reference

@@ -33,6 +33,8 @@ import aQute.bnd.annotation.component.Deactivate;
 import aQute.bnd.annotation.component.Modified;
 import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Configurable;
+import flexiblepower.manager.advancedbattery.AdvancedBatteryConfig;
+import flexiblepower.manager.advancedbattery.AdvancedBatteryWidget;
 
 @Component(designateFactory = AdvancedBatteryConfig.class, provide = Endpoint.class, immediate = true)
 public class AdvancedBatterySimulation extends AbstractResourceDriver<BatteryState, BatteryControlParameters>

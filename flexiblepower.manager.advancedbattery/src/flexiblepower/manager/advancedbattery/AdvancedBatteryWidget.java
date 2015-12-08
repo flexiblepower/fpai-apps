@@ -1,11 +1,7 @@
-package org.flexiblepower.simulation.advancedbattery;
-
-import static javax.measure.unit.NonSI.KWH;
+package flexiblepower.manager.advancedbattery;
 
 import java.util.Locale;
 
-import org.flexiblepower.ral.drivers.battery.BatteryMode;
-import org.flexiblepower.simulation.advancedbattery.AdvancedBatterySimulation.State;
 import org.flexiblepower.ui.Widget;
 
 public class AdvancedBatteryWidget implements Widget {
@@ -33,19 +29,19 @@ public class AdvancedBatteryWidget implements Widget {
         }
     }
 
-    private final AdvancedBatterySimulation simulation;
+    private final AdvancedBatteryDeviceModel deviceModel;
 
-    public AdvancedBatteryWidget(AdvancedBatterySimulation simulation) {
-        this.simulation = simulation;
+    public AdvancedBatteryWidget(AdvancedBatteryDeviceModel deviceModel) {
+        this.deviceModel = deviceModel;
     }
 	
     public Update update() {
-        State state = simulation.getCurrentState();
-        double soc = state.getStateOfCharge();
-        int socPercentage = (int) (soc * 100.0);
-        double capacity = state.getTotalCapacity().doubleValue(KWH);
-        BatteryMode mode = state.getCurrentMode();
-        return new Update(socPercentage, String.format("%2.1f kWh", capacity), mode.toString());
+//        double soc = deviceModel.getStateOfCharge();
+//        int socPercentage = (int) (soc * 100.0);
+//        double capacity = deviceModel.getTotalCapacity().doubleValue(KWH);
+//        BatteryMode mode = deviceModel.getCurrentMode();
+    	//TODO: Fill this
+        return new Update(1, "", "");
     }
 
     @Override
