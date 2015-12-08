@@ -13,11 +13,11 @@ public interface AdvancedBatteryConfig {
     @Meta.AD(deflt="0.5", description = "initial State of Charge (0-1)")
     double initialSocRatio();
     
-    @Meta.AD(deflt="0.2", description = "minimum desired State of Charge (0-1)")
-    double minimumSocRatio();
+    @Meta.AD(deflt="20", description = "minimum desired fill level (percent)")
+    double minimumFillLevelPercent();
     
-    @Meta.AD(deflt="0.9", description = "maximum desired State of Charge (0-1)")
-    double maximumSocRatio();
+    @Meta.AD(deflt="90", description = "maximum desired fill level (percent)")
+    double maximumFillLevelPercent();
     
     @Meta.AD(deflt = "5", description = "The simulation time step for a recalculation of the state.")
     long updateIntervalSeconds();
