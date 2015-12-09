@@ -1,15 +1,22 @@
 package flexiblepower.manager.advancedbattery;
 
 import javax.measure.Measurable;
+import javax.measure.Measure;
+import javax.measure.quantity.Dimensionless;
 import javax.measure.quantity.Energy;
 import javax.measure.quantity.Power;
+import javax.measure.unit.NonSI;
+import javax.measure.unit.SI;
+
+import org.flexiblepower.ral.drivers.battery.BatteryState;
 
 public class AdvancedBatteryDeviceModel implements Runnable {
 
 	AdvancedBatteryMode mode;
+	private AdvancedBatteryConfig configuration;
 	
 	public AdvancedBatteryDeviceModel(AdvancedBatteryConfig configuration) {
-		// TODO Auto-generated constructor stub
+		this.configuration = configuration;
 	}
 
 	public AdvancedBatteryMode getCurrentMode() {
@@ -23,8 +30,7 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 	}
 
 	public Measurable<Energy> getTotalCapacity() {
-		// TODO Auto-generated method stub
-		return null;
+		return Measure.valueOf(configuration.nrOfmodules() * 1.2, NonSI.KWH);
 	}
 
 	public double getChargeEfficiency(Measurable<Power> chargeSpeed) {
@@ -36,5 +42,20 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 		// TODO Auto-generated method stub
 		return 1;
 	}
+	
+	public Measurable<Power> getMaximumChargeSpeed() {
+		// TODO actually use
+		return Measure.valueOf(configuration.nrOfmodules() <= 1 ? 2500 : 5000, SI.WATT);
+	}
 
+	public Measurable<Power> getMaximumDischargeSpeed() {
+		// TODO actually use
+		return Measure.valueOf(configuration.nrOfmodules() <= 1 ? -2500 : -5000, SI.WATT);
+	}
+
+	public Measurable<Dimensionless> getCurrentFillLevel() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
 }

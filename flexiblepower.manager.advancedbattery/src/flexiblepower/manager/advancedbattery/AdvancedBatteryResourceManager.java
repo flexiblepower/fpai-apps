@@ -73,22 +73,15 @@ public class AdvancedBatteryResourceManager implements BufferResourceManager, En
 
 	private static final int BATTERY_CHARGER_ID = 0;
 
-	private static final double MINIMUM_BUFFER_LEVEL = 0;
-
 	private AdvancedBatteryConfig configuration;
 	private FlexiblePowerContext context;
 	private AdvancedBatteryDeviceModel model;
-
-	private Date lastUpdatedTime;
-	private Date changedStateTimestamp;
 
 	private AdvancedBatteryWidget widget;
 
 	private ServiceRegistration<Widget> widgetRegistration;
 
 	private ScheduledFuture<?> scheduledFuture;
-
-	private AdvancedBatteryDeviceModel previousModel;
 
 	private Actuator batteryCharger;
 
@@ -123,9 +116,14 @@ public class AdvancedBatteryResourceManager implements BufferResourceManager, En
 		if (widgetRegistration != null) {
 			widgetRegistration.unregister();
 		}
-		if(scheduledFuture != null) {
+		if (scheduledFuture != null) {
 			scheduledFuture.cancel(true);
 		}
+	}
+
+	@Reference(optional = false, dynamic = false, multiple = false)
+	public void setContext(FlexiblePowerContext context) {
+		this.context = context;
 	}
 
 	protected List<? extends ResourceMessage> startRegistration() {
@@ -135,14 +133,13 @@ public class AdvancedBatteryResourceManager implements BufferResourceManager, En
 		logger.debug("Updated the battery state update, mode=" + model.getCurrentMode().name());
 
 		// safe current state of the battery
-		previousModel = model;
-		changedStateTimestamp = context.currentTime();
+		Date now = context.currentTime();
 
 		// ---- Buffer registration ----
 		// create a battery actuator for electricity
 		batteryCharger = new Actuator(BATTERY_CHARGER_ID, "Battery Charger 1", CommoditySet.onlyElectricity);
 		// create a buffer registration message
-		batteryBufferRegistration = new BufferRegistration<Dimensionless>(configuration.resourceId(), changedStateTimestamp,
+		batteryBufferRegistration = new BufferRegistration<Dimensionless>(configuration.resourceId(), now,
 				Measure.zero(SECOND), "Battery state of charge in percent", NonSI.PERCENT,
 				Collections.<Actuator> singleton(batteryCharger));
 
@@ -150,40 +147,36 @@ public class AdvancedBatteryResourceManager implements BufferResourceManager, En
 		// create a behavior of the battery
 		ActuatorBehaviour batteryActuatorBehaviour = makeBatteryActuatorBehaviour(batteryCharger.getActuatorId());
 		// create the leakage function of the battery
-		FillLevelFunction<LeakageRate> bufferLeakageFunction = FillLevelFunction
-				.<LeakageRate> create(MINIMUM_BUFFER_LEVEL).add(batteryState.getTotalCapacity().doubleValue(UNIT_JOULE),
-						new LeakageRate(batteryState.getSelfDischargeSpeed().doubleValue(WATT)))
-				.build();
+		FillLevelFunction<LeakageRate> bufferLeakageFunction = FillLevelFunction.<LeakageRate> create(0d)
+				.add(100d, new LeakageRate(0)).build(); // TODO build in
+														// leakage???
 		// create the buffer system description message
 		Set<ActuatorBehaviour> actuatorsBehaviours = new HashSet<ActuatorBehaviour>();
 		actuatorsBehaviours.add(batteryActuatorBehaviour);
-		BufferSystemDescription sysDescr = new BufferSystemDescription(batteryBufferRegistration, changedStateTimestamp,
-				changedStateTimestamp, actuatorsBehaviours, bufferLeakageFunction);
+		BufferSystemDescription sysDescr = new BufferSystemDescription(batteryBufferRegistration, now, now,
+				actuatorsBehaviours, bufferLeakageFunction);
 
 		// ---- Buffer state update ----
-		// create running mode
-		Set<ActuatorUpdate> currentRunningMode = makeBatteryRunningModes(batteryCharger.getActuatorId(),
-				batteryState.getCurrentMode());
-		// create buffer state update message
-		Measure<Double, Energy> currentFillLevel = getCurrentFillLevel(batteryState);
-		BufferStateUpdate<Energy> update = new BufferStateUpdate<Energy>(batteryBufferRegistration,
-				changedStateTimestamp, changedStateTimestamp, currentFillLevel, currentRunningMode);
+		BufferStateUpdate<Dimensionless> update = createBufferStateUpdate(now);
 
 		logger.debug("Battery manager start registration completed.");
 		// return the three messages
 		return Arrays.asList(batteryBufferRegistration, sysDescr, update);
 	}
 
-	private ControlSpaceRevoke createRevokeMessage() {
-		return new ControlSpaceRevoke(configuration.resourceId(), context.currentTime());
+	private BufferStateUpdate<Dimensionless> createBufferStateUpdate(Date timestamp) {
+		// create running mode
+		Set<ActuatorUpdate> currentRunningMode = makeBatteryRunningModes(batteryCharger.getActuatorId(),
+				model.getCurrentMode());
+		// create buffer state update message
+		Measurable<Dimensionless> currentFillLevel = model.getCurrentFillLevel();
+		BufferStateUpdate<Dimensionless> update = new BufferStateUpdate<Dimensionless>(batteryBufferRegistration,
+				timestamp, timestamp, currentFillLevel, currentRunningMode);
+		return update;
 	}
 
-	@Reference(optional = false, dynamic = false, multiple = false)
-	public void setContext(FlexiblePowerContext context) {
-		lastUpdatedTime = context.currentTime();
-		this.context = context;
-		// Instantiate the model.
-
+	private ControlSpaceRevoke createRevokeMessage() {
+		return new ControlSpaceRevoke(configuration.resourceId(), context.currentTime());
 	}
 
 	@Override
@@ -221,126 +214,108 @@ public class AdvancedBatteryResourceManager implements BufferResourceManager, En
 	public void disconnected() {
 		this.controllerConnection = null;
 	}
-	
-    /**
-     * Helper method to set up everything for the battery actuator behavior specification
-     *
-     * @param actuatorId
-     * @return Returns the completely filled battery actuator behavior object
-     */
-    private ActuatorBehaviour makeBatteryActuatorBehaviour(int actuatorId) {
-        // make three transitions holders
-        Transition toChargingTransition = makeTransition(BatteryMode.CHARGE.ordinal());
-        Transition toIdleTransition = makeTransition(BatteryMode.IDLE.ordinal());
-        Transition toDisChargingTransition = makeTransition(BatteryMode.DISCHARGE.ordinal());
 
-        // create the transition graph, it is fully connected in this case
-        Set<Transition> idleTransition = new HashSet<Transition>();
-        idleTransition.add(toChargingTransition);
-        idleTransition.add(toDisChargingTransition);
-        Set<Transition> chargeTransition = new HashSet<Transition>();
-        chargeTransition.add(toIdleTransition);
-        chargeTransition.add(toDisChargingTransition);
-        Set<Transition> dischargeTransition = new HashSet<Transition>();
-        dischargeTransition.add(toIdleTransition);
-        dischargeTransition.add(toChargingTransition);
+	/**
+	 * Helper method to set up everything for the battery actuator behavior
+	 * specification
+	 *
+	 * @param actuatorId
+	 * @return Returns the completely filled battery actuator behavior object
+	 */
+	private ActuatorBehaviour makeBatteryActuatorBehaviour(int actuatorId) {
+		// make three transitions holders
+		Transition toChargingTransition = makeTransition(BatteryMode.CHARGE.ordinal());
+		Transition toIdleTransition = makeTransition(BatteryMode.IDLE.ordinal());
+		Transition toDisChargingTransition = makeTransition(BatteryMode.DISCHARGE.ordinal());
 
-        FillLevelFunction<RunningModeBehaviour> chargeFillLevelFunctions, idleFillLevelFunctions,
-                dischargeFillLevelFunctions;
+		// create the transition graph, it is fully connected in this case
+		Set<Transition> idleTransition = new HashSet<Transition>();
+		idleTransition.add(toChargingTransition);
+		idleTransition.add(toDisChargingTransition);
+		Set<Transition> chargeTransition = new HashSet<Transition>();
+		chargeTransition.add(toIdleTransition);
+		chargeTransition.add(toDisChargingTransition);
+		Set<Transition> dischargeTransition = new HashSet<Transition>();
+		dischargeTransition.add(toIdleTransition);
+		dischargeTransition.add(toChargingTransition);
 
-        double totalCapacity = model.getTotalCapacity().doubleValue(NonSI.KWH);
-        Measurable<Power> chargeSpeed = Measure.valueOf(1500, SI.WATT);
+		FillLevelFunction<RunningModeBehaviour> chargeFillLevelFunction, idleFillLevelFunction,
+				dischargeFillLevelFunction;
 
-        chargeFillLevelFunctions = FillLevelFunction.<RunningModeBehaviour> create(configuration.minimumFillLevelPercent())
-                                                    .add(configuration.maximumFillLevelPercent(),
-                                                         new RunningModeBehaviour(chargeSpeed.doubleValue(WATT)
-                                                                                  * model.getChargeEfficiency(chargeSpeed), // TODO translate to % per second
-                                                                                  CommodityMeasurables.electricity(chargeSpeed),
-                                                                                  Measure.zero(NonSI.EUR_PER_HOUR)))
-                                                    .build();
+		Measurable<Power> chargeSpeed = Measure.valueOf(1500, SI.WATT); // TODO
+																		// make
+																		// configurable
 
-        idleFillLevelFunctions = FillLevelFunction.<RunningModeBehaviour> create(configuration.minimumFillLevelPercent())
-                                                  .add(configuration.maximumFillLevelPercent(),
-                                                       new RunningModeBehaviour(0,
-                                                                                CommodityMeasurables.electricity(Measure.zero(WATT)),
-                                                                                Measure.zero(NonSI.EUR_PER_HOUR)))
-                                                  .build();
+		chargeFillLevelFunction = FillLevelFunction
+				.<RunningModeBehaviour> create(configuration.minimumFillLevelPercent())
+				.add(configuration.maximumFillLevelPercent(),
+						new RunningModeBehaviour(
+								chargeSpeed.doubleValue(WATT) / model.getTotalCapacity().doubleValue(SI.JOULE) * 100d
+										* model.getChargeEfficiency(chargeSpeed),
+								CommodityMeasurables.electricity(chargeSpeed), Measure.zero(NonSI.EUR_PER_HOUR)))
+				.build();
 
-        Measurable<Power> dischargeSpeed = Measure.valueOf(-1500, SI.WATT);
-        // TODO: Check if discharge speed is the fill level change and the discharge/efficiency is correct...
-        dischargeFillLevelFunctions = FillLevelFunction.<RunningModeBehaviour> create(configuration.minimumFillLevelPercent())
-                                                       .add(configuration.maximumFillLevelPercent(),
-                                                            new RunningModeBehaviour(dischargeSpeed.doubleValue(WATT) * model.getDischargeEfficiency(dischargeSpeed), // TODO translate to % per second
-                                                                                     CommodityMeasurables.electricity(Measure.valueOf(-dischargeSpeed.doubleValue(WATT),
-                                                                                                                                      WATT)),
-                                                                                     Measure.zero(NonSI.EUR_PER_HOUR)))
-                                                       .build();
+		idleFillLevelFunction = FillLevelFunction.<RunningModeBehaviour> create(configuration.minimumFillLevelPercent())
+				.add(configuration.maximumFillLevelPercent(), new RunningModeBehaviour(0,
+						CommodityMeasurables.electricity(Measure.zero(WATT)), Measure.zero(NonSI.EUR_PER_HOUR)))
+				.build();
 
-        // Based on the fill level functions and the transitions, create the three running modes
-        RunningMode<FillLevelFunction<RunningModeBehaviour>> chargeRunningMode = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(BatteryMode.CHARGE.ordinal(),
-                                                                                                                                          "charging",
-                                                                                                                                          chargeFillLevelFunctions,
-                                                                                                                                          chargeTransition);
-        RunningMode<FillLevelFunction<RunningModeBehaviour>> idleRunningMode = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(BatteryMode.IDLE.ordinal(),
-                                                                                                                                        "idle",
-                                                                                                                                        idleFillLevelFunctions,
-                                                                                                                                        idleTransition);
-        RunningMode<FillLevelFunction<RunningModeBehaviour>> dischargeRunningMode = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(BatteryMode.DISCHARGE.ordinal(),
-                                                                                                                                             "discharging",
-                                                                                                                                             dischargeFillLevelFunctions,
-                                                                                                                                             dischargeTransition);
+		Measurable<Power> dischargeSpeed = Measure.valueOf(-1500, SI.WATT); // TODO
+																			// make
+																			// configurable
 
-        // return the actuator behavior with the three running modes for the specified actuator id
-        return ActuatorBehaviour.create(actuatorId)
-                                .add(idleRunningMode)
-                                .add(chargeRunningMode)
-                                .add(dischargeRunningMode)
-                                .build();
-    }
+		dischargeFillLevelFunction = FillLevelFunction
+				.<RunningModeBehaviour> create(configuration.minimumFillLevelPercent())
+				.add(configuration.maximumFillLevelPercent(),
+						new RunningModeBehaviour(
+								dischargeSpeed.doubleValue(WATT) / model.getTotalCapacity().doubleValue(SI.JOULE) * 100d
+										* model.getDischargeEfficiency(dischargeSpeed),
+								CommodityMeasurables.electricity(dischargeSpeed), Measure.zero(NonSI.EUR_PER_HOUR)))
+				.build();
 
-    /**
-     * Make a transition with no timers, no cost and the specified transition id
-     *
-     * @param transitionId
-     * @return
-     */
-    private Transition makeTransition(int transitionId) {
-        // no timers
-        Set<Timer> startTimers = null;
-        Set<Timer> blockingTimers = null;
-        Measurable<Duration> transitionTime = Measure.zero(SECOND);
+		// Based on the fill level functions and the transitions, create the
+		// three running modes
+		RunningMode<FillLevelFunction<RunningModeBehaviour>> chargeRunningMode = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(
+				BatteryMode.CHARGE.ordinal(), "charging", chargeFillLevelFunction, chargeTransition);
+		RunningMode<FillLevelFunction<RunningModeBehaviour>> idleRunningMode = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(
+				BatteryMode.IDLE.ordinal(), "idle", idleFillLevelFunction, idleTransition);
+		RunningMode<FillLevelFunction<RunningModeBehaviour>> dischargeRunningMode = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(
+				BatteryMode.DISCHARGE.ordinal(), "discharging", dischargeFillLevelFunction, dischargeTransition);
 
-        // no cost
-        Measurable<Money> transitionCosts = Measure.zero(NonSI.EUROCENT);
+		// return the actuator behavior with the three running modes for the
+		// specified actuator id
+		return ActuatorBehaviour.create(actuatorId).add(idleRunningMode).add(chargeRunningMode)
+				.add(dischargeRunningMode).build();
+	}
 
-        // return transition
-        return new Transition(transitionId,
-                              startTimers,
-                              blockingTimers,
-                              transitionCosts,
-                              transitionTime);
-    }
+	/**
+	 * Make a transition with no timers, no cost and the specified transition id
+	 *
+	 * @param transitionId
+	 * @return
+	 */
+	private Transition makeTransition(int transitionId) {
+		// no timers
+		Set<Timer> startTimers = null;
+		Set<Timer> blockingTimers = null;
+		Measurable<Duration> transitionTime = Measure.zero(SECOND);
 
-    /**
-     * Create the battery actuator set, based on the battery mode
-     *
-     * @param batteryMode
-     * @return
-     */
-    private Set<ActuatorUpdate> makeBatteryRunningModes(int actuatorId, BatteryMode batteryMode) {
-        return Collections.<ActuatorUpdate> singleton(new ActuatorUpdate(actuatorId, batteryMode.ordinal(), null));
-    }
+		// no cost
+		Measurable<Money> transitionCosts = Measure.zero(NonSI.EUROCENT);
 
-    /**
-     * current fill level is calculated by multiplying the total capacity with the state of charge.
-     *
-     * @param batteryState
-     * @return
-     */
-    private Measure<Double, Energy> getCurrentFillLevel(BatteryState batteryState) {
-        double stateOfCharge = batteryState.getStateOfCharge();
-        Measurable<Energy> totalCapacity = batteryState.getTotalCapacity();
-        return Measure.valueOf(stateOfCharge * totalCapacity.doubleValue(UNIT_JOULE), UNIT_JOULE);
-    }
+		// return transition
+		return new Transition(transitionId, startTimers, blockingTimers, transitionCosts, transitionTime);
+	}
+
+	/**
+	 * Create the battery actuator set, based on the battery mode
+	 *
+	 * @param advancedBatteryMode
+	 * @return
+	 */
+	private Set<ActuatorUpdate> makeBatteryRunningModes(int actuatorId, AdvancedBatteryMode advancedBatteryMode) {
+		return Collections
+				.<ActuatorUpdate> singleton(new ActuatorUpdate(actuatorId, advancedBatteryMode.runningModeId, null));
+	}
 
 }

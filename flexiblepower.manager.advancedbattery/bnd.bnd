@@ -3,4 +3,4 @@
 	flexiblepower.ui
 Bundle-Version: 1.1.0.${qualifier}
 Service-Component: *
-Export-Package:  org.flexiblepower.battery.advancedmanager
+Private-Package: flexiblepower.manager.advancedbattery

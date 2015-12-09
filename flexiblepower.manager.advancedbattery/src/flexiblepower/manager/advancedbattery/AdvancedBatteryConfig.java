@@ -8,7 +8,7 @@ public interface AdvancedBatteryConfig {
     String resourceId();
     
     @Meta.AD(deflt = "4", description = "Number of 1.2 kWh IJ1001M Modules")
-    int modules();
+    int nrOfmodules();
     
     @Meta.AD(deflt="0.5", description = "initial State of Charge (0-1)")
     double initialSocRatio();
@@ -19,6 +19,6 @@ public interface AdvancedBatteryConfig {
     @Meta.AD(deflt="90", description = "maximum desired fill level (percent)")
     double maximumFillLevelPercent();
     
-    @Meta.AD(deflt = "5", description = "The simulation time step for a recalculation of the state.")
+    @Meta.AD(deflt = "30", description = "The simulation time step for a recalculation of the state")
     long updateIntervalSeconds();
 }
