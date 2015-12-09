@@ -16,7 +16,6 @@ import javax.measure.Measurable;
 import javax.measure.Measure;
 import javax.measure.quantity.Dimensionless;
 import javax.measure.quantity.Duration;
-import javax.measure.quantity.Energy;
 import javax.measure.quantity.Money;
 import javax.measure.quantity.Power;
 import javax.measure.unit.NonSI;
@@ -25,28 +24,24 @@ import javax.measure.unit.SI;
 import org.flexiblepower.context.FlexiblePowerContext;
 import org.flexiblepower.efi.BufferResourceManager;
 import org.flexiblepower.efi.buffer.Actuator;
+import org.flexiblepower.efi.buffer.ActuatorAllocation;
 import org.flexiblepower.efi.buffer.ActuatorBehaviour;
 import org.flexiblepower.efi.buffer.ActuatorUpdate;
 import org.flexiblepower.efi.buffer.BufferAllocation;
 import org.flexiblepower.efi.buffer.BufferRegistration;
 import org.flexiblepower.efi.buffer.BufferStateUpdate;
 import org.flexiblepower.efi.buffer.BufferSystemDescription;
-import org.flexiblepower.efi.buffer.BufferUpdate;
 import org.flexiblepower.efi.buffer.LeakageRate;
 import org.flexiblepower.efi.buffer.RunningModeBehaviour;
 import org.flexiblepower.efi.util.FillLevelFunction;
 import org.flexiblepower.efi.util.RunningMode;
 import org.flexiblepower.efi.util.Timer;
 import org.flexiblepower.efi.util.Transition;
-import org.flexiblepower.messaging.Cardinality;
 import org.flexiblepower.messaging.Connection;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.messaging.MessageHandler;
-import org.flexiblepower.messaging.Port;
 import org.flexiblepower.ral.drivers.battery.BatteryMode;
-import org.flexiblepower.ral.drivers.battery.BatteryState;
 import org.flexiblepower.ral.messages.AllocationRevoke;
-import org.flexiblepower.ral.messages.AllocationStatusUpdate;
 import org.flexiblepower.ral.messages.ControlSpaceRevoke;
 import org.flexiblepower.ral.messages.ResourceMessage;
 import org.flexiblepower.ral.values.CommodityMeasurables;
@@ -64,10 +59,7 @@ import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Configurable;
 
 @Component(designateFactory = AdvancedBatteryConfig.class, provide = Endpoint.class, immediate = true)
-@Port(name = "controller", accepts = { BufferAllocation.class, AllocationRevoke.class }, sends = {
-		BufferRegistration.class, BufferUpdate.class, AllocationStatusUpdate.class,
-		ControlSpaceRevoke.class }, cardinality = Cardinality.SINGLE)
-public class AdvancedBatteryResourceManager implements BufferResourceManager, Endpoint, MessageHandler {
+public class AdvancedBatteryResourceManager implements BufferResourceManager, Runnable, MessageHandler {
 
 	private static final Logger logger = LoggerFactory.getLogger(AdvancedBatteryResourceManager.class);
 
@@ -96,9 +88,9 @@ public class AdvancedBatteryResourceManager implements BufferResourceManager, En
 			configuration = Configurable.createConfigurable(AdvancedBatteryConfig.class, properties);
 
 			// Initialize the model correctly to start the first time step.
-			model = new AdvancedBatteryDeviceModel(configuration);
+			model = new AdvancedBatteryDeviceModel(configuration, context);
 
-			scheduledFuture = this.context.scheduleAtFixedRate(model, Measure.valueOf(0, SI.SECOND),
+			scheduledFuture = this.context.scheduleAtFixedRate(this, Measure.valueOf(0, SI.SECOND),
 					Measure.valueOf(configuration.updateIntervalSeconds(), SI.SECOND));
 
 			widget = new AdvancedBatteryWidget(this.model);
@@ -202,12 +194,21 @@ public class AdvancedBatteryResourceManager implements BufferResourceManager, En
 
 	private void handleAllocationRevoke(AllocationRevoke message) {
 		// TODO Auto-generated method stub
-
 	}
 
 	private void handleBufferAllocation(BufferAllocation message) {
-		// TODO Auto-generated method stub
+		for (ActuatorAllocation allocation : message.getActuatorAllocations()) {
+			if (allocation.getActuatorId() == batteryCharger.getActuatorId()) {
+				// This one is for us!
+				AdvancedBatteryMode desiredRunningMode = AdvancedBatteryMode
+						.getByRunningModeId(allocation.getRunningModeId());
+				model.goToRunningMode(desiredRunningMode); // also updates model
+				// TODO use: aa.getStartTime();
 
+				// Send the state update
+				controllerConnection.sendMessage(createBufferStateUpdate(context.currentTime()));
+			}
+		}
 	}
 
 	@Override
@@ -224,9 +225,9 @@ public class AdvancedBatteryResourceManager implements BufferResourceManager, En
 	 */
 	private ActuatorBehaviour makeBatteryActuatorBehaviour(int actuatorId) {
 		// make three transitions holders
-		Transition toChargingTransition = makeTransition(BatteryMode.CHARGE.ordinal());
-		Transition toIdleTransition = makeTransition(BatteryMode.IDLE.ordinal());
-		Transition toDisChargingTransition = makeTransition(BatteryMode.DISCHARGE.ordinal());
+		Transition toChargingTransition = makeTransition(AdvancedBatteryMode.CHARGE.runningModeId);
+		Transition toIdleTransition = makeTransition(AdvancedBatteryMode.IDLE.runningModeId);
+		Transition toDisChargingTransition = makeTransition(AdvancedBatteryMode.DISCHARGE.runningModeId);
 
 		// create the transition graph, it is fully connected in this case
 		Set<Transition> idleTransition = new HashSet<Transition>();
@@ -276,11 +277,12 @@ public class AdvancedBatteryResourceManager implements BufferResourceManager, En
 		// Based on the fill level functions and the transitions, create the
 		// three running modes
 		RunningMode<FillLevelFunction<RunningModeBehaviour>> chargeRunningMode = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(
-				BatteryMode.CHARGE.ordinal(), "charging", chargeFillLevelFunction, chargeTransition);
+				AdvancedBatteryMode.CHARGE.runningModeId, "charging", chargeFillLevelFunction, chargeTransition);
 		RunningMode<FillLevelFunction<RunningModeBehaviour>> idleRunningMode = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(
-				BatteryMode.IDLE.ordinal(), "idle", idleFillLevelFunction, idleTransition);
+				AdvancedBatteryMode.IDLE.runningModeId, "idle", idleFillLevelFunction, idleTransition);
 		RunningMode<FillLevelFunction<RunningModeBehaviour>> dischargeRunningMode = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(
-				BatteryMode.DISCHARGE.ordinal(), "discharging", dischargeFillLevelFunction, dischargeTransition);
+				AdvancedBatteryMode.DISCHARGE.runningModeId, "discharging", dischargeFillLevelFunction,
+				dischargeTransition);
 
 		// return the actuator behavior with the three running modes for the
 		// specified actuator id
@@ -316,6 +318,17 @@ public class AdvancedBatteryResourceManager implements BufferResourceManager, En
 	private Set<ActuatorUpdate> makeBatteryRunningModes(int actuatorId, AdvancedBatteryMode advancedBatteryMode) {
 		return Collections
 				.<ActuatorUpdate> singleton(new ActuatorUpdate(actuatorId, advancedBatteryMode.runningModeId, null));
+	}
+
+	@Override
+	public void run() {
+		// Update the model
+		model.run();
+		// Send the state update
+		if (controllerConnection != null) {
+			BufferStateUpdate<Dimensionless> bufferStateUpdate = createBufferStateUpdate(context.currentTime());
+			controllerConnection.sendMessage(bufferStateUpdate);
+		}
 	}
 
 }
