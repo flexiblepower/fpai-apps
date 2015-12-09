@@ -74,7 +74,7 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 																		// to
 																		// 0
 
-	private AdvancedBatteryMode mode = AdvancedBatteryMode.DISCHARGE;
+	private AdvancedBatteryMode mode = AdvancedBatteryMode.IDLE;
 	private AdvancedBatteryConfig configuration;
 	private FlexiblePowerContext context;
 	private Date previousRun;
@@ -278,9 +278,12 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 		return Measure.valueOf(soc * 100d, NonSI.PERCENT);
 	}
 
-	public void goToRunningMode(AdvancedBatteryMode rm) {
-		this.mode = rm;
-		run();
+	public void goToRunningMode(AdvancedBatteryMode newRunningMode) {
+		// Only do something when the runningmode actually changed
+		if (this.mode != newRunningMode) {
+			this.mode = newRunningMode;
+			run();
+		}
 	}
 
 }
