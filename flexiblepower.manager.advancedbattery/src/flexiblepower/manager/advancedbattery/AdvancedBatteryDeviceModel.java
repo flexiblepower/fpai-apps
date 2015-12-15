@@ -236,6 +236,11 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 		return Measure.valueOf(configuration.nrOfmodules() * 1.2, NonSI.KWH);
 	}
 
+	/**
+	 * Returns the efficiency (ranging from 0 - 100) given the current charge speed.
+	 * @param chargeSpeed
+	 * @return efficiency from as a number from 0 - 100
+	 */
 	public double getChargeEfficiency(Measurable<Power> chargeSpeed) {
 		// efficiency curves are based on a 2000W converter
 		// scale the power set point based on the max power rating of the unit
