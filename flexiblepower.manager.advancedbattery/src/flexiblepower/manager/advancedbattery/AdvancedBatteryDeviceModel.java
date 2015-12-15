@@ -101,8 +101,6 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 			duration = TimeUtil.difference(previousRun, now);
 		}
 
-		mode = getCurrentMode();
-
 		// Calculate the Voltage and Current of the battery for the current mode
 		if (mode == AdvancedBatteryMode.CHARGE) {
 			electricPower = Measure.valueOf(1500, SI.WATT); // TODO make

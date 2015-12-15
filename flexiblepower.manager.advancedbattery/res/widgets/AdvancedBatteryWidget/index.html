@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+<head>
+	<link rel="stylesheet" href="/css/widget.css" />
+	<link rel="stylesheet" href="/css/tooltip.css" />
+	<link rel="stylesheet" href="style.css" />
+	<script type="text/javascript" src="/js/vendor/jquery.min.js"></script>
+	<script type="text/javascript" src="/js/widget.js"></script>
+	<script type="text/javascript" src="script.js"></script>
+	<title>Simulated PV Panel</title>
+</head>
+<body class="widget">
+	<img id="icon" src="1.png" alt="Battery" />
+	<a class='tooltip info'>
+		<img src='/img/info.png' />
+		<span>
+			The Advanced battery can produce or consume energy. This widget can not be controlled through the UI, but will
+			be controlled by the smart grid application that is active. It is based on the Sony Fortelion IJ1001M Li-Ion battery system. 
+		</span>
+	</a>
+	
+	<img id="loading" src="/img/loading.gif" alt="Loading..." />
+
+	<p><label>State of charge</label> <span id="soc">...</span></p>
+	<p><label>Current total capacity</label> <span id="tc">...</span></p>
+	<p><label>Current mode</label> <span id="mode">...</span></p>
+	<p><label>Current Voltage</label> <span id="voltage">...</span></p>
+	<p><label>Current current</label> <span id="current">...</span></p>
+	<p><label>Current power value</label> <span id="power">...</span></p>
+</body>
+</html>
