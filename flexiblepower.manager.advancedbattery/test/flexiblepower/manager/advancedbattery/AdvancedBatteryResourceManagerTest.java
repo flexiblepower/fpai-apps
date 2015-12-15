@@ -60,9 +60,13 @@ public class AdvancedBatteryResourceManagerTest {
 	
 	@Test
 	public void startRegistrationTest() {
-		List<? extends ResourceMessage> messages = manager.startRegistration();
+		//List<? extends ResourceMessage> messages = manager.startRegistration();
 		//assertEquals(3, messages.size());
 	}
-	
+
+	@Test
+	public void handleMessageTest() {
+		//manager.handleMessage(new );
+	}
 	
 }
