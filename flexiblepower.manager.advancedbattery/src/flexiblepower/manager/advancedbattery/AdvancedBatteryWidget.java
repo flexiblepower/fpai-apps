@@ -2,31 +2,61 @@ package flexiblepower.manager.advancedbattery;
 
 import java.util.Locale;
 
+import javax.measure.unit.NonSI;
+import javax.measure.unit.SI;
+
 import org.flexiblepower.ui.Widget;
 
 public class AdvancedBatteryWidget implements Widget {
     public static class Update {
-        private final int soc;
-        private final String totalCapacity;
+		private final double soc;
         private final String mode;
+        private final double initialTotalCapacity;
+        private final double percentageOfInitialCapacityLeft;
+        private final double voltage;
+        private final double current;
+        private final double chargingPower;
 
-        public Update(int soc, String totalCapacity, String mode) {
-            this.soc = soc;
-            this.totalCapacity = totalCapacity;
-            this.mode = mode;
+        public Update(double soc, String mode, double initialTotalCapacity,
+        		double percentageOfInitialCapacityLeft, double voltage,
+        		double current, double chargingPower) {
+        	super();
+        	this.soc = soc;
+        	this.mode = mode;
+        	this.initialTotalCapacity = initialTotalCapacity;
+        	this.percentageOfInitialCapacityLeft = percentageOfInitialCapacityLeft;
+        	this.voltage = voltage;
+        	this.current = current;
+        	this.chargingPower = chargingPower;
         }
-
-        public int getSoc() {
-            return soc;
+        
+        public double getSoc() {
+        	return soc;
         }
-
-        public String getTotalCapacity() {
-            return totalCapacity;
-        }
-
+        
         public String getMode() {
-            return mode;
+        	return mode;
         }
+        
+        public double getInitialTotalCapacity() {
+        	return initialTotalCapacity;
+        }
+        
+        public double getPercentageOfInitialCapacityLeft() {
+        	return percentageOfInitialCapacityLeft;
+        }
+        
+        public double getVoltage() {
+        	return voltage;
+        }
+        
+        public double getCurrent() {
+        	return current;
+        }
+        
+        public double getChargingPower() {
+        	return chargingPower;
+        }     
     }
 
     private final AdvancedBatteryDeviceModel deviceModel;
@@ -36,12 +66,13 @@ public class AdvancedBatteryWidget implements Widget {
     }
 	
     public Update update() {
-//        double soc = deviceModel.getStateOfCharge();
-//        int socPercentage = (int) (soc * 100.0);
-//        double capacity = deviceModel.getTotalCapacity().doubleValue(KWH);
-//        BatteryMode mode = deviceModel.getCurrentMode();
-    	//TODO: Fill this
-        return new Update(1, "", "");
+        return new Update(deviceModel.getCurrentFillLevel().doubleValue(NonSI.PERCENT),
+        					deviceModel.getCurrentMode().name(),
+        					deviceModel.getTotalCapacity().doubleValue(NonSI.KWH),
+        					100.0d,
+        					deviceModel.getBatteryVolts(),
+        					deviceModel.getCurrentInAmps(),
+        					deviceModel.getElectricPower().doubleValue(SI.WATT));
     }
 
     @Override

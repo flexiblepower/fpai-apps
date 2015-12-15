@@ -56,6 +56,7 @@ public class AdvancedBatteryResourceManagerTest {
 		
 		model = new AdvancedBatteryDeviceModel(config, context);
 		manager.setContext(context);
+		//TODO get the configuration in there.
 	}
 	
 	@Test

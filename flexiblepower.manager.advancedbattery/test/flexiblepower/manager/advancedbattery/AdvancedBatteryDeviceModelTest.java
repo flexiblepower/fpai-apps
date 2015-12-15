@@ -64,7 +64,7 @@ public class AdvancedBatteryDeviceModelTest {
 		//Efficiency at full charging speed
 		assertEquals(96.47285,model.getChargeEfficiency(model.getMaximumChargeSpeed()),0.0001);
 		//Efficiency at zero speed
-		assertEquals(0d,model.getChargeEfficiency(Measure.valueOf(0d, SI.WATT)),0.0001);
+		assertEquals(0d, model.getChargeEfficiency(Measure.valueOf(0d, SI.WATT)),0.0001);
 		//Efficiency at half speed
 		assertEquals(97.1002,model.getChargeEfficiency(Measure.valueOf(.5 * model.getMaximumChargeSpeed().doubleValue(SI.WATT),SI.WATT)),0.0001);
 	}

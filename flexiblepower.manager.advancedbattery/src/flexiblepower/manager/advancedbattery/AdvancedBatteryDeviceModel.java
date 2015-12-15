@@ -55,6 +55,8 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 	private final double B = 3.75; // exponential capacity (Ah)^-1
 	private final double r = 0.036; // internal resistance of module (ohms)
 	private double batteryVolts = E0;// Battery terminal voltage
+
+
 	private double oldBatteryVolts = batteryVolts;// initialise the Battery
 													// terminal voltage from the
 													// last time
@@ -256,6 +258,11 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 		return efficiency;
 	}
 
+	/**
+	 * Returns the efficiency (ranging from 0 - 100) given the current discharge speed.
+	 * @param dischargeSpeed
+	 * @return efficiency from as a number from 0 - 100
+	 */
 	public double getDischargeEfficiency(Measurable<Power> chargeSpeed) {
 		// efficiency curves are based on a 2kW converter
 		// scale the power set point based on the max power rating of the unit
@@ -279,10 +286,17 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 		return Measure.valueOf(configuration.nrOfmodules() <= 1 ? -2500 : -5000, SI.WATT);
 	}
 
+	/**
+	 * @return The percentage of charge in the battery. (0-100)
+	 */
 	public Measurable<Dimensionless> getCurrentFillLevel() {
 		return Measure.valueOf(soc * 100d, NonSI.PERCENT);
 	}
 
+	/**
+	 * 
+	 * @param newRunningMode
+	 */	
 	public void goToRunningMode(AdvancedBatteryMode newRunningMode) {
 		// Only do something when the runningmode actually changed
 		if (this.mode != newRunningMode) {
@@ -291,4 +305,16 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 		}
 	}
 
+	protected double getCurrentInAmps() {
+		return i;
+	}
+
+	protected double getBatteryVolts() {
+		return batteryVolts;
+	}
+
+	protected Measurable<Power> getElectricPower() {
+		return electricPower;
+	}
+	
 }
