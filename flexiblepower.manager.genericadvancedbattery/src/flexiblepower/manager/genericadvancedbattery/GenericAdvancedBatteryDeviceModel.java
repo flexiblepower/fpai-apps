@@ -1,4 +1,4 @@
-package flexiblepower.manager.advancedbattery;
+package flexiblepower.manager.genericadvancedbattery;
 
 import java.util.Date;
 
@@ -16,9 +16,9 @@ import org.flexiblepower.time.TimeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AdvancedBatteryDeviceModel implements Runnable {
+public class GenericAdvancedBatteryDeviceModel implements Runnable {
 
-	private static final Logger logger = LoggerFactory.getLogger(AdvancedBatteryDeviceModel.class);
+	private static final Logger logger = LoggerFactory.getLogger(GenericAdvancedBatteryDeviceModel.class);
 
 	// please refer to the simulink generic battery module help file for more
 	// information
@@ -55,6 +55,8 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 	private final double B = 3.75; // exponential capacity (Ah)^-1
 	private final double r = 0.036; // internal resistance of module (ohms)
 	private double batteryVolts = E0;// Battery terminal voltage
+
+
 	private double oldBatteryVolts = batteryVolts;// initialise the Battery
 													// terminal voltage from the
 													// last time
@@ -74,18 +76,18 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 																		// to
 																		// 0
 
-	private AdvancedBatteryMode mode = AdvancedBatteryMode.IDLE;
-	private AdvancedBatteryConfig configuration;
+	private GenericAdvancedBatteryMode mode = GenericAdvancedBatteryMode.IDLE;
+	private GenericAdvancedBatteryConfig configuration;
 	private FlexiblePowerContext context;
 	private Date previousRun;
 
-	public AdvancedBatteryDeviceModel(AdvancedBatteryConfig configuration, FlexiblePowerContext context) {
+	public GenericAdvancedBatteryDeviceModel(GenericAdvancedBatteryConfig configuration, FlexiblePowerContext context) {
 		this.configuration = configuration;
 		this.context = context;
 		this.soc = configuration.initialSocRatio();
 	}
 
-	public AdvancedBatteryMode getCurrentMode() {
+	public GenericAdvancedBatteryMode getCurrentMode() {
 		return mode;
 	}
 
@@ -99,10 +101,8 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 			duration = TimeUtil.difference(previousRun, now);
 		}
 
-		mode = getCurrentMode();
-
 		// Calculate the Voltage and Current of the battery for the current mode
-		if (mode == AdvancedBatteryMode.CHARGE) {
+		if (mode == GenericAdvancedBatteryMode.CHARGE) {
 			electricPower = Measure.valueOf(1500, SI.WATT); // TODO make
 															// configurable
 
@@ -123,7 +123,7 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 			// convention is charging is negative current
 			i = BattPower.doubleValue(SI.WATT) / batteryVolts;
 
-		} else if (mode == AdvancedBatteryMode.DISCHARGE) {
+		} else if (mode == GenericAdvancedBatteryMode.DISCHARGE) {
 
 			electricPower = Measure.valueOf(-1500, SI.WATT); // TODO make
 																// configurable
@@ -233,9 +233,14 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 	}
 
 	public Measurable<Energy> getTotalCapacity() {
-		return Measure.valueOf(configuration.nrOfmodules() * 1.2, NonSI.KWH);
+		return Measure.valueOf(configuration.totalCapacityKWh(), NonSI.KWH);
 	}
 
+	/**
+	 * Returns the efficiency (ranging from 0 - 100) given the current charge speed.
+	 * @param chargeSpeed
+	 * @return efficiency from as a number from 0 - 100
+	 */
 	public double getChargeEfficiency(Measurable<Power> chargeSpeed) {
 		// efficiency curves are based on a 2000W converter
 		// scale the power set point based on the max power rating of the unit
@@ -251,6 +256,11 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 		return efficiency;
 	}
 
+	/**
+	 * Returns the efficiency (ranging from 0 - 100) given the current discharge speed.
+	 * @param dischargeSpeed
+	 * @return efficiency from as a number from 0 - 100
+	 */
 	public double getDischargeEfficiency(Measurable<Power> chargeSpeed) {
 		// efficiency curves are based on a 2kW converter
 		// scale the power set point based on the max power rating of the unit
@@ -266,19 +276,26 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 
 	public Measurable<Power> getMaximumChargeSpeed() {
 		// TODO actually use
-		return Measure.valueOf(configuration.nrOfmodules() <= 1 ? 2500 : 5000, SI.WATT);
+		return Measure.valueOf(configuration.maximumChargingRateWatts(), SI.WATT);
 	}
 
 	public Measurable<Power> getMaximumDischargeSpeed() {
 		// TODO actually use
-		return Measure.valueOf(configuration.nrOfmodules() <= 1 ? -2500 : -5000, SI.WATT);
+		return Measure.valueOf(configuration.maximumDischargingRateWatts(), SI.WATT);
 	}
 
+	/**
+	 * @return The percentage of charge in the battery. (0-100)
+	 */
 	public Measurable<Dimensionless> getCurrentFillLevel() {
 		return Measure.valueOf(soc * 100d, NonSI.PERCENT);
 	}
 
-	public void goToRunningMode(AdvancedBatteryMode newRunningMode) {
+	/**
+	 * 
+	 * @param newRunningMode
+	 */	
+	public void goToRunningMode(GenericAdvancedBatteryMode newRunningMode) {
 		// Only do something when the runningmode actually changed
 		if (this.mode != newRunningMode) {
 			this.mode = newRunningMode;
@@ -286,4 +303,16 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 		}
 	}
 
+	protected double getCurrentInAmps() {
+		return i;
+	}
+
+	protected double getBatteryVolts() {
+		return batteryVolts;
+	}
+
+	protected Measurable<Power> getElectricPower() {
+		return electricPower;
+	}
+	
 }

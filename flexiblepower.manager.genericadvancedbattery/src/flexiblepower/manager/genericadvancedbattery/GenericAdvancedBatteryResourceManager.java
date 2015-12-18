@@ -1,4 +1,4 @@
-package flexiblepower.manager.advancedbattery;
+package flexiblepower.manager.genericadvancedbattery;
 
 import static javax.measure.unit.SI.SECOND;
 import static javax.measure.unit.SI.WATT;
@@ -58,18 +58,18 @@ import aQute.bnd.annotation.component.Deactivate;
 import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Configurable;
 
-@Component(designateFactory = AdvancedBatteryConfig.class, provide = Endpoint.class, immediate = true)
-public class AdvancedBatteryResourceManager implements BufferResourceManager, Runnable, MessageHandler {
+@Component(designateFactory = GenericAdvancedBatteryConfig.class, provide = Endpoint.class, immediate = true)
+public class GenericAdvancedBatteryResourceManager implements BufferResourceManager, Runnable, MessageHandler {
 
-	private static final Logger logger = LoggerFactory.getLogger(AdvancedBatteryResourceManager.class);
+	private static final Logger logger = LoggerFactory.getLogger(GenericAdvancedBatteryResourceManager.class);
 
 	private static final int BATTERY_CHARGER_ID = 0;
 
-	private AdvancedBatteryConfig configuration;
+	private GenericAdvancedBatteryConfig configuration;
 	private FlexiblePowerContext context;
-	private AdvancedBatteryDeviceModel model;
+	private GenericAdvancedBatteryDeviceModel model;
 
-	private AdvancedBatteryWidget widget;
+	private GenericAdvancedBatteryWidget widget;
 
 	private ServiceRegistration<Widget> widgetRegistration;
 
@@ -85,15 +85,15 @@ public class AdvancedBatteryResourceManager implements BufferResourceManager, Ru
 	public void activate(BundleContext bundleContext, Map<String, Object> properties) {
 		try {
 			// Create a configuration
-			configuration = Configurable.createConfigurable(AdvancedBatteryConfig.class, properties);
+			configuration = Configurable.createConfigurable(GenericAdvancedBatteryConfig.class, properties);
 
 			// Initialize the model correctly to start the first time step.
-			model = new AdvancedBatteryDeviceModel(configuration, context);
+			model = new GenericAdvancedBatteryDeviceModel(configuration, context);
 
 			scheduledFuture = this.context.scheduleAtFixedRate(this, Measure.valueOf(0, SI.SECOND),
 					Measure.valueOf(configuration.updateIntervalSeconds(), SI.SECOND));
 
-			widget = new AdvancedBatteryWidget(this.model);
+			widget = new GenericAdvancedBatteryWidget(this.model);
 			widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
 			logger.debug("Advanced Battery Manager activated");
 		} catch (Exception ex) {
@@ -200,7 +200,7 @@ public class AdvancedBatteryResourceManager implements BufferResourceManager, Ru
 		for (ActuatorAllocation allocation : message.getActuatorAllocations()) {
 			if (allocation.getActuatorId() == batteryCharger.getActuatorId()) {
 				// This one is for us!
-				AdvancedBatteryMode desiredRunningMode = AdvancedBatteryMode
+				GenericAdvancedBatteryMode desiredRunningMode = GenericAdvancedBatteryMode
 						.getByRunningModeId(allocation.getRunningModeId());
 				model.goToRunningMode(desiredRunningMode); // also updates model
 				// TODO use: aa.getStartTime();
@@ -225,9 +225,9 @@ public class AdvancedBatteryResourceManager implements BufferResourceManager, Ru
 	 */
 	private ActuatorBehaviour makeBatteryActuatorBehaviour(int actuatorId) {
 		// make three transitions holders
-		Transition toChargingTransition = makeTransition(AdvancedBatteryMode.CHARGE.runningModeId);
-		Transition toIdleTransition = makeTransition(AdvancedBatteryMode.IDLE.runningModeId);
-		Transition toDisChargingTransition = makeTransition(AdvancedBatteryMode.DISCHARGE.runningModeId);
+		Transition toChargingTransition = makeTransition(GenericAdvancedBatteryMode.CHARGE.runningModeId);
+		Transition toIdleTransition = makeTransition(GenericAdvancedBatteryMode.IDLE.runningModeId);
+		Transition toDisChargingTransition = makeTransition(GenericAdvancedBatteryMode.DISCHARGE.runningModeId);
 
 		// create the transition graph, it is fully connected in this case
 		Set<Transition> idleTransition = new HashSet<Transition>();
@@ -277,11 +277,11 @@ public class AdvancedBatteryResourceManager implements BufferResourceManager, Ru
 		// Based on the fill level functions and the transitions, create the
 		// three running modes
 		RunningMode<FillLevelFunction<RunningModeBehaviour>> chargeRunningMode = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(
-				AdvancedBatteryMode.CHARGE.runningModeId, "charging", chargeFillLevelFunction, chargeTransition);
+				GenericAdvancedBatteryMode.CHARGE.runningModeId, "charging", chargeFillLevelFunction, chargeTransition);
 		RunningMode<FillLevelFunction<RunningModeBehaviour>> idleRunningMode = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(
-				AdvancedBatteryMode.IDLE.runningModeId, "idle", idleFillLevelFunction, idleTransition);
+				GenericAdvancedBatteryMode.IDLE.runningModeId, "idle", idleFillLevelFunction, idleTransition);
 		RunningMode<FillLevelFunction<RunningModeBehaviour>> dischargeRunningMode = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(
-				AdvancedBatteryMode.DISCHARGE.runningModeId, "discharging", dischargeFillLevelFunction,
+				GenericAdvancedBatteryMode.DISCHARGE.runningModeId, "discharging", dischargeFillLevelFunction,
 				dischargeTransition);
 
 		// return the actuator behavior with the three running modes for the
@@ -315,7 +315,7 @@ public class AdvancedBatteryResourceManager implements BufferResourceManager, Ru
 	 * @param advancedBatteryMode
 	 * @return
 	 */
-	private Set<ActuatorUpdate> makeBatteryRunningModes(int actuatorId, AdvancedBatteryMode advancedBatteryMode) {
+	private Set<ActuatorUpdate> makeBatteryRunningModes(int actuatorId, GenericAdvancedBatteryMode advancedBatteryMode) {
 		return Collections
 				.<ActuatorUpdate> singleton(new ActuatorUpdate(actuatorId, advancedBatteryMode.runningModeId, null));
 	}
