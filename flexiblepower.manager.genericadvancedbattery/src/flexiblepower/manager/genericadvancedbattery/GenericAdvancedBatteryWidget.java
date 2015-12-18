@@ -1,4 +1,4 @@
-package flexiblepower.manager.advancedbattery;
+package flexiblepower.manager.genericadvancedbattery;
 
 import java.util.Locale;
 
@@ -7,7 +7,7 @@ import javax.measure.unit.SI;
 
 import org.flexiblepower.ui.Widget;
 
-public class AdvancedBatteryWidget implements Widget {
+public class GenericAdvancedBatteryWidget implements Widget {
     public static class Update {
 		private final double soc;
         private final String mode;
@@ -59,9 +59,9 @@ public class AdvancedBatteryWidget implements Widget {
         }     
     }
 
-    private final AdvancedBatteryDeviceModel deviceModel;
+    private final GenericAdvancedBatteryDeviceModel deviceModel;
 
-    public AdvancedBatteryWidget(AdvancedBatteryDeviceModel deviceModel) {
+    public GenericAdvancedBatteryWidget(GenericAdvancedBatteryDeviceModel deviceModel) {
         this.deviceModel = deviceModel;
     }
 	

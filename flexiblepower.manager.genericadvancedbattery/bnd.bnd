@@ -5,4 +5,4 @@
 	org.mockito.mockito-all
 Bundle-Version: 1.1.0.${qualifier}
 Service-Component: *
-Private-Package: flexiblepower.manager.advancedbattery
+Private-Package: flexiblepower.manager.genericadvancedbattery

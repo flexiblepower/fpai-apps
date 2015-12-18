@@ -1,4 +1,4 @@
-package flexiblepower.manager.advancedbattery;
+package flexiblepower.manager.genericadvancedbattery;
 
 import static org.junit.Assert.assertEquals;
 
@@ -13,18 +13,21 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import flexiblepower.manager.genericadvancedbattery.GenericAdvancedBatteryConfig;
+import flexiblepower.manager.genericadvancedbattery.GenericAdvancedBatteryDeviceModel;
+
 public class AdvancedBatteryDeviceModelTest {
 
-	AdvancedBatteryDeviceModel model;
+	GenericAdvancedBatteryDeviceModel model;
 	FlexiblePowerContext context;
 	
 	@Before
 	public void setUp() {
-		AdvancedBatteryConfig config = new AdvancedBatteryConfig() {
+		GenericAdvancedBatteryConfig config = new GenericAdvancedBatteryConfig() {
 			
 			@Override
 			public long updateIntervalSeconds() {
-				return 10;
+				return 30;
 			}
 			
 			@Override
@@ -33,29 +36,44 @@ public class AdvancedBatteryDeviceModelTest {
 			}
 			
 			@Override
-			public int nrOfmodules() {
-				return 1;
-			}
-			
-			@Override
 			public double minimumFillLevelPercent() {
-				return 0;
+				return 20;
 			}
 			
 			@Override
 			public double maximumFillLevelPercent() {
-				return 100;
+				return 90;
 			}
 			
 			@Override
 			public double initialSocRatio() {
+				return .5;
+			}
+
+			@Override
+			public double totalCapacityKWh() {
 				return 5;
+			}
+
+			@Override
+			public double maximumChargingRateWatts() {
+				return 1500;
+			}
+
+			@Override
+			public double maximumDischargingRateWatts() {
+				return 1500;
+			}
+
+			@Override
+			public int numberOfCyclesBeforeEndOfLife() {
+				return 6000;
 			}
 		};
 		context = Mockito.mock(FlexiblePowerContext.class);
 		Mockito.when(context.currentTimeMillis()).thenReturn(new Date().getTime());
 		
-		model = new AdvancedBatteryDeviceModel(config, context);
+		model = new GenericAdvancedBatteryDeviceModel(config, context);
 	}
 	
 	@Test
@@ -73,10 +91,10 @@ public class AdvancedBatteryDeviceModelTest {
 	public void testGetDischargeEfficiency() {
 		//TODO check values...
 		//Efficiency at full charging speed
-		assertEquals(88.48533,model.getDischargeEfficiency(model.getMaximumDischargeSpeed()),0.0001);
+		assertEquals(94.38403,model.getDischargeEfficiency(model.getMaximumDischargeSpeed()),0.0001);
 		//Efficiency at zero speed
 		assertEquals(0.0173d,model.getDischargeEfficiency(Measure.valueOf(0d, SI.WATT)),0.0001);
 		//Efficiency at half speed
-		assertEquals(94.24067,model.getDischargeEfficiency(Measure.valueOf(.5 * model.getMaximumDischargeSpeed().doubleValue(SI.WATT),SI.WATT)),0.0001);
+		assertEquals(94.9225486,model.getDischargeEfficiency(Measure.valueOf(.5 * model.getMaximumDischargeSpeed().doubleValue(SI.WATT),SI.WATT)),0.0001);
 	}
 }

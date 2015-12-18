@@ -1,25 +1,25 @@
-package flexiblepower.manager.advancedbattery;
-
-import static org.junit.Assert.assertEquals;
+package flexiblepower.manager.genericadvancedbattery;
 
 import java.util.Date;
-import java.util.List;
 import java.util.UUID;
 
 import org.flexiblepower.context.FlexiblePowerContext;
-import org.flexiblepower.ral.messages.ResourceMessage;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import flexiblepower.manager.genericadvancedbattery.GenericAdvancedBatteryConfig;
+import flexiblepower.manager.genericadvancedbattery.GenericAdvancedBatteryDeviceModel;
+import flexiblepower.manager.genericadvancedbattery.GenericAdvancedBatteryResourceManager;
+
 public class AdvancedBatteryResourceManagerTest {
-	AdvancedBatteryResourceManager manager = new AdvancedBatteryResourceManager();
-	AdvancedBatteryDeviceModel model;
+	GenericAdvancedBatteryResourceManager manager = new GenericAdvancedBatteryResourceManager();
+	GenericAdvancedBatteryDeviceModel model;
 	FlexiblePowerContext context;
 	
 	@Before
 	public void setUp() {
-		AdvancedBatteryConfig config = new AdvancedBatteryConfig() {
+		GenericAdvancedBatteryConfig config = new GenericAdvancedBatteryConfig() {
 			
 			@Override
 			public long updateIntervalSeconds() {
@@ -29,11 +29,6 @@ public class AdvancedBatteryResourceManagerTest {
 			@Override
 			public String resourceId() {
 				return UUID.randomUUID().toString();
-			}
-			
-			@Override
-			public int nrOfmodules() {
-				return 1;
 			}
 			
 			@Override
@@ -50,11 +45,35 @@ public class AdvancedBatteryResourceManagerTest {
 			public double initialSocRatio() {
 				return 5;
 			}
+
+			@Override
+			public double totalCapacityKWh() {
+				// TODO Auto-generated method stub
+				return 0;
+			}
+
+			@Override
+			public double maximumChargingRateWatts() {
+				// TODO Auto-generated method stub
+				return 0;
+			}
+
+			@Override
+			public double maximumDischargingRateWatts() {
+				// TODO Auto-generated method stub
+				return 0;
+			}
+
+			@Override
+			public int numberOfCyclesBeforeEndOfLife() {
+				// TODO Auto-generated method stub
+				return 0;
+			}
 		};
 		context = Mockito.mock(FlexiblePowerContext.class);
 		Mockito.when(context.currentTimeMillis()).thenReturn(new Date().getTime());
 		
-		model = new AdvancedBatteryDeviceModel(config, context);
+		model = new GenericAdvancedBatteryDeviceModel(config, context);
 		manager.setContext(context);
 		//TODO get the configuration in there.
 	}

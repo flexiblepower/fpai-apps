@@ -1,4 +1,4 @@
-package flexiblepower.manager.advancedbattery;
+package flexiblepower.manager.genericadvancedbattery;
 
 import java.util.Date;
 
@@ -16,9 +16,9 @@ import org.flexiblepower.time.TimeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AdvancedBatteryDeviceModel implements Runnable {
+public class GenericAdvancedBatteryDeviceModel implements Runnable {
 
-	private static final Logger logger = LoggerFactory.getLogger(AdvancedBatteryDeviceModel.class);
+	private static final Logger logger = LoggerFactory.getLogger(GenericAdvancedBatteryDeviceModel.class);
 
 	// please refer to the simulink generic battery module help file for more
 	// information
@@ -76,18 +76,18 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 																		// to
 																		// 0
 
-	private AdvancedBatteryMode mode = AdvancedBatteryMode.IDLE;
-	private AdvancedBatteryConfig configuration;
+	private GenericAdvancedBatteryMode mode = GenericAdvancedBatteryMode.IDLE;
+	private GenericAdvancedBatteryConfig configuration;
 	private FlexiblePowerContext context;
 	private Date previousRun;
 
-	public AdvancedBatteryDeviceModel(AdvancedBatteryConfig configuration, FlexiblePowerContext context) {
+	public GenericAdvancedBatteryDeviceModel(GenericAdvancedBatteryConfig configuration, FlexiblePowerContext context) {
 		this.configuration = configuration;
 		this.context = context;
 		this.soc = configuration.initialSocRatio();
 	}
 
-	public AdvancedBatteryMode getCurrentMode() {
+	public GenericAdvancedBatteryMode getCurrentMode() {
 		return mode;
 	}
 
@@ -102,7 +102,7 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 		}
 
 		// Calculate the Voltage and Current of the battery for the current mode
-		if (mode == AdvancedBatteryMode.CHARGE) {
+		if (mode == GenericAdvancedBatteryMode.CHARGE) {
 			electricPower = Measure.valueOf(1500, SI.WATT); // TODO make
 															// configurable
 
@@ -123,7 +123,7 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 			// convention is charging is negative current
 			i = BattPower.doubleValue(SI.WATT) / batteryVolts;
 
-		} else if (mode == AdvancedBatteryMode.DISCHARGE) {
+		} else if (mode == GenericAdvancedBatteryMode.DISCHARGE) {
 
 			electricPower = Measure.valueOf(-1500, SI.WATT); // TODO make
 																// configurable
@@ -233,7 +233,7 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 	}
 
 	public Measurable<Energy> getTotalCapacity() {
-		return Measure.valueOf(configuration.nrOfmodules() * 1.2, NonSI.KWH);
+		return Measure.valueOf(configuration.totalCapacityKWh(), NonSI.KWH);
 	}
 
 	/**
@@ -276,12 +276,12 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 
 	public Measurable<Power> getMaximumChargeSpeed() {
 		// TODO actually use
-		return Measure.valueOf(configuration.nrOfmodules() <= 1 ? 2500 : 5000, SI.WATT);
+		return Measure.valueOf(configuration.maximumChargingRateWatts(), SI.WATT);
 	}
 
 	public Measurable<Power> getMaximumDischargeSpeed() {
 		// TODO actually use
-		return Measure.valueOf(configuration.nrOfmodules() <= 1 ? -2500 : -5000, SI.WATT);
+		return Measure.valueOf(configuration.maximumDischargingRateWatts(), SI.WATT);
 	}
 
 	/**
@@ -295,7 +295,7 @@ public class AdvancedBatteryDeviceModel implements Runnable {
 	 * 
 	 * @param newRunningMode
 	 */	
-	public void goToRunningMode(AdvancedBatteryMode newRunningMode) {
+	public void goToRunningMode(GenericAdvancedBatteryMode newRunningMode) {
 		// Only do something when the runningmode actually changed
 		if (this.mode != newRunningMode) {
 			this.mode = newRunningMode;
