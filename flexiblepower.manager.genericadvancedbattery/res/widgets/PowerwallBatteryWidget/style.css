@@ -12,7 +12,7 @@
 }
 
 p {
-	height: 1.2em;
+	height: 2.2em;
 	display: none;
 	font-family: "TeslaNikolaCaps";
 }
@@ -21,7 +21,17 @@ body {
 	background-image: url("tesla.jpg");
 }
 
+#powerwall{
+	margin-top:15px;
+	text-align: left;
+	font-size: small;
+}
 @font-face {
     font-family:"TeslaNikolaCaps";
     src: url("TeslaNikolaCaps.ttf") /* TTF file for CSS3 browsers */
+}
+
+#chargeMode {
+	text-align: right;
+	font-size: medium;
 }

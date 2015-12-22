@@ -8,6 +8,8 @@ $(window).load(function() {
 		$("#voltage").text(data.voltage.toFixed(2) + " V");
 		$("#current").text(data.current.toFixed(2) + " A");
 		$("#power").text(data.chargingPower.toFixed(2) + " W");
+		$("#capacityLeft").text(data.percentageOfInitialCapacityLeft.toFixed(2) + "%")
+		
 		
 		if(data.soc > 87) {
 			$("#icon").attr("src", "8.png");

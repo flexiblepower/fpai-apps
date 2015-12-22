@@ -1,4 +1,4 @@
-package flexiblepower.manager.battery.sony;
+package flexiblepower.manager.battery.powerwall;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,36 +21,36 @@ import flexiblepower.manager.genericadvancedbattery.GenericAdvancedBatteryConfig
 import flexiblepower.manager.genericadvancedbattery.GenericAdvancedBatteryDeviceModel;
 import flexiblepower.manager.genericadvancedbattery.GenericAdvancedBatteryResourceManager;
 
-@Component(designateFactory = SonyBatteryConfig.class, provide = Endpoint.class, immediate = true)
-public class SonyBatteryResourceManager extends GenericAdvancedBatteryResourceManager {
+@Component(designateFactory = PowerwallBatteryConfig.class, provide = Endpoint.class, immediate = true)
+public class PowerwallBatteryResourceManager extends GenericAdvancedBatteryResourceManager {
 
-	
-	private SonyBatteryConfig sonyConfiguration;
+	//TODO The real powerwall is less efficient (including inverter around 87% than the generic model). 
+	private static final double CAPACITY_KWH = 7;
+	private PowerwallBatteryConfig powerwallConfiguration;
 
 	@Override
 	@Activate
 	public void activate(BundleContext bundleContext, Map<String, Object> properties) {
 		try {
-			sonyConfiguration = Configurable.createConfigurable(SonyBatteryConfig.class, properties);
+			powerwallConfiguration = Configurable.createConfigurable(PowerwallBatteryConfig.class, properties);
 
 			Map<String, Object> newProperties = new HashMap<String,Object>();
-			newProperties.put("resourceId", sonyConfiguration.resourceId());
-			newProperties.put("totalCapacityKWh", sonyConfiguration.nrOfmodules()*1.2);
-			newProperties.put("maximumChargingRateWatts", sonyConfiguration.nrOfmodules() == 1 ? 2500 : 5000);
-			newProperties.put("maximumDischargingRateWatts", sonyConfiguration.nrOfmodules() == 1 ? 2500 : 5000);
-			newProperties.put("numberOfCyclesBeforeEndOfLife", 6000);
-			newProperties.put("initialSocRatio", sonyConfiguration.initialSocRatio());
-			newProperties.put("minimumFillLevelPercent", sonyConfiguration.minimumFillLevelPercent());
-			newProperties.put("maximumFillLevelPercent", sonyConfiguration.maximumFillLevelPercent());
-			newProperties.put("updateIntervalSeconds", sonyConfiguration.updateIntervalSeconds());
+			newProperties.put("resourceId", powerwallConfiguration.resourceId());
+			newProperties.put("totalCapacityKWh", CAPACITY_KWH);
+			newProperties.put("maximumChargingRateWatts", 2000);
+			newProperties.put("maximumDischargingRateWatts", 2000);
+			newProperties.put("numberOfCyclesBeforeEndOfLife", 4000);
+			newProperties.put("initialSocRatio", powerwallConfiguration.initialSocRatio());
+			newProperties.put("minimumFillLevelPercent", powerwallConfiguration.minimumFillLevelPercent());
+			newProperties.put("maximumFillLevelPercent", powerwallConfiguration.maximumFillLevelPercent());
+			newProperties.put("updateIntervalSeconds", powerwallConfiguration.updateIntervalSeconds());
 			
-			// Advanced model settings
-			newProperties.put("ratedVoltage", 52.6793);
-			newProperties.put("KValue", 0.011);
-			newProperties.put("QAmpereHours", 24);
-			newProperties.put("constantA", 3);
-			newProperties.put("constantB", 2.8);
-			newProperties.put("internalResistanceOhms", 0.036);
+			newProperties.put("ratedVoltage", 433.3507);
+			newProperties.put("KValue", 0.12903);
+			newProperties.put("QAmpereHours", 17.5);
+			newProperties.put("constantA", 60);
+			newProperties.put("constantB", 3.4893);
+			newProperties.put("internalResistanceOhms", 0.22857);
 			
 			// Create a configuration
 			configuration = Configurable.createConfigurable(GenericAdvancedBatteryConfig.class, newProperties);
@@ -61,7 +61,7 @@ public class SonyBatteryResourceManager extends GenericAdvancedBatteryResourceMa
 			scheduledFuture = this.context.scheduleAtFixedRate(this, Measure.valueOf(0, SI.SECOND),
 					Measure.valueOf(configuration.updateIntervalSeconds(), SI.SECOND));
 
-			widget = new SonyBatteryWidget(this.model);
+			widget = new PowerwallBatteryWidget(this.model);
 			widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
 			logger.debug("Advanced Battery Manager activated");
 		} catch (Exception ex) {

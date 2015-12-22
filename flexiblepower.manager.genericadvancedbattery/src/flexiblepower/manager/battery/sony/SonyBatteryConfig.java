@@ -19,6 +19,6 @@ public interface SonyBatteryConfig {
     @Meta.AD(deflt="90", description = "maximum desired fill level (percent)")
     double maximumFillLevelPercent();
     
-    @Meta.AD(deflt = "30", description = "The simulation time step for a recalculation of the state")
+    @Meta.AD(deflt = "5", description = "The simulation time step for a recalculation of the state")
     long updateIntervalSeconds();
 }

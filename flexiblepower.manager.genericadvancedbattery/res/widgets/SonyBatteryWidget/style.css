@@ -1,3 +1,10 @@
+body {
+    background-image: url('single.png');
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    color: white;
+} 
+
 #loading {
 	position: absolute;
 	left: 45%;
@@ -12,6 +19,11 @@
 }
 
 p {
-	height: 1.2em;
+	height: 1.3em;
 	display: none;
+}
+#theNumbers {
+	margin-top:5px;
+	margin-left: 80px;
+	text-align: center;
 }

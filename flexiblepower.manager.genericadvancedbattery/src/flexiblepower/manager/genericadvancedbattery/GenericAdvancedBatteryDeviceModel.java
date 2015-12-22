@@ -41,33 +41,33 @@ public class GenericAdvancedBatteryDeviceModel implements Runnable {
 	/** Efficiency used for charge and discharge in a ratio (0-1)*/
 	private double efficiency = 1;
 	/**Constant internal battery voltage (V) */
-	private final double E0 = 52.6793;
+	private double E0;
 	/**Internal Battery voltage variable (V) */
-	private double Ebatt = E0;
+	private double Ebatt;
 	/**Internal Battery voltage variable (V) */
-	private double internalVolts = E0;
+	private double internalVolts;
 	/** battery terminal voltage (V)*/
-	private double batteryVolts = E0;
+	private double batteryVolts;
 	/**Polarization constant used for calculating the battery voltage (Ah^-1) */
-	private final double K = 0.011;
+	private double K;
 	/**instantaneous battery DC current variable (A) */
 	private double i = 0;
 	/**sum of capacity extracted from the battery (Ah)*/
 	private double it = 0;
 	/**rated battery capacity Constant (Ah)*/
-	private double ratedQ = 24;
+	private double ratedQ;
 	/**rated battery capacity Constant (Ah)*/
-	private double Q = 24;
+	private double Q;
 	/**rated battery capacity for caculating the SOC (Ah)*/
-	private double Qsoc = 23.22;
+	private double Qsoc;
 	/**variable to keep track of the battery age as a ratio (0-1) of max rated capacity */
 	private double Qratio = 1;
 	/** exponential voltage constant used to calculate the voltage (V)*/
-	private final double A = 3;
+	private double A;
 	/** exponential capacity constant used to calculate the voltage (Ah^-1)*/
-	private final double B = 2.8;
+	private double B;
 	/**internal resistance of each battery module (ohms)*/
-	private final double r = 0.036; 
+	private double r; 
 	/** Variable to store the battery voltage form the last time step (V)*/
 	private double oldBatteryVolts = batteryVolts;
 	/**Initialize the battery terminal voltage error variable used by the voltage solver (V) */
@@ -88,6 +88,16 @@ public class GenericAdvancedBatteryDeviceModel implements Runnable {
 		this.configuration = configuration;
 		this.context = context;
 		this.soc = configuration.initialSocRatio();
+		
+		// Set the constants of the model.
+		this.E0 = configuration.ratedVoltage();
+		this.Ebatt = E0;
+		this.internalVolts = E0;
+		this.batteryVolts = E0;
+		this.K = configuration.KValue();
+		this.A = configuration.constantA();
+		this.B = configuration.constantB();
+		
 		this.Q = configuration.totalCapacityKWh()*1000 / E0;
 		ratedQ = Q;
 		this.Qsoc = this.Q * (23.22 /24);
@@ -195,7 +205,6 @@ public class GenericAdvancedBatteryDeviceModel implements Runnable {
 			i = 0;
 			batteryVolts = dischargeBatteryEbatt(i);
 			//there is no current hence the internal voltage and the terminal votlage are the same
-		
 		}
 
 		// calculate the current (A)
@@ -210,13 +219,10 @@ public class GenericAdvancedBatteryDeviceModel implements Runnable {
 		// update the state of charge
 		soc -= DeltaSoC;
 		
-
 		// save the current power set point to oldPower
 		oldPower = electricPower;
 		oldBatteryVolts = batteryVolts;
 		oldMode = mode;
-		
-		
 
 		this.previousRun = now;
 		logger.info("Executed battery model at " + now + ", mode is " + mode

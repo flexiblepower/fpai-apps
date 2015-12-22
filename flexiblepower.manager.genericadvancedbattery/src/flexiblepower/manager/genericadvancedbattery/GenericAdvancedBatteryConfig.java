@@ -29,6 +29,25 @@ public interface GenericAdvancedBatteryConfig {
     @Meta.AD(deflt="90", description = "maximum desired fill level (percent)")
     double maximumFillLevelPercent();
     
-    @Meta.AD(deflt = "30", description = "The simulation time step for a recalculation of the state")
+    @Meta.AD(deflt = "5", description = "The simulation time step for a recalculation of the state")
     long updateIntervalSeconds();
+    //TODO We could make the rated voltage, and the constants K, A and B configurable, but this is a really advanced feature that requires Matlab Simulink, so it is not in the first implementation.
+    
+    @Meta.AD(deflt = "52.6793", description = "*ADVANCED SETTINGS* Rated Voltage of the battery")
+    double ratedVoltage();
+    
+    @Meta.AD(deflt = "0.011", description = "*ADVANCED SETTINGS* The constant K (unitless) of the battery model")
+    double KValue();
+    
+    @Meta.AD(deflt = "24", description = "*ADVANCED SETTINGS* The constant Q in Ampere hours of the battery model")
+    double QAmpereHours();
+    
+    @Meta.AD(deflt = "3", description = "*ADVANCED SETTINGS* Exponential Voltage constant used to calculate the Voltage in Volts")
+    double constantA();
+
+    @Meta.AD(deflt = "2.8", description = "*ADVANCED SETTINGS* Exponential Capacity constant used to calculate the Voltage.(Ah^-1)")
+    double constantB();
+    
+    @Meta.AD(deflt = "0.036", description = "*ADVANCED SETTINGS* The internal resistance in Ohms")
+    double internalResistanceOhms();
 }

@@ -69,6 +69,36 @@ public class AdvancedBatteryDeviceModelTest {
 			public int numberOfCyclesBeforeEndOfLife() {
 				return 6000;
 			}
+
+			@Override
+			public double ratedVoltage() {
+				return 52.6793;
+			}
+
+			@Override
+			public double KValue() {
+				return 0.011;
+			}
+
+			@Override
+			public double QAmpereHours() {
+				return 24;
+			}
+
+			@Override
+			public double constantA() {
+				return 3;
+			}
+
+			@Override
+			public double constantB() {
+				return 2.8;
+			}
+
+			@Override
+			public double internalResistanceOhms() {
+				return 0.036;
+			}
 		};
 		context = Mockito.mock(FlexiblePowerContext.class);
 		Mockito.when(context.currentTimeMillis()).thenReturn(new Date().getTime());
