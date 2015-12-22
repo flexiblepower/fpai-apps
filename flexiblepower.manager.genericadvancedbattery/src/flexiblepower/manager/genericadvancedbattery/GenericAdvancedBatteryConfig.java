@@ -10,10 +10,10 @@ public interface GenericAdvancedBatteryConfig {
     @Meta.AD(deflt = "5", description = "Total Capacity in kWh")
     double totalCapacityKWh();
 
-    @Meta.AD(deflt = "1500", description = "Maximum charging rate in Watts")
+    @Meta.AD(deflt = "1500", description = "Maximum absolute charging rate in Watts")
     double maximumChargingRateWatts();
     
-    @Meta.AD(deflt = "1500", description = "Maximum discharging rate in Watts")
+    @Meta.AD(deflt = "1500", description = "Maximum absolute discharging rate in Watts (Should be a positive value)")
     double maximumDischargingRateWatts();
     
     @Meta.AD(deflt = "6000", description = "Number of full discharge cycles until battery end of life (80% capacity)")

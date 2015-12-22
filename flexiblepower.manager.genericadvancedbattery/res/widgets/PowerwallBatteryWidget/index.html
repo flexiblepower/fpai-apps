@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+<head>
+<link rel="stylesheet" href="/css/widget.css" />
+<link rel="stylesheet" href="/css/tooltip.css" />
+<link rel="stylesheet" href="style.css" />
+<script type="text/javascript" src="/js/vendor/jquery.min.js"></script>
+<script type="text/javascript" src="/js/widget.js"></script>
+<script type="text/javascript" src="script.js"></script>
+<title>Tesla Powerwall Battery</title>
+</head>
+<body class="widget" background="tesla.jpg"; >
+	<img id="icon" src="1.png" alt="Battery" />
+	<a class='tooltip info'> <img src='/img/info.png' /> <span>
+			The Advanced battery can produce or consume energy. This widget can
+			not be controlled through the UI, but will be controlled by the smart
+			grid application that is active. </span>
+	</a>
+
+	<img id="loading" src="/img/loading.gif" alt="Loading..." />
+
+	<div id="powerwall">
+	<p>
+		<label>State of charge</label> <span id="soc">...</span>
+	</p>
+	<p>
+		<label>Mode</label> <span id="mode">...</span>
+	</p>
+	<p>
+		<label>Power value</label> <span id="power">...</span>
+	</p>
+	<p>
+		<label>Voltage</label> <span id="voltage">...</span>
+	</p>
+	<p>
+		<label>Current</label> <span id="current">...</span>
+	</p>
+	<p>
+		<label>Total capacity</label> <span id="tc">...</span>
+	</p>
+	</div>
+</body>
+</html>

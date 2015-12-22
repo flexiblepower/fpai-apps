@@ -18,73 +18,81 @@ import org.slf4j.LoggerFactory;
 
 public class GenericAdvancedBatteryDeviceModel implements Runnable {
 
-	private static final Logger logger = LoggerFactory.getLogger(GenericAdvancedBatteryDeviceModel.class);
+	private static final Logger logger = LoggerFactory
+			.getLogger(GenericAdvancedBatteryDeviceModel.class);
 
 	// please refer to the simulink generic battery module help file for more
 	// information
 	private Measurable<Power> electricPower;
-	private Measurable<Power> BattPower = Measure.valueOf(0, SI.WATT);// power
-																		// entering
-																		// of
-																		// leaving
-																		// the
-																		// battery
-	private Measurable<Power> maxPower = Measure.valueOf(0, SI.WATT);// initialise
-																		// the
-																		// maximum
-																		// power
-																		// rating
-																		// of
-																		// the
-																		// system
-	private double powerScale = 0;// scaling variable for the converter
-									// efficiency calculation
-	private double soc;// battery state of charge
-	private double efficiency = 1;// efficiency of the converter
-									// charge/discharge cycle
-	private final double E0 = 16 * 3.2925; // constant voltage (V)
-	private double Ebatt = E0;// non linear voltage (current battery internal
-								// voltage) (V)
-	private double oldEbatt = Ebatt; // initialise the internal battery voltage
-										// from the last time step
-	private final double K = 0.011517; // Polarization constant (Ah^-1)
-	private double i = 0; // Battery current (A)
-	private double it = 0; // extracted capacity (Ah)
-	private double Q = 8 * 3;// maximum battery capacity (Ah)
-	private final double A = 2.0615; // exponential voltage (V)
-	private final double B = 3.75; // exponential capacity (Ah)^-1
-	private final double r = 0.036; // internal resistance of module (ohms)
-	private double batteryVolts = E0;// Battery terminal voltage
 
-
-	private double oldBatteryVolts = batteryVolts;// initialise the Battery
-													// terminal voltage from the
-													// last time
-	private double errorBV = 1; // initialise the battery terminal voltage error
-								// used by the solver
-	private double DeltaSoC = 0; // initialise the change of state of charge
-									// variable
-	// step
-	private Measurable<Power> oldPower = Measure.valueOf(0, SI.WATT);// initialise
-																		// the
-																		// power
-																		// from
-																		// the
-																		// last
-																		// time
-																		// step
-																		// to
-																		// 0
-
+	/** Power entering of leaving the battery */
+	private Measurable<Power> BattPower = Measure.valueOf(0, SI.WATT);
+	/** Initialize the maximum power rating of the system */
+	private Measurable<Power> maxPower = Measure.valueOf(0, SI.WATT);
+	/** scaling variable for the converter efficiency calculation */
+	private double powerScale = 0;
+	/** battery state of charge ratio (0-1)*/
+	private double soc;
+	/**initialise the variables for the soc of the battery at the start and end of a discharge cycle (0-1) */
+	private double startSoC=0;
+	private double endSoC=0;
+	/**initialise the variable to store the change in state of charge of the battery during a discharge cycle*/
+	private double dischargeDeltaSoc = 0;
+	/** Efficiency used for charge and discharge in a ratio (0-1)*/
+	private double efficiency = 1;
+	/**Constant internal battery voltage (V) */
+	private final double E0 = 52.6793;
+	/**Internal Battery voltage variable (V) */
+	private double Ebatt = E0;
+	/**Internal Battery voltage variable (V) */
+	private double internalVolts = E0;
+	/** battery terminal voltage (V)*/
+	private double batteryVolts = E0;
+	/**Polarization constant used for calculating the battery voltage (Ah^-1) */
+	private final double K = 0.011;
+	/**instantaneous battery DC current variable (A) */
+	private double i = 0;
+	/**sum of capacity extracted from the battery (Ah)*/
+	private double it = 0;
+	/**rated battery capacity Constant (Ah)*/
+	private double ratedQ = 24;
+	/**rated battery capacity Constant (Ah)*/
+	private double Q = 24;
+	/**rated battery capacity for caculating the SOC (Ah)*/
+	private double Qsoc = 23.22;
+	/**variable to keep track of the battery age as a ratio (0-1) of max rated capacity */
+	private double Qratio = 1;
+	/** exponential voltage constant used to calculate the voltage (V)*/
+	private final double A = 3;
+	/** exponential capacity constant used to calculate the voltage (Ah^-1)*/
+	private final double B = 2.8;
+	/**internal resistance of each battery module (ohms)*/
+	private final double r = 0.036; 
+	/** Variable to store the battery voltage form the last time step (V)*/
+	private double oldBatteryVolts = batteryVolts;
+	/**Initialize the battery terminal voltage error variable used by the voltage solver (V) */
+	private double errorBV = 1;
+	/**Change in state of charge variable for this time step ratio (0-1) */
+	private double DeltaSoC = 0;
+	/** Power from the last time step variable (Watts)*/
+	private Measurable<Power> oldPower = Measure.valueOf(0, SI.WATT);
+	
 	private GenericAdvancedBatteryMode mode = GenericAdvancedBatteryMode.IDLE;
+	private GenericAdvancedBatteryMode oldMode = GenericAdvancedBatteryMode.IDLE;
 	private GenericAdvancedBatteryConfig configuration;
 	private FlexiblePowerContext context;
 	private Date previousRun;
 
-	public GenericAdvancedBatteryDeviceModel(GenericAdvancedBatteryConfig configuration, FlexiblePowerContext context) {
+	public GenericAdvancedBatteryDeviceModel(GenericAdvancedBatteryConfig configuration,
+			FlexiblePowerContext context) {
 		this.configuration = configuration;
 		this.context = context;
 		this.soc = configuration.initialSocRatio();
+		this.Q = configuration.totalCapacityKWh()*1000 / E0;
+		ratedQ = Q;
+		this.Qsoc = this.Q * (23.22 /24);
+		//initialise extracted capacity using the config soc 
+		this.it = (1-soc) * Qsoc;
 	}
 
 	public GenericAdvancedBatteryMode getCurrentMode() {
@@ -93,6 +101,37 @@ public class GenericAdvancedBatteryDeviceModel implements Runnable {
 
 	@Override
 	public synchronized void run() {
+		// Check if the mode is allowed in the soc
+		if ((soc < configuration.minimumFillLevelPercent() / 100 || batteryVolts < 32 )
+				&& mode == GenericAdvancedBatteryMode.DISCHARGE) {
+			mode = GenericAdvancedBatteryMode.IDLE;
+		} else if (soc > configuration.maximumFillLevelPercent() / 100
+				&& mode == GenericAdvancedBatteryMode.CHARGE) {
+			mode = GenericAdvancedBatteryMode.IDLE;
+		}
+		
+		//need to calculate the DoD for a full discharge cycle
+		//Check for the start of a discharge cycle
+		if(mode == GenericAdvancedBatteryMode.DISCHARGE && (oldMode != mode)){
+			//save the current soc 
+			startSoC = soc;
+		}
+		
+		//Check for end of a discharge cycle
+		if(oldMode == GenericAdvancedBatteryMode.DISCHARGE && (oldMode!= mode)){
+			//save the current soc
+			endSoC = soc;
+			
+			//calculate the change in soc for this discharge cycle (0-1)
+			dischargeDeltaSoc = startSoC - endSoC;
+			
+			//calculate the change in capacity due to battery aging
+			Qratio = getBatteryChangeCapacity(dischargeDeltaSoc)/100;
+			Q = Q - Q * Qratio;
+			Qsoc = Qsoc - Qsoc * Qratio; 
+			
+		}
+
 		Date now = context.currentTime();
 		Measurable<Duration> duration;
 		if (previousRun == null) {
@@ -103,133 +142,145 @@ public class GenericAdvancedBatteryDeviceModel implements Runnable {
 
 		// Calculate the Voltage and Current of the battery for the current mode
 		if (mode == GenericAdvancedBatteryMode.CHARGE) {
-			electricPower = Measure.valueOf(1500, SI.WATT); // TODO make
-															// configurable
-
+			electricPower = Measure.valueOf(-1 * configuration.maximumChargingRateWatts(), SI.WATT);
+			
 			// calculate the power going into the battery by using the converter
 			// charge efficiency curve
-			BattPower = Measure.valueOf((getChargeEfficiency(electricPower) / 100) * electricPower.doubleValue(SI.WATT),
-					SI.WATT);
+			BattPower = Measure.valueOf(
+					(getChargeEfficiency(electricPower) / 100)
+							* electricPower.doubleValue(SI.WATT), SI.WATT);
 
-			// Check if the Power set point has changed has changed
-			if (electricPower.doubleValue(SI.WATT) != oldPower.doubleValue(SI.WATT)) {
-				solveChargeBatteryVolts();
+			// Check if the Power set point has changed
+			if (electricPower.doubleValue(SI.WATT) != oldPower
+					.doubleValue(SI.WATT)) {
+				internalVolts = solveChargeBatteryEbatt();
 			} else {
 				// Calculate the voltage
-				chargeBatteryVolts();
+				internalVolts = chargeBatteryEbatt(i);
 			}
-
-			// calculate the current (A)
-			// convention is charging is negative current
-			i = BattPower.doubleValue(SI.WATT) / batteryVolts;
-
+			
+			// calculate the battery terminal voltage resulting from the internal
+			// resistance
+			batteryVolts = internalVolts - (i * r);
+			
 		} else if (mode == GenericAdvancedBatteryMode.DISCHARGE) {
 
-			electricPower = Measure.valueOf(-1500, SI.WATT); // TODO make
-																// configurable
-
+			electricPower = Measure.valueOf(configuration.maximumDischargingRateWatts(), SI.WATT);
+			
 			// calculate the power coming out of the battery by using the
 			// converter discharge efficiency curve
-			BattPower = Measure.valueOf(
-					electricPower.doubleValue(SI.WATT) / (getDischargeEfficiency(electricPower) / 100), SI.WATT);
+			BattPower = Measure.valueOf(electricPower.doubleValue(SI.WATT)
+					/ (getDischargeEfficiency(electricPower) / 100), SI.WATT);
 
 			// Check if the Power set point has changed has changed
-			if (electricPower.doubleValue(SI.WATT) != oldPower.doubleValue(SI.WATT)) {
-				solveDischargeBatteryVolts();
+			if (electricPower.doubleValue(SI.WATT) != oldPower
+					.doubleValue(SI.WATT)) {
+				internalVolts = solveDischargeBatteryEbatt();
 			} else {
-				// calculate the battery terminal voltage during discharge
-				dischargeBatteryVolts();
+				// calculate the battery internal voltage during discharge
+				internalVolts = dischargeBatteryEbatt(i);
 			}
-
-			// calculate the current (A)
-			// convention is discharging is positive current
-			i = BattPower.doubleValue(SI.WATT) / batteryVolts;
-
+			
+			// calculate the battery terminal voltage resulting from the internal
+			// resistance
+			batteryVolts = internalVolts - (i * r);
+			
 		} else { // mode == AdvancedBatteryMode.IDLE
 			electricPower = Measure.zero(SI.WATT);
+			BattPower = Measure.zero(SI.WATT);
+			
+			//During idle that current i is 0. this makes the charge and discharge voltage formulas identical
+			//use the discharge formula 
+			//set i = 0;
+			i = 0;
+			batteryVolts = dischargeBatteryEbatt(i);
+			//there is no current hence the internal voltage and the terminal votlage are the same
+		
 		}
+
+		// calculate the current (A)
+		// convention is discharging is positive current
+		i = BattPower.doubleValue(SI.WATT) / batteryVolts;
 
 		// update 'it' charge added or removed
 		it += i * duration.doubleValue(NonSI.HOUR);
 
 		// change in SoC (0-1)
-		DeltaSoC = (i * duration.doubleValue(NonSI.HOUR)) / Q;
+		DeltaSoC = (i * duration.doubleValue(NonSI.HOUR)) / Qsoc;
 		// update the state of charge
-		soc += DeltaSoC;
+		soc -= DeltaSoC;
+		
 
 		// save the current power set point to oldPower
 		oldPower = electricPower;
-		oldEbatt = Ebatt;
 		oldBatteryVolts = batteryVolts;
+		oldMode = mode;
+		
+		
 
 		this.previousRun = now;
-		logger.info(
-				"Executed battery model at " + now + ", mode is " + mode + ", fill level is " + getCurrentFillLevel());
+		logger.info("Executed battery model at " + now + ", mode is " + mode
+				+ ", fill level is " + getCurrentFillLevel());
 	}
 
-	// calculate the voltage of the system during discharge
-	public double dischargeBatteryVolts() {
+	/** calculate the voltage of the system during discharge */
+	private double dischargeBatteryEbatt(double i) {
 
 		// calculate the internal battery voltage Ebatt
 
-		Ebatt = E0 - K * (Q / (Q - it)) * i - K * (Q / (Q - it)) * it + A * Math.exp(-B * it);
+		Ebatt = E0 - K * (Q / (Q - it)) * i - K * (Q / (Q - it)) * it + A
+				* Math.exp(-B * it);
 
-		// calculate the battery terminal voltage resulting from the internal
-		// resistance
-		batteryVolts = Ebatt - (i * r);
-		return batteryVolts;
+		return Ebatt;
 	}
 
-	// calculate the voltage of the system during charging
-	public double chargeBatteryVolts() {
+	/** calculate the voltage of the system during charging */
+	private double chargeBatteryEbatt(double i) {
 		// calculate the internal battery voltage Ebatt
 
-		Ebatt = E0 - K * (Q / (it + 0.1 * Q)) * i - K * (Q / (Q - it)) * it + A * Math.exp(-B * it);
+		Ebatt = E0 - K * (Q / (it + 0.1 * Q)) * i - K * (Q / (Q - it)) * it + A
+				* Math.exp(-B * it);
 
-		// calculate the battery terminal voltage resulting from the internal
-		// resistance
-		batteryVolts = Ebatt - (i * r);
-		return batteryVolts;
+
+		return Ebatt;
 	}
 
 	// Solve the battery voltage for a change in discharge power setpoint
-	public double solveDischargeBatteryVolts() {
+	private double solveDischargeBatteryEbatt() {
 		// estimate the current using the terminal voltage from the last time
 		// step
-		i = BattPower.doubleValue(SI.WATT) / oldBatteryVolts;
+		double solverI = BattPower.doubleValue(SI.WATT) / oldBatteryVolts;
 
 		// loop until the error is less than 0.01 volts
 		while (errorBV >= 0.0001) {
-			Ebatt = E0 - K * (Q / (Q - it)) * i - K * (Q / (Q - it)) * it + A * Math.exp(-B * it);
+			Ebatt = E0 - K * (Q / (Q - it)) * solverI - K * (Q / (Q - it)) * it
+					+ A * Math.exp(-B * it);
 			// calculate the error
-			errorBV = Math.abs(batteryVolts - (Ebatt - (i * r)));
-			batteryVolts = Ebatt - (i * r);
-			i = BattPower.doubleValue(SI.WATT) / batteryVolts;
+			errorBV = Math.abs(batteryVolts - (Ebatt - (solverI * r)));
+			batteryVolts = Ebatt - (solverI * r);
+			solverI = BattPower.doubleValue(SI.WATT) / batteryVolts;
 		}
 
-		batteryVolts = Ebatt - (i * r);
-
-		return batteryVolts;
+		return Ebatt;
 	}
 
-	public double solveChargeBatteryVolts() {
-
+	private double solveChargeBatteryEbatt() {
 		// estimate the current using the terminal voltage from the last time
 		// step
-		i = BattPower.doubleValue(SI.WATT) / oldBatteryVolts;
+		double solverI = BattPower.doubleValue(SI.WATT) / oldBatteryVolts;
 
 		// loop until the error is less than 0.01 volts
 		while (errorBV >= 0.0001) {
-			Ebatt = E0 - K * (Q / (it + 0.1 * Q)) * i - K * (Q / (Q - it)) * it + A * Math.exp(-B * it);
+			Ebatt = E0 - K * (Q / (it + 0.1 * Q)) * solverI - K
+					* (Q / (Q - it)) * it + A * Math.exp(-B * it);
 			// calculate the error
-			errorBV = Math.abs(batteryVolts - (Ebatt - (i * r)));
-			batteryVolts = Ebatt - (i * r);
-			i = BattPower.doubleValue(SI.WATT) / batteryVolts;
+			errorBV = Math.abs(batteryVolts - (Ebatt - (solverI * r)));
+			batteryVolts = Ebatt - (solverI * r);
+			solverI = BattPower.doubleValue(SI.WATT) / batteryVolts;
 		}
 
-		batteryVolts = Ebatt - (i * r);
 
-		return batteryVolts;
+		return Ebatt;
 	}
 
 	public Measurable<Energy> getTotalCapacity() {
@@ -237,51 +288,57 @@ public class GenericAdvancedBatteryDeviceModel implements Runnable {
 	}
 
 	/**
-	 * Returns the efficiency (ranging from 0 - 100) given the current charge speed.
+	 * Returns the efficiency (ranging from 0 - 100) given the current chargeP
+	 * speed.
+	 * 
 	 * @param chargeSpeed
 	 * @return efficiency from as a number from 0 - 100
 	 */
 	public double getChargeEfficiency(Measurable<Power> chargeSpeed) {
 		// efficiency curves are based on a 2000W converter
 		// scale the power set point based on the max power rating of the unit
-		powerScale = ((Math.abs((chargeSpeed.doubleValue(SI.KILO(SI.WATT))))
-				/ (getMaximumChargeSpeed().doubleValue(SI.KILO(SI.WATT)))) * 2);
-
+		powerScale = ((Math.abs((chargeSpeed.doubleValue(SI.KILO(SI.WATT)))) / (getMaximumChargeSpeed()
+				.doubleValue(SI.KILO(SI.WATT)))) * 2);
 		if (powerScale < 0.009) {
 			efficiency = 0;
 		} else {
-			efficiency = (0.9191 * (Math.pow(powerScale, 4)) - 4.17 * (Math.pow(powerScale, 3))
-					+ 5.398 * (Math.pow(powerScale, 2)) + 95.06 * (powerScale) - 0.8774) / (powerScale - 0.007935);
+			efficiency = (0.9191 * (Math.pow(powerScale, 4)) - 4.17
+					* (Math.pow(powerScale, 3)) + 5.398
+					* (Math.pow(powerScale, 2)) + 95.06 * (powerScale) - 0.8774)
+					/ (powerScale - 0.007935);
 		}
 		return efficiency;
 	}
 
 	/**
-	 * Returns the efficiency (ranging from 0 - 100) given the current discharge speed.
+	 * Returns the efficiency (ranging from 0 - 100) given the current discharge
+	 * speed.
+	 * 
 	 * @param dischargeSpeed
 	 * @return efficiency from as a number from 0 - 100
 	 */
 	public double getDischargeEfficiency(Measurable<Power> chargeSpeed) {
 		// efficiency curves are based on a 2kW converter
 		// scale the power set point based on the max power rating of the unit
-		powerScale = ((Math.abs((chargeSpeed.doubleValue(SI.KILO(SI.WATT))))
-				/ (getMaximumDischargeSpeed().doubleValue(SI.KILO(SI.WATT)))) * 2);
+		powerScale = ((Math.abs((chargeSpeed.doubleValue(SI.KILO(SI.WATT)))) / (getMaximumDischargeSpeed()
+				.doubleValue(SI.KILO(SI.WATT)))) * 2);
 
-		efficiency = (-1.043 * (Math.pow(powerScale, 3)) + 1.836 * (Math.pow(powerScale, 2)) + 95.63 * powerScale
-				+ 0.0002741) / (powerScale + 0.01581);
+		efficiency = (-1.043 * (Math.pow(powerScale, 3)) + 1.836
+				* (Math.pow(powerScale, 2)) + 95.63 * powerScale + 0.0002741)
+				/ (powerScale + 0.01581);
 
 		return efficiency;
 
 	}
 
 	public Measurable<Power> getMaximumChargeSpeed() {
-		// TODO actually use
-		return Measure.valueOf(configuration.maximumChargingRateWatts(), SI.WATT);
+		return Measure.valueOf(configuration.maximumChargingRateWatts(),
+				SI.WATT);
 	}
 
 	public Measurable<Power> getMaximumDischargeSpeed() {
-		// TODO actually use
-		return Measure.valueOf(configuration.maximumDischargingRateWatts(), SI.WATT);
+		return Measure.valueOf(
+				configuration.maximumDischargingRateWatts(), SI.WATT);
 	}
 
 	/**
@@ -294,7 +351,7 @@ public class GenericAdvancedBatteryDeviceModel implements Runnable {
 	/**
 	 * 
 	 * @param newRunningMode
-	 */	
+	 */
 	public void goToRunningMode(GenericAdvancedBatteryMode newRunningMode) {
 		// Only do something when the runningmode actually changed
 		if (this.mode != newRunningMode) {
@@ -303,16 +360,36 @@ public class GenericAdvancedBatteryDeviceModel implements Runnable {
 		}
 	}
 
-	protected double getCurrentInAmps() {
-		return i;
+	public double getCurrentInAmps() {
+		return -i;
 	}
 
-	protected double getBatteryVolts() {
+	public double getBatteryVolts() {
 		return batteryVolts;
 	}
+	
+	public double getBatteryAge() {
+		return Q/ratedQ * 100;
+	}
 
-	protected Measurable<Power> getElectricPower() {
-		return electricPower;
+	public Measurable<Power> getElectricPower() {
+		return Measure.valueOf(-electricPower.doubleValue(SI.WATT), SI.WATT);
 	}
 	
+	/**
+	 * Calculate the % reduction of total capacity due to battery aging
+	 * battery end of life is when the capacity is reduced to 80%
+	 * */
+	public double getBatteryChangeCapacity(double dischargeDeltaSoc ){
+	
+		double CyclePercent = 0.0053; // % drop in rated capacity / cycle
+		
+		
+		double changeCapacityPercentage = (dischargeDeltaSoc * CyclePercent/100) * 100;
+		
+		return changeCapacityPercentage;
+	}
+	
+	
+
 }

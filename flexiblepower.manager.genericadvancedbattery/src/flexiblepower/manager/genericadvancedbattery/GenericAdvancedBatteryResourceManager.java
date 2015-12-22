@@ -61,19 +61,19 @@ import aQute.bnd.annotation.metatype.Configurable;
 @Component(designateFactory = GenericAdvancedBatteryConfig.class, provide = Endpoint.class, immediate = true)
 public class GenericAdvancedBatteryResourceManager implements BufferResourceManager, Runnable, MessageHandler {
 
-	private static final Logger logger = LoggerFactory.getLogger(GenericAdvancedBatteryResourceManager.class);
+	protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
 	private static final int BATTERY_CHARGER_ID = 0;
 
-	private GenericAdvancedBatteryConfig configuration;
-	private FlexiblePowerContext context;
-	private GenericAdvancedBatteryDeviceModel model;
+	protected GenericAdvancedBatteryConfig configuration;
+	protected FlexiblePowerContext context;
+	protected GenericAdvancedBatteryDeviceModel model;
 
-	private GenericAdvancedBatteryWidget widget;
+	protected Widget widget;
 
-	private ServiceRegistration<Widget> widgetRegistration;
+	protected ServiceRegistration<Widget> widgetRegistration;
 
-	private ScheduledFuture<?> scheduledFuture;
+	protected ScheduledFuture<?> scheduledFuture;
 
 	private Actuator batteryCharger;
 
@@ -243,9 +243,7 @@ public class GenericAdvancedBatteryResourceManager implements BufferResourceMana
 		FillLevelFunction<RunningModeBehaviour> chargeFillLevelFunction, idleFillLevelFunction,
 				dischargeFillLevelFunction;
 
-		Measurable<Power> chargeSpeed = Measure.valueOf(1500, SI.WATT); // TODO
-																		// make
-																		// configurable
+		Measurable<Power> chargeSpeed = Measure.valueOf(configuration.maximumChargingRateWatts(), SI.WATT);
 
 		chargeFillLevelFunction = FillLevelFunction
 				.<RunningModeBehaviour> create(configuration.minimumFillLevelPercent())
@@ -261,9 +259,7 @@ public class GenericAdvancedBatteryResourceManager implements BufferResourceMana
 						CommodityMeasurables.electricity(Measure.zero(WATT)), Measure.zero(NonSI.EUR_PER_HOUR)))
 				.build();
 
-		Measurable<Power> dischargeSpeed = Measure.valueOf(-1500, SI.WATT); // TODO
-																			// make
-																			// configurable
+		Measurable<Power> dischargeSpeed = Measure.valueOf(-1 * configuration.maximumDischargingRateWatts(), SI.WATT);
 
 		dischargeFillLevelFunction = FillLevelFunction
 				.<RunningModeBehaviour> create(configuration.minimumFillLevelPercent())
