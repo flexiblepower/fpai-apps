@@ -102,7 +102,7 @@ public class GenericAdvancedBatteryDeviceModel implements Runnable {
         this.context = context;
         soc = configuration.initialSocRatio();
 
-        // Set the constants of the model.
+        // Set the constants of the batteryModel.
         E0 = configuration.ratedVoltage();
         Ebatt = E0;
         internalVolts = E0;
@@ -240,7 +240,7 @@ public class GenericAdvancedBatteryDeviceModel implements Runnable {
 
         previousRun = now;
         logger.info(
-                    "Executed battery model at " + now
+                    "Executed battery batteryModel at " + now
                     + ", mode is "
                     + mode
                     + ", fill level is "

@@ -23,7 +23,7 @@ import flexiblepower.manager.genericadvancedbattery.GenericAdvancedBatteryResour
 @Component(designateFactory = PowerwallBatteryConfig.class, provide = Endpoint.class, immediate = true)
 public class PowerwallBatteryResourceManager extends GenericAdvancedBatteryResourceManager {
 
-    // TODO The real powerwall is less efficient (including inverter around 87% than the generic model).
+    // TODO The real powerwall is less efficient (including inverter around 87% than the generic batteryModel).
     private static final double CAPACITY_KWH = 7;
     private PowerwallBatteryConfig powerwallConfiguration;
 
@@ -52,18 +52,18 @@ public class PowerwallBatteryResourceManager extends GenericAdvancedBatteryResou
             newProperties.put("constantB", 3.4893);
             newProperties.put("internalResistanceOhms", 0.22857);
 
-            // Create a configuration
-            configuration = Configurable.createConfigurable(GenericAdvancedBatteryConfig.class, newProperties);
+            // Create a config
+            config = Configurable.createConfigurable(GenericAdvancedBatteryConfig.class, newProperties);
 
-            // Initialize the model correctly to start the first time step.
-            model = new GenericAdvancedBatteryDeviceModel(configuration, context);
+            // Initialize the batteryModel correctly to start the first time step.
+            batteryModel = new GenericAdvancedBatteryDeviceModel(config, context);
 
             scheduledFuture = context.scheduleAtFixedRate(this,
                                                           Measure.valueOf(0, SI.SECOND),
-                                                          Measure.valueOf(configuration.updateIntervalSeconds(),
+                                                          Measure.valueOf(config.updateIntervalSeconds(),
                                                                           SI.SECOND));
 
-            widget = new PowerwallBatteryWidget(model);
+            widget = new PowerwallBatteryWidget(batteryModel);
             widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
             logger.debug("Advanced Battery Manager activated");
         } catch (Exception ex) {

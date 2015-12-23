@@ -58,46 +58,55 @@ import aQute.bnd.annotation.component.Deactivate;
 import aQute.bnd.annotation.component.Reference;
 import aQute.bnd.annotation.metatype.Configurable;
 
+/**
+ * This is a ResourceManager for the generic Battery batteryModel. This manager includes the batteryModel, so there is
+ * no need to connect it to a driver.
+ *
+ * This is the generic batteryModel. There are specialized models which inherit from thil class.
+ */
 @Component(designateFactory = GenericAdvancedBatteryConfig.class, provide = Endpoint.class, immediate = true)
 public class GenericAdvancedBatteryResourceManager implements BufferResourceManager, Runnable, MessageHandler {
 
+    private static final int BATTERY_CHARGER_ACTUATOR_ID = 0;
+
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    private static final int BATTERY_CHARGER_ID = 0;
-
-    protected GenericAdvancedBatteryConfig configuration;
+    /** Configuration of the component */
+    protected GenericAdvancedBatteryConfig config;
+    /** FlexiblePowerContext */
     protected FlexiblePowerContext context;
-    protected GenericAdvancedBatteryDeviceModel model;
-
+    /** The actual batteryModel */
+    protected GenericAdvancedBatteryDeviceModel batteryModel;
+    /** Widget for the battery batteryModel, can be different for subclasses */
     protected Widget widget;
-
+    /** Reference to the Widget registration in the Service Registry */
     protected ServiceRegistration<Widget> widgetRegistration;
-
+    /** Schedule this Runnable */
     protected ScheduledFuture<?> scheduledFuture;
-
+    /** Object describing the charger */
     private Actuator batteryCharger;
-
+    /** EFI buffer registration message */
     private BufferRegistration<Dimensionless> batteryBufferRegistration;
-
+    /** Connection to the Controller (Energy App) */
     private Connection controllerConnection;
-
+    /** Map with all the RunningModes, runningmode ID is used as key */
     private HashMap<Integer, RunningMode<FillLevelFunction<RunningModeBehaviour>>> runningModes;
 
     @Activate
     public void activate(BundleContext bundleContext, Map<String, Object> properties) {
         try {
-            // Create a configuration
-            configuration = Configurable.createConfigurable(GenericAdvancedBatteryConfig.class, properties);
+            // Create a config
+            config = Configurable.createConfigurable(GenericAdvancedBatteryConfig.class, properties);
 
-            // Initialize the model correctly to start the first time step.
-            model = new GenericAdvancedBatteryDeviceModel(configuration, context);
+            // Initialize the batteryModel correctly to start the first time step.
+            batteryModel = new GenericAdvancedBatteryDeviceModel(config, context);
 
             scheduledFuture = context.scheduleAtFixedRate(this,
                                                           Measure.valueOf(0, SI.SECOND),
-                                                          Measure.valueOf(configuration.updateIntervalSeconds(),
+                                                          Measure.valueOf(config.updateIntervalSeconds(),
                                                                           SI.SECOND));
 
-            widget = new GenericAdvancedBatteryWidget(model);
+            widget = new GenericAdvancedBatteryWidget(batteryModel);
             widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
             logger.debug("Advanced Battery Manager activated");
         } catch (Exception ex) {
@@ -128,9 +137,9 @@ public class GenericAdvancedBatteryResourceManager implements BufferResourceMana
 
         // ---- Buffer registration ----
         // create a battery actuator for electricity
-        batteryCharger = new Actuator(BATTERY_CHARGER_ID, "Battery Charger 1", CommoditySet.onlyElectricity);
+        batteryCharger = new Actuator(BATTERY_CHARGER_ACTUATOR_ID, "Battery Charger 1", CommoditySet.onlyElectricity);
         // create a buffer registration message
-        batteryBufferRegistration = new BufferRegistration<Dimensionless>(configuration.resourceId(),
+        batteryBufferRegistration = new BufferRegistration<Dimensionless>(config.resourceId(),
                                                                           now,
                                                                           Measure.zero(SECOND),
                                                                           "Battery state of charge in percent",
@@ -139,7 +148,7 @@ public class GenericAdvancedBatteryResourceManager implements BufferResourceMana
 
         // ---- Buffer system description ----
         // create a behavior of the battery
-        ActuatorBehaviour batteryActuatorBehaviour = makeBatteryActuatorBehaviour(batteryCharger.getActuatorId());
+        ActuatorBehaviour batteryActuatorBehaviour = createBatteryActuatorBehaviour(batteryCharger.getActuatorId());
         // create the leakage function of the battery
         FillLevelFunction<LeakageRate> bufferLeakageFunction = FillLevelFunction.<LeakageRate> create(0d)
                                                                                 .add(100d, new LeakageRate(0))
@@ -164,13 +173,13 @@ public class GenericAdvancedBatteryResourceManager implements BufferResourceMana
 
     private BufferStateUpdate<Dimensionless> createBufferStateUpdate(Date timestamp) {
         // create running mode
-        int currentRonningMode = findRunningModeWithPower(model.getElectricPower().doubleValue(SI.WATT));
+        int currentRonningMode = findRunningModeWithPower(batteryModel.getElectricPower().doubleValue(SI.WATT));
         Set<ActuatorUpdate> currentRunningMode = Collections
-                                                            .<ActuatorUpdate> singleton(new ActuatorUpdate(BATTERY_CHARGER_ID,
+                                                            .<ActuatorUpdate> singleton(new ActuatorUpdate(BATTERY_CHARGER_ACTUATOR_ID,
                                                                                                            currentRonningMode,
                                                                                                            null));
         // create buffer state update message
-        Measurable<Dimensionless> currentFillLevel = model.getCurrentFillLevel();
+        Measurable<Dimensionless> currentFillLevel = batteryModel.getCurrentFillLevel();
         BufferStateUpdate<Dimensionless> update = new BufferStateUpdate<Dimensionless>(batteryBufferRegistration,
                                                                                        timestamp,
                                                                                        timestamp,
@@ -211,13 +220,13 @@ public class GenericAdvancedBatteryResourceManager implements BufferResourceMana
                 if (runningModes.containsKey(allocation.getRunningModeId())) {
                     Measurable<Power> desiredChargePower = runningModes.get(allocation.getRunningModeId())
                                                                        .getValue()
-                                                                       .getValueForFillLevel(model.getCurrentFillLevel()
-                                                                                                  .doubleValue(NonSI.PERCENT))
+                                                                       .getValueForFillLevel(batteryModel.getCurrentFillLevel()
+                                                                                                         .doubleValue(NonSI.PERCENT))
                                                                        .getCommodityConsumption()
                                                                        .get(Commodity.ELECTRICITY);
 
-                    // This method also updates the model
-                    model.setDesiredChargePower(desiredChargePower);
+                    // This method also updates the batteryModel
+                    batteryModel.setDesiredChargePower(desiredChargePower);
 
                     // TODO use: aa.getStartTime();
 
@@ -241,9 +250,9 @@ public class GenericAdvancedBatteryResourceManager implements BufferResourceMana
      * @param actuatorId
      * @return Returns the completely filled battery actuator behavior object
      */
-    private ActuatorBehaviour makeBatteryActuatorBehaviour(int actuatorId) {
+    private ActuatorBehaviour createBatteryActuatorBehaviour(int actuatorId) {
 
-        int nrOfRunningModes = 3 + 2 * configuration.nrOfModulationSteps();
+        int nrOfRunningModes = 3 + 2 * config.nrOfModulationSteps();
 
         // Create a set of all the Transitions. Since every transition is
         // allowed from every RunningMode to every other RunningMode, we can
@@ -257,9 +266,9 @@ public class GenericAdvancedBatteryResourceManager implements BufferResourceMana
         int runningModeId = 0;
         runningModes = new HashMap<Integer, RunningMode<FillLevelFunction<RunningModeBehaviour>>>();
         // Charging RunningModes
-        double increment = configuration.maximumChargingRateWatts() / (configuration.nrOfModulationSteps() + 1);
-        for (int i = 0; i < configuration.nrOfModulationSteps() + 1; i++) {
-            double power = configuration.maximumChargingRateWatts() - (increment * i);
+        double increment = config.maximumChargingRateWatts() / (config.nrOfModulationSteps() + 1);
+        for (int i = 0; i < config.nrOfModulationSteps() + 1; i++) {
+            double power = config.maximumChargingRateWatts() - (increment * i);
             runningModes.put(runningModeId,
                              createRunningMode(runningModeId, transitions, Measure.valueOf(power, SI.WATT)));
             runningModeId++;
@@ -270,9 +279,9 @@ public class GenericAdvancedBatteryResourceManager implements BufferResourceMana
         runningModeId++;
 
         // Discharging RunningModes
-        increment = configuration.maximumDischargingRateWatts() / (configuration.nrOfModulationSteps() + 1);
-        for (int i = configuration.nrOfModulationSteps(); i >= 0; i--) {
-            double power = -configuration.maximumDischargingRateWatts() + (increment * i);
+        increment = config.maximumDischargingRateWatts() / (config.nrOfModulationSteps() + 1);
+        for (int i = config.nrOfModulationSteps(); i >= 0; i--) {
+            double power = -config.maximumDischargingRateWatts() + (increment * i);
             runningModes.put(runningModeId,
                              createRunningMode(runningModeId, transitions, Measure.valueOf(power, SI.WATT)));
             runningModeId++;
@@ -301,13 +310,13 @@ public class GenericAdvancedBatteryResourceManager implements BufferResourceMana
     }
 
     private FillLevelFunction<RunningModeBehaviour> createFillLevelFunction(Measurable<Power> power) {
-        return FillLevelFunction.<RunningModeBehaviour> create(configuration.minimumFillLevelPercent())
-                                .add(configuration.maximumFillLevelPercent(),
+        return FillLevelFunction.<RunningModeBehaviour> create(config.minimumFillLevelPercent())
+                                .add(config.maximumFillLevelPercent(),
                                      new RunningModeBehaviour(
                                                               power.doubleValue(SI.WATT)
-                                                              / model.getTotalCapacity().doubleValue(SI.JOULE)
+                                                              / batteryModel.getTotalCapacity().doubleValue(SI.JOULE)
                                                               * 100d
-                                                              * model.getDischargeEfficiency(power),
+                                                              * batteryModel.getDischargeEfficiency(power),
                                                               CommodityMeasurables.electricity(power),
                                                               Measure.zero(NonSI.EUR_PER_HOUR)))
                                 .build();
@@ -334,13 +343,13 @@ public class GenericAdvancedBatteryResourceManager implements BufferResourceMana
 
     /**
      * Find the RunningMode that is closest to the given power value
-     * 
+     *
      * @param powerWatt
      *            The power in Watts to look for
      * @return the RunningMode that is closest to the given power value
      */
     private int findRunningModeWithPower(double powerWatt) {
-        double fillLevel = model.getCurrentFillLevel().doubleValue(NonSI.PERCENT);
+        double fillLevel = batteryModel.getCurrentFillLevel().doubleValue(NonSI.PERCENT);
         double bestDistance = Double.POSITIVE_INFINITY;
         int bestRmId = 0;
         for (Entry<Integer, RunningMode<FillLevelFunction<RunningModeBehaviour>>> e : runningModes.entrySet()) {
@@ -359,10 +368,13 @@ public class GenericAdvancedBatteryResourceManager implements BufferResourceMana
         return bestRmId;
     }
 
+    /**
+     * Update the model, and when connected send a BufferStateUpdate to the Controller.
+     */
     @Override
     public void run() {
-        // Update the model
-        model.run();
+        // Update the batteryModel
+        batteryModel.run();
         // Send the state update
         if (controllerConnection != null) {
             BufferStateUpdate<Dimensionless> bufferStateUpdate = createBufferStateUpdate(context.currentTime());

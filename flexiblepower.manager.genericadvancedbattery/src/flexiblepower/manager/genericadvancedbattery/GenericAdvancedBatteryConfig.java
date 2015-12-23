@@ -43,10 +43,10 @@ public interface GenericAdvancedBatteryConfig {
     @Meta.AD(deflt = "52.6793", description = "*ADVANCED SETTINGS* Rated Voltage of the battery")
            double ratedVoltage();
 
-    @Meta.AD(deflt = "0.011", description = "*ADVANCED SETTINGS* The constant K (unitless) of the battery model")
+    @Meta.AD(deflt = "0.011", description = "*ADVANCED SETTINGS* The constant K (unitless) of the battery batteryModel")
            double KValue();
 
-    @Meta.AD(deflt = "24", description = "*ADVANCED SETTINGS* The constant Q in Ampere hours of the battery model")
+    @Meta.AD(deflt = "24", description = "*ADVANCED SETTINGS* The constant Q in Ampere hours of the battery batteryModel")
            double QAmpereHours();
 
     @Meta.AD(deflt = "3",

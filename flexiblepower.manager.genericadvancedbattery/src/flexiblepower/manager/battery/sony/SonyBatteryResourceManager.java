@@ -43,7 +43,7 @@ public class SonyBatteryResourceManager extends GenericAdvancedBatteryResourceMa
             newProperties.put("maximumFillLevelPercent", sonyConfiguration.maximumFillLevelPercent());
             newProperties.put("updateIntervalSeconds", sonyConfiguration.updateIntervalSeconds());
 
-            // Advanced model settings
+            // Advanced batteryModel settings
             newProperties.put("ratedVoltage", 52.6793);
             newProperties.put("KValue", 0.011);
             newProperties.put("QAmpereHours", 24);
@@ -51,18 +51,18 @@ public class SonyBatteryResourceManager extends GenericAdvancedBatteryResourceMa
             newProperties.put("constantB", 2.8);
             newProperties.put("internalResistanceOhms", 0.036);
 
-            // Create a configuration
-            configuration = Configurable.createConfigurable(GenericAdvancedBatteryConfig.class, newProperties);
+            // Create a config
+            config = Configurable.createConfigurable(GenericAdvancedBatteryConfig.class, newProperties);
 
-            // Initialize the model correctly to start the first time step.
-            model = new GenericAdvancedBatteryDeviceModel(configuration, context);
+            // Initialize the batteryModel correctly to start the first time step.
+            batteryModel = new GenericAdvancedBatteryDeviceModel(config, context);
 
             scheduledFuture = context.scheduleAtFixedRate(this,
                                                           Measure.valueOf(0, SI.SECOND),
-                                                          Measure.valueOf(configuration.updateIntervalSeconds(),
+                                                          Measure.valueOf(config.updateIntervalSeconds(),
                                                                           SI.SECOND));
 
-            widget = new SonyBatteryWidget(model);
+            widget = new SonyBatteryWidget(batteryModel);
             widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
             logger.debug("Advanced Battery Manager activated");
         } catch (Exception ex) {
