@@ -6,6 +6,7 @@ import static javax.measure.unit.SI.WATT;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,10 +41,10 @@ import org.flexiblepower.efi.util.Transition;
 import org.flexiblepower.messaging.Connection;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.messaging.MessageHandler;
-import org.flexiblepower.ral.drivers.battery.BatteryMode;
 import org.flexiblepower.ral.messages.AllocationRevoke;
 import org.flexiblepower.ral.messages.ControlSpaceRevoke;
 import org.flexiblepower.ral.messages.ResourceMessage;
+import org.flexiblepower.ral.values.Commodity;
 import org.flexiblepower.ral.values.CommodityMeasurables;
 import org.flexiblepower.ral.values.CommoditySet;
 import org.flexiblepower.ui.Widget;
@@ -80,6 +81,8 @@ public class GenericAdvancedBatteryResourceManager implements BufferResourceMana
 	private BufferRegistration<Dimensionless> batteryBufferRegistration;
 
 	private Connection controllerConnection;
+
+	private HashMap<Integer, RunningMode<FillLevelFunction<RunningModeBehaviour>>> runningModes;
 
 	@Activate
 	public void activate(BundleContext bundleContext, Map<String, Object> properties) {
@@ -200,13 +203,21 @@ public class GenericAdvancedBatteryResourceManager implements BufferResourceMana
 		for (ActuatorAllocation allocation : message.getActuatorAllocations()) {
 			if (allocation.getActuatorId() == batteryCharger.getActuatorId()) {
 				// This one is for us!
-				GenericAdvancedBatteryMode desiredRunningMode = GenericAdvancedBatteryMode
-						.getByRunningModeId(allocation.getRunningModeId());
-				model.goToRunningMode(desiredRunningMode); // also updates model
-				// TODO use: aa.getStartTime();
+				if (this.runningModes.containsKey(allocation.getRunningModeId())) {
+					Measurable<Power> desiredChargePower = this.runningModes.get(allocation.getRunningModeId())
+							.getValue().getValueForFillLevel(model.getCurrentFillLevel().doubleValue(NonSI.PERCENT))
+							.getCommodityConsumption().get(Commodity.ELECTRICITY);
 
-				// Send the state update
-				controllerConnection.sendMessage(createBufferStateUpdate(context.currentTime()));
+					// This method also updates the model
+					model.setDesiredChargePower(desiredChargePower);
+
+					// TODO use: aa.getStartTime();
+
+					// Send the state update
+					controllerConnection.sendMessage(createBufferStateUpdate(context.currentTime()));
+				} else {
+					logger.warn("Received allocation for non-existing runningmode: " + allocation.getRunningModeId());
+				}
 			}
 		}
 	}
@@ -280,6 +291,11 @@ public class GenericAdvancedBatteryResourceManager implements BufferResourceMana
 				GenericAdvancedBatteryMode.DISCHARGE.runningModeId, "discharging", dischargeFillLevelFunction,
 				dischargeTransition);
 
+		this.runningModes = new HashMap<Integer, RunningMode<FillLevelFunction<RunningModeBehaviour>>>();
+		runningModes.put(chargeRunningMode.getId(), chargeRunningMode);
+		runningModes.put(idleRunningMode.getId(), idleRunningMode);
+		runningModes.put(dischargeRunningMode.getId(), dischargeRunningMode);
+
 		// return the actuator behavior with the three running modes for the
 		// specified actuator id
 		return ActuatorBehaviour.create(actuatorId).add(idleRunningMode).add(chargeRunningMode)
@@ -311,7 +327,8 @@ public class GenericAdvancedBatteryResourceManager implements BufferResourceMana
 	 * @param advancedBatteryMode
 	 * @return
 	 */
-	private Set<ActuatorUpdate> makeBatteryRunningModes(int actuatorId, GenericAdvancedBatteryMode advancedBatteryMode) {
+	private Set<ActuatorUpdate> makeBatteryRunningModes(int actuatorId,
+			GenericAdvancedBatteryMode advancedBatteryMode) {
 		return Collections
 				.<ActuatorUpdate> singleton(new ActuatorUpdate(actuatorId, advancedBatteryMode.runningModeId, null));
 	}
