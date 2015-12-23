@@ -1,9 +1,9 @@
 body {
-    background-image: url('single.png');
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    color: white;
-} 
+	background-image: url('single.png');
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+	color: white;
+}
 
 #loading {
 	position: absolute;
@@ -22,8 +22,8 @@ p {
 	height: 1.3em;
 	display: none;
 }
+
 #theNumbers {
-	margin-top:5px;
-	margin-left: 80px;
+	margin: 5px 5px 0 0;
 	text-align: center;
 }

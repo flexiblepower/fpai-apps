@@ -1,7 +1,6 @@
 package flexiblepower.manager.genericadvancedbattery;
 
 import static javax.measure.unit.SI.SECOND;
-import static javax.measure.unit.SI.WATT;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -10,6 +9,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 
@@ -42,7 +42,6 @@ import org.flexiblepower.messaging.Connection;
 import org.flexiblepower.messaging.Endpoint;
 import org.flexiblepower.messaging.MessageHandler;
 import org.flexiblepower.ral.messages.AllocationRevoke;
-import org.flexiblepower.ral.messages.ControlSpaceRevoke;
 import org.flexiblepower.ral.messages.ResourceMessage;
 import org.flexiblepower.ral.values.Commodity;
 import org.flexiblepower.ral.values.CommodityMeasurables;
@@ -62,286 +61,313 @@ import aQute.bnd.annotation.metatype.Configurable;
 @Component(designateFactory = GenericAdvancedBatteryConfig.class, provide = Endpoint.class, immediate = true)
 public class GenericAdvancedBatteryResourceManager implements BufferResourceManager, Runnable, MessageHandler {
 
-	protected final Logger logger = LoggerFactory.getLogger(this.getClass());
+    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-	private static final int BATTERY_CHARGER_ID = 0;
+    private static final int BATTERY_CHARGER_ID = 0;
 
-	protected GenericAdvancedBatteryConfig configuration;
-	protected FlexiblePowerContext context;
-	protected GenericAdvancedBatteryDeviceModel model;
+    protected GenericAdvancedBatteryConfig configuration;
+    protected FlexiblePowerContext context;
+    protected GenericAdvancedBatteryDeviceModel model;
 
-	protected Widget widget;
+    protected Widget widget;
 
-	protected ServiceRegistration<Widget> widgetRegistration;
+    protected ServiceRegistration<Widget> widgetRegistration;
 
-	protected ScheduledFuture<?> scheduledFuture;
+    protected ScheduledFuture<?> scheduledFuture;
 
-	private Actuator batteryCharger;
+    private Actuator batteryCharger;
 
-	private BufferRegistration<Dimensionless> batteryBufferRegistration;
+    private BufferRegistration<Dimensionless> batteryBufferRegistration;
 
-	private Connection controllerConnection;
+    private Connection controllerConnection;
 
-	private HashMap<Integer, RunningMode<FillLevelFunction<RunningModeBehaviour>>> runningModes;
+    private HashMap<Integer, RunningMode<FillLevelFunction<RunningModeBehaviour>>> runningModes;
 
-	@Activate
-	public void activate(BundleContext bundleContext, Map<String, Object> properties) {
-		try {
-			// Create a configuration
-			configuration = Configurable.createConfigurable(GenericAdvancedBatteryConfig.class, properties);
+    @Activate
+    public void activate(BundleContext bundleContext, Map<String, Object> properties) {
+        try {
+            // Create a configuration
+            configuration = Configurable.createConfigurable(GenericAdvancedBatteryConfig.class, properties);
 
-			// Initialize the model correctly to start the first time step.
-			model = new GenericAdvancedBatteryDeviceModel(configuration, context);
+            // Initialize the model correctly to start the first time step.
+            model = new GenericAdvancedBatteryDeviceModel(configuration, context);
 
-			scheduledFuture = this.context.scheduleAtFixedRate(this, Measure.valueOf(0, SI.SECOND),
-					Measure.valueOf(configuration.updateIntervalSeconds(), SI.SECOND));
+            scheduledFuture = context.scheduleAtFixedRate(this,
+                                                          Measure.valueOf(0, SI.SECOND),
+                                                          Measure.valueOf(configuration.updateIntervalSeconds(),
+                                                                          SI.SECOND));
 
-			widget = new GenericAdvancedBatteryWidget(this.model);
-			widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
-			logger.debug("Advanced Battery Manager activated");
-		} catch (Exception ex) {
-			logger.error("Error during initialization of the battery simulation: " + ex.getMessage(), ex);
-			deactivate();
-		}
-	}
+            widget = new GenericAdvancedBatteryWidget(model);
+            widgetRegistration = bundleContext.registerService(Widget.class, widget, null);
+            logger.debug("Advanced Battery Manager activated");
+        } catch (Exception ex) {
+            logger.error("Error during initialization of the battery simulation: " + ex.getMessage(), ex);
+            deactivate();
+        }
+    }
 
-	@Deactivate
-	public void deactivate() {
-		logger.debug("Advanced Battery Manager deactivated");
-		if (widgetRegistration != null) {
-			widgetRegistration.unregister();
-		}
-		if (scheduledFuture != null) {
-			scheduledFuture.cancel(true);
-		}
-	}
+    @Deactivate
+    public void deactivate() {
+        logger.debug("Advanced Battery Manager deactivated");
+        if (widgetRegistration != null) {
+            widgetRegistration.unregister();
+        }
+        if (scheduledFuture != null) {
+            scheduledFuture.cancel(true);
+        }
+    }
 
-	@Reference(optional = false, dynamic = false, multiple = false)
-	public void setContext(FlexiblePowerContext context) {
-		this.context = context;
-	}
+    @Reference(optional = false, dynamic = false, multiple = false)
+    public void setContext(FlexiblePowerContext context) {
+        this.context = context;
+    }
 
-	protected List<? extends ResourceMessage> startRegistration() {
-		// Because we're not connected to a driver we'll not use the state
-		// object.
+    protected List<? extends ResourceMessage> startRegistration() {
+        // safe current state of the battery
+        Date now = context.currentTime();
 
-		logger.debug("Updated the battery state update, mode=" + model.getCurrentMode().name());
+        // ---- Buffer registration ----
+        // create a battery actuator for electricity
+        batteryCharger = new Actuator(BATTERY_CHARGER_ID, "Battery Charger 1", CommoditySet.onlyElectricity);
+        // create a buffer registration message
+        batteryBufferRegistration = new BufferRegistration<Dimensionless>(configuration.resourceId(),
+                                                                          now,
+                                                                          Measure.zero(SECOND),
+                                                                          "Battery state of charge in percent",
+                                                                          NonSI.PERCENT,
+                                                                          Collections.<Actuator> singleton(batteryCharger));
 
-		// safe current state of the battery
-		Date now = context.currentTime();
+        // ---- Buffer system description ----
+        // create a behavior of the battery
+        ActuatorBehaviour batteryActuatorBehaviour = makeBatteryActuatorBehaviour(batteryCharger.getActuatorId());
+        // create the leakage function of the battery
+        FillLevelFunction<LeakageRate> bufferLeakageFunction = FillLevelFunction.<LeakageRate> create(0d)
+                                                                                .add(100d, new LeakageRate(0))
+                                                                                .build(); // TODO build in
+                                                                                          // leakage???
+        // create the buffer system description message
+        Set<ActuatorBehaviour> actuatorsBehaviours = new HashSet<ActuatorBehaviour>();
+        actuatorsBehaviours.add(batteryActuatorBehaviour);
+        BufferSystemDescription sysDescr = new BufferSystemDescription(batteryBufferRegistration,
+                                                                       now,
+                                                                       now,
+                                                                       actuatorsBehaviours,
+                                                                       bufferLeakageFunction);
 
-		// ---- Buffer registration ----
-		// create a battery actuator for electricity
-		batteryCharger = new Actuator(BATTERY_CHARGER_ID, "Battery Charger 1", CommoditySet.onlyElectricity);
-		// create a buffer registration message
-		batteryBufferRegistration = new BufferRegistration<Dimensionless>(configuration.resourceId(), now,
-				Measure.zero(SECOND), "Battery state of charge in percent", NonSI.PERCENT,
-				Collections.<Actuator> singleton(batteryCharger));
+        // ---- Buffer state update ----
+        BufferStateUpdate<Dimensionless> update = createBufferStateUpdate(now);
 
-		// ---- Buffer system description ----
-		// create a behavior of the battery
-		ActuatorBehaviour batteryActuatorBehaviour = makeBatteryActuatorBehaviour(batteryCharger.getActuatorId());
-		// create the leakage function of the battery
-		FillLevelFunction<LeakageRate> bufferLeakageFunction = FillLevelFunction.<LeakageRate> create(0d)
-				.add(100d, new LeakageRate(0)).build(); // TODO build in
-														// leakage???
-		// create the buffer system description message
-		Set<ActuatorBehaviour> actuatorsBehaviours = new HashSet<ActuatorBehaviour>();
-		actuatorsBehaviours.add(batteryActuatorBehaviour);
-		BufferSystemDescription sysDescr = new BufferSystemDescription(batteryBufferRegistration, now, now,
-				actuatorsBehaviours, bufferLeakageFunction);
+        logger.debug("Battery manager start registration completed.");
+        // return the three messages
+        return Arrays.asList(batteryBufferRegistration, sysDescr, update);
+    }
 
-		// ---- Buffer state update ----
-		BufferStateUpdate<Dimensionless> update = createBufferStateUpdate(now);
+    private BufferStateUpdate<Dimensionless> createBufferStateUpdate(Date timestamp) {
+        // create running mode
+        int currentRonningMode = findRunningModeWithPower(model.getElectricPower().doubleValue(SI.WATT));
+        Set<ActuatorUpdate> currentRunningMode = Collections
+                                                            .<ActuatorUpdate> singleton(new ActuatorUpdate(BATTERY_CHARGER_ID,
+                                                                                                           currentRonningMode,
+                                                                                                           null));
+        // create buffer state update message
+        Measurable<Dimensionless> currentFillLevel = model.getCurrentFillLevel();
+        BufferStateUpdate<Dimensionless> update = new BufferStateUpdate<Dimensionless>(batteryBufferRegistration,
+                                                                                       timestamp,
+                                                                                       timestamp,
+                                                                                       currentFillLevel,
+                                                                                       currentRunningMode);
+        return update;
+    }
 
-		logger.debug("Battery manager start registration completed.");
-		// return the three messages
-		return Arrays.asList(batteryBufferRegistration, sysDescr, update);
-	}
+    @Override
+    public MessageHandler onConnect(Connection connection) {
+        // Connect to the Controller
+        controllerConnection = connection;
+        for (ResourceMessage m : startRegistration()) {
+            connection.sendMessage(m);
+        }
+        return this;
+    }
 
-	private BufferStateUpdate<Dimensionless> createBufferStateUpdate(Date timestamp) {
-		// create running mode
-		Set<ActuatorUpdate> currentRunningMode = makeBatteryRunningModes(batteryCharger.getActuatorId(),
-				model.getCurrentMode());
-		// create buffer state update message
-		Measurable<Dimensionless> currentFillLevel = model.getCurrentFillLevel();
-		BufferStateUpdate<Dimensionless> update = new BufferStateUpdate<Dimensionless>(batteryBufferRegistration,
-				timestamp, timestamp, currentFillLevel, currentRunningMode);
-		return update;
-	}
+    @Override
+    public void handleMessage(Object message) {
+        if (message instanceof BufferAllocation) {
+            handleBufferAllocation((BufferAllocation) message);
+        } else if (message instanceof AllocationRevoke) {
+            handleAllocationRevoke((AllocationRevoke) message);
+        } else {
+            logger.warn("Received unknown message type: " + message.getClass().getSimpleName());
+        }
+    }
 
-	private ControlSpaceRevoke createRevokeMessage() {
-		return new ControlSpaceRevoke(configuration.resourceId(), context.currentTime());
-	}
+    private void handleAllocationRevoke(AllocationRevoke message) {
+        // TODO Auto-generated method stub
+    }
 
-	@Override
-	public MessageHandler onConnect(Connection connection) {
-		// Connect to the Controller
-		this.controllerConnection = connection;
-		for (ResourceMessage m : this.startRegistration()) {
-			connection.sendMessage(m);
-		}
-		return this;
-	}
+    private void handleBufferAllocation(BufferAllocation message) {
+        for (ActuatorAllocation allocation : message.getActuatorAllocations()) {
+            if (allocation.getActuatorId() == batteryCharger.getActuatorId()) {
+                // This one is for us!
+                if (runningModes.containsKey(allocation.getRunningModeId())) {
+                    Measurable<Power> desiredChargePower = runningModes.get(allocation.getRunningModeId())
+                                                                       .getValue()
+                                                                       .getValueForFillLevel(model.getCurrentFillLevel()
+                                                                                                  .doubleValue(NonSI.PERCENT))
+                                                                       .getCommodityConsumption()
+                                                                       .get(Commodity.ELECTRICITY);
 
-	@Override
-	public void handleMessage(Object message) {
-		if (message instanceof BufferAllocation) {
-			handleBufferAllocation((BufferAllocation) message);
-		} else if (message instanceof AllocationRevoke) {
-			handleAllocationRevoke((AllocationRevoke) message);
-		} else {
-			logger.warn("Received unknown message type: " + message.getClass().getSimpleName());
-		}
-	}
+                    // This method also updates the model
+                    model.setDesiredChargePower(desiredChargePower);
 
-	private void handleAllocationRevoke(AllocationRevoke message) {
-		// TODO Auto-generated method stub
-	}
+                    // TODO use: aa.getStartTime();
 
-	private void handleBufferAllocation(BufferAllocation message) {
-		for (ActuatorAllocation allocation : message.getActuatorAllocations()) {
-			if (allocation.getActuatorId() == batteryCharger.getActuatorId()) {
-				// This one is for us!
-				if (this.runningModes.containsKey(allocation.getRunningModeId())) {
-					Measurable<Power> desiredChargePower = this.runningModes.get(allocation.getRunningModeId())
-							.getValue().getValueForFillLevel(model.getCurrentFillLevel().doubleValue(NonSI.PERCENT))
-							.getCommodityConsumption().get(Commodity.ELECTRICITY);
+                    // Send the state update
+                    controllerConnection.sendMessage(createBufferStateUpdate(context.currentTime()));
+                } else {
+                    logger.warn("Received allocation for non-existing runningmode: " + allocation.getRunningModeId());
+                }
+            }
+        }
+    }
 
-					// This method also updates the model
-					model.setDesiredChargePower(desiredChargePower);
+    @Override
+    public void disconnected() {
+        controllerConnection = null;
+    }
 
-					// TODO use: aa.getStartTime();
+    /**
+     * Helper method to set up everything for the battery actuator behavior specification
+     *
+     * @param actuatorId
+     * @return Returns the completely filled battery actuator behavior object
+     */
+    private ActuatorBehaviour makeBatteryActuatorBehaviour(int actuatorId) {
 
-					// Send the state update
-					controllerConnection.sendMessage(createBufferStateUpdate(context.currentTime()));
-				} else {
-					logger.warn("Received allocation for non-existing runningmode: " + allocation.getRunningModeId());
-				}
-			}
-		}
-	}
+        int nrOfRunningModes = 3 + 2 * configuration.nrOfModulationSteps();
 
-	@Override
-	public void disconnected() {
-		this.controllerConnection = null;
-	}
+        // Create a set of all the Transitions. Since every transition is
+        // allowed from every RunningMode to every other RunningMode, we can
+        // give every RunningMode the same set of all transitions.
+        Set<Transition> transitions = new HashSet<Transition>();
+        for (int runnningModeId = 0; runnningModeId < nrOfRunningModes; runnningModeId++) {
+            transitions.add(makeTransition(runnningModeId));
+        }
 
-	/**
-	 * Helper method to set up everything for the battery actuator behavior
-	 * specification
-	 *
-	 * @param actuatorId
-	 * @return Returns the completely filled battery actuator behavior object
-	 */
-	private ActuatorBehaviour makeBatteryActuatorBehaviour(int actuatorId) {
-		// make three transitions holders
-		Transition toChargingTransition = makeTransition(GenericAdvancedBatteryMode.CHARGE.runningModeId);
-		Transition toIdleTransition = makeTransition(GenericAdvancedBatteryMode.IDLE.runningModeId);
-		Transition toDisChargingTransition = makeTransition(GenericAdvancedBatteryMode.DISCHARGE.runningModeId);
+        // Create RunningModes
+        int runningModeId = 0;
+        runningModes = new HashMap<Integer, RunningMode<FillLevelFunction<RunningModeBehaviour>>>();
+        // Charging RunningModes
+        double increment = configuration.maximumChargingRateWatts() / (configuration.nrOfModulationSteps() + 1);
+        for (int i = 0; i < configuration.nrOfModulationSteps() + 1; i++) {
+            double power = configuration.maximumChargingRateWatts() - (increment * i);
+            runningModes.put(runningModeId,
+                             createRunningMode(runningModeId, transitions, Measure.valueOf(power, SI.WATT)));
+            runningModeId++;
+        }
 
-		// create the transition graph, it is fully connected in this case
-		Set<Transition> idleTransition = new HashSet<Transition>();
-		idleTransition.add(toChargingTransition);
-		idleTransition.add(toDisChargingTransition);
-		Set<Transition> chargeTransition = new HashSet<Transition>();
-		chargeTransition.add(toIdleTransition);
-		chargeTransition.add(toDisChargingTransition);
-		Set<Transition> dischargeTransition = new HashSet<Transition>();
-		dischargeTransition.add(toIdleTransition);
-		dischargeTransition.add(toChargingTransition);
+        // Idle RunningMode
+        runningModes.put(runningModeId, createRunningMode(runningModeId, transitions, Measure.zero(SI.WATT)));
+        runningModeId++;
 
-		FillLevelFunction<RunningModeBehaviour> chargeFillLevelFunction, idleFillLevelFunction,
-				dischargeFillLevelFunction;
+        // Discharging RunningModes
+        increment = configuration.maximumDischargingRateWatts() / (configuration.nrOfModulationSteps() + 1);
+        for (int i = configuration.nrOfModulationSteps(); i >= 0; i--) {
+            double power = -configuration.maximumDischargingRateWatts() + (increment * i);
+            runningModes.put(runningModeId,
+                             createRunningMode(runningModeId, transitions, Measure.valueOf(power, SI.WATT)));
+            runningModeId++;
+        }
 
-		Measurable<Power> chargeSpeed = Measure.valueOf(configuration.maximumChargingRateWatts(), SI.WATT);
+        // return the actuator behavior with the three running modes for the
+        // specified actuator id
+        return new ActuatorBehaviour(actuatorId, runningModes.values());
+    }
 
-		chargeFillLevelFunction = FillLevelFunction
-				.<RunningModeBehaviour> create(configuration.minimumFillLevelPercent())
-				.add(configuration.maximumFillLevelPercent(),
-						new RunningModeBehaviour(
-								chargeSpeed.doubleValue(WATT) / model.getTotalCapacity().doubleValue(SI.JOULE) * 100d
-										* model.getChargeEfficiency(chargeSpeed),
-								CommodityMeasurables.electricity(chargeSpeed), Measure.zero(NonSI.EUR_PER_HOUR)))
-				.build();
+    private RunningMode<FillLevelFunction<RunningModeBehaviour>> createRunningMode(int runningModeId,
+                                                                                   Set<Transition> transitions,
+                                                                                   Measurable<Power> power) {
+        String name;
+        if (power.doubleValue(SI.WATT) > 0) {
+            name = "charing, " + power;
+        } else if (power.doubleValue(SI.WATT) < 0) {
+            name = "discharging, " + power;
+        } else {
+            name = "Idle";
+        }
+        return new RunningMode<FillLevelFunction<RunningModeBehaviour>>(runningModeId,
+                                                                        name,
+                                                                        createFillLevelFunction(power),
+                                                                        transitions);
+    }
 
-		idleFillLevelFunction = FillLevelFunction.<RunningModeBehaviour> create(configuration.minimumFillLevelPercent())
-				.add(configuration.maximumFillLevelPercent(), new RunningModeBehaviour(0,
-						CommodityMeasurables.electricity(Measure.zero(WATT)), Measure.zero(NonSI.EUR_PER_HOUR)))
-				.build();
+    private FillLevelFunction<RunningModeBehaviour> createFillLevelFunction(Measurable<Power> power) {
+        return FillLevelFunction.<RunningModeBehaviour> create(configuration.minimumFillLevelPercent())
+                                .add(configuration.maximumFillLevelPercent(),
+                                     new RunningModeBehaviour(
+                                                              power.doubleValue(SI.WATT)
+                                                              / model.getTotalCapacity().doubleValue(SI.JOULE)
+                                                              * 100d
+                                                              * model.getDischargeEfficiency(power),
+                                                              CommodityMeasurables.electricity(power),
+                                                              Measure.zero(NonSI.EUR_PER_HOUR)))
+                                .build();
+    }
 
-		Measurable<Power> dischargeSpeed = Measure.valueOf(-1 * configuration.maximumDischargingRateWatts(), SI.WATT);
+    /**
+     * Make a transition with no timers, no cost and the specified transition id
+     *
+     * @param toRunningMode
+     * @return
+     */
+    private Transition makeTransition(int toRunningMode) {
+        // no timers
+        Set<Timer> startTimers = null;
+        Set<Timer> blockingTimers = null;
+        Measurable<Duration> transitionTime = Measure.zero(SECOND);
 
-		dischargeFillLevelFunction = FillLevelFunction
-				.<RunningModeBehaviour> create(configuration.minimumFillLevelPercent())
-				.add(configuration.maximumFillLevelPercent(),
-						new RunningModeBehaviour(
-								dischargeSpeed.doubleValue(WATT) / model.getTotalCapacity().doubleValue(SI.JOULE) * 100d
-										* model.getDischargeEfficiency(dischargeSpeed),
-								CommodityMeasurables.electricity(dischargeSpeed), Measure.zero(NonSI.EUR_PER_HOUR)))
-				.build();
+        // no cost
+        Measurable<Money> transitionCosts = Measure.zero(NonSI.EUROCENT);
 
-		// Based on the fill level functions and the transitions, create the
-		// three running modes
-		RunningMode<FillLevelFunction<RunningModeBehaviour>> chargeRunningMode = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(
-				GenericAdvancedBatteryMode.CHARGE.runningModeId, "charging", chargeFillLevelFunction, chargeTransition);
-		RunningMode<FillLevelFunction<RunningModeBehaviour>> idleRunningMode = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(
-				GenericAdvancedBatteryMode.IDLE.runningModeId, "idle", idleFillLevelFunction, idleTransition);
-		RunningMode<FillLevelFunction<RunningModeBehaviour>> dischargeRunningMode = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(
-				GenericAdvancedBatteryMode.DISCHARGE.runningModeId, "discharging", dischargeFillLevelFunction,
-				dischargeTransition);
+        // return transition
+        return new Transition(toRunningMode, startTimers, blockingTimers, transitionCosts, transitionTime);
+    }
 
-		this.runningModes = new HashMap<Integer, RunningMode<FillLevelFunction<RunningModeBehaviour>>>();
-		runningModes.put(chargeRunningMode.getId(), chargeRunningMode);
-		runningModes.put(idleRunningMode.getId(), idleRunningMode);
-		runningModes.put(dischargeRunningMode.getId(), dischargeRunningMode);
+    /**
+     * Find the RunningMode that is closest to the given power value
+     * 
+     * @param powerWatt
+     *            The power in Watts to look for
+     * @return the RunningMode that is closest to the given power value
+     */
+    private int findRunningModeWithPower(double powerWatt) {
+        double fillLevel = model.getCurrentFillLevel().doubleValue(NonSI.PERCENT);
+        double bestDistance = Double.POSITIVE_INFINITY;
+        int bestRmId = 0;
+        for (Entry<Integer, RunningMode<FillLevelFunction<RunningModeBehaviour>>> e : runningModes.entrySet()) {
+            double rmPower = e.getValue()
+                              .getValue()
+                              .getValueForFillLevel(fillLevel)
+                              .getCommodityConsumption()
+                              .get(Commodity.ELECTRICITY)
+                              .doubleValue(SI.WATT);
+            double distance = Math.abs(powerWatt - rmPower);
+            if (distance < bestDistance) {
+                distance = bestDistance;
+                bestRmId = e.getKey();
+            }
+        }
+        return bestRmId;
+    }
 
-		// return the actuator behavior with the three running modes for the
-		// specified actuator id
-		return ActuatorBehaviour.create(actuatorId).add(idleRunningMode).add(chargeRunningMode)
-				.add(dischargeRunningMode).build();
-	}
-
-	/**
-	 * Make a transition with no timers, no cost and the specified transition id
-	 *
-	 * @param transitionId
-	 * @return
-	 */
-	private Transition makeTransition(int transitionId) {
-		// no timers
-		Set<Timer> startTimers = null;
-		Set<Timer> blockingTimers = null;
-		Measurable<Duration> transitionTime = Measure.zero(SECOND);
-
-		// no cost
-		Measurable<Money> transitionCosts = Measure.zero(NonSI.EUROCENT);
-
-		// return transition
-		return new Transition(transitionId, startTimers, blockingTimers, transitionCosts, transitionTime);
-	}
-
-	/**
-	 * Create the battery actuator set, based on the battery mode
-	 *
-	 * @param advancedBatteryMode
-	 * @return
-	 */
-	private Set<ActuatorUpdate> makeBatteryRunningModes(int actuatorId,
-			GenericAdvancedBatteryMode advancedBatteryMode) {
-		return Collections
-				.<ActuatorUpdate> singleton(new ActuatorUpdate(actuatorId, advancedBatteryMode.runningModeId, null));
-	}
-
-	@Override
-	public void run() {
-		// Update the model
-		model.run();
-		// Send the state update
-		if (controllerConnection != null) {
-			BufferStateUpdate<Dimensionless> bufferStateUpdate = createBufferStateUpdate(context.currentTime());
-			controllerConnection.sendMessage(bufferStateUpdate);
-		}
-	}
+    @Override
+    public void run() {
+        // Update the model
+        model.run();
+        // Send the state update
+        if (controllerConnection != null) {
+            BufferStateUpdate<Dimensionless> bufferStateUpdate = createBufferStateUpdate(context.currentTime());
+            controllerConnection.sendMessage(bufferStateUpdate);
+        }
+    }
 
 }

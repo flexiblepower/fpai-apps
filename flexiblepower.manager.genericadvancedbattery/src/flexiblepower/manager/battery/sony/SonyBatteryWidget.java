@@ -11,7 +11,7 @@ import flexiblepower.manager.genericadvancedbattery.GenericAdvancedBatteryDevice
 
 public class SonyBatteryWidget implements Widget {
     public static class Update {
-		private final double soc;
+        private final double soc;
         private final String mode;
         private final double initialTotalCapacity;
         private final double percentageOfInitialCapacityLeft;
@@ -19,62 +19,66 @@ public class SonyBatteryWidget implements Widget {
         private final double current;
         private final double chargingPower;
 
-        public Update(double soc, String mode, double initialTotalCapacity,
-        		double percentageOfInitialCapacityLeft, double voltage,
-        		double current, double chargingPower) {
-        	super();
-        	this.soc = soc;
-        	this.mode = mode;
-        	this.initialTotalCapacity = initialTotalCapacity;
-        	this.percentageOfInitialCapacityLeft = percentageOfInitialCapacityLeft;
-        	this.voltage = voltage;
-        	this.current = current;
-        	this.chargingPower = chargingPower;
+        public Update(double soc,
+                      String mode,
+                      double initialTotalCapacity,
+                      double percentageOfInitialCapacityLeft,
+                      double voltage,
+                      double current,
+                      double chargingPower) {
+            super();
+            this.soc = soc;
+            this.mode = mode;
+            this.initialTotalCapacity = initialTotalCapacity;
+            this.percentageOfInitialCapacityLeft = percentageOfInitialCapacityLeft;
+            this.voltage = voltage;
+            this.current = current;
+            this.chargingPower = chargingPower;
         }
-        
+
         public double getSoc() {
-        	return soc;
+            return soc;
         }
-        
+
         public String getMode() {
-        	return mode;
+            return mode;
         }
-        
+
         public double getInitialTotalCapacity() {
-        	return initialTotalCapacity;
+            return initialTotalCapacity;
         }
-        
+
         public double getPercentageOfInitialCapacityLeft() {
-        	return percentageOfInitialCapacityLeft;
+            return percentageOfInitialCapacityLeft;
         }
-        
+
         public double getVoltage() {
-        	return voltage;
+            return voltage;
         }
-        
+
         public double getCurrent() {
-        	return current;
+            return current;
         }
-        
+
         public double getChargingPower() {
-        	return chargingPower;
-        }     
+            return chargingPower;
+        }
     }
 
     private final GenericAdvancedBatteryDeviceModel deviceModel;
 
     public SonyBatteryWidget(GenericAdvancedBatteryDeviceModel model) {
-        this.deviceModel = model;
+        deviceModel = model;
     }
-	
+
     public Update update() {
         return new Update(deviceModel.getCurrentFillLevel().doubleValue(NonSI.PERCENT),
-        					deviceModel.getCurrentMode().name(),
-        					deviceModel.getTotalCapacity().doubleValue(NonSI.KWH),
-        					100.0d,
-        					deviceModel.getBatteryVolts(),
-        					deviceModel.getCurrentInAmps(),
-        					deviceModel.getElectricPower().doubleValue(SI.WATT));
+                          deviceModel.getCurrentMode().name(),
+                          deviceModel.getTotalCapacity().doubleValue(NonSI.KWH),
+                          100.0d,
+                          deviceModel.getBatteryVolts(),
+                          deviceModel.getCurrentInAmps(),
+                          deviceModel.getElectricPower().doubleValue(SI.WATT));
     }
 
     @Override
