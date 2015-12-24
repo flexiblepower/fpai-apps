@@ -49,10 +49,6 @@ public interface GenericAdvancedBatteryConfig {
     @Meta.AD(deflt = "0.011", description = "*ADVANCED SETTINGS* The constant K (unitless) of the battery batteryModel")
            double KValue();
 
-    @Meta.AD(deflt = "24",
-             description = "*ADVANCED SETTINGS* The constant Q in Ampere hours of the battery batteryModel")
-           double QAmpereHours();
-
     @Meta.AD(deflt = "3",
              description = "*ADVANCED SETTINGS* Exponential Voltage constant used to calculate the Voltage in Volts")
            double constantA();
