@@ -173,18 +173,22 @@ public class GenericAdvancedBatteryResourceManager implements BufferResourceMana
 
     private BufferStateUpdate<Dimensionless> createBufferStateUpdate(Date timestamp) {
         // create running mode
-        int currentRonningMode = findRunningModeWithPower(batteryModel.getElectricPower().doubleValue(SI.WATT));
-        Set<ActuatorUpdate> currentRunningMode = Collections
-                                                            .<ActuatorUpdate> singleton(new ActuatorUpdate(BATTERY_CHARGER_ACTUATOR_ID,
-                                                                                                           currentRonningMode,
-                                                                                                           null));
+        int currentRunningMode = findRunningModeWithPower(batteryModel.getElectricPower().doubleValue(SI.WATT));
+        Set<ActuatorUpdate> actuatorUpdates = Collections
+                                                         .<ActuatorUpdate> singleton(new ActuatorUpdate(BATTERY_CHARGER_ACTUATOR_ID,
+                                                                                                        currentRunningMode,
+                                                                                                        null));
+        // Cap the currentFillLevel so there will always be a RunningMode defined for the currentFillLevel
+        double currentFillLevel = batteryModel.getCurrentFillLevel().doubleValue(NonSI.PERCENT);
+        currentFillLevel = Math.max(Math.min(currentFillLevel, config.maximumFillLevelPercent()),
+                                    config.minimumFillLevelPercent());
         // create buffer state update message
-        Measurable<Dimensionless> currentFillLevel = batteryModel.getCurrentFillLevel();
         BufferStateUpdate<Dimensionless> update = new BufferStateUpdate<Dimensionless>(batteryBufferRegistration,
                                                                                        timestamp,
                                                                                        timestamp,
-                                                                                       currentFillLevel,
-                                                                                       currentRunningMode);
+                                                                                       Measure.valueOf(currentFillLevel,
+                                                                                                       NonSI.PERCENT),
+                                                                                       actuatorUpdates);
         return update;
     }
 
