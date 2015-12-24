@@ -2,13 +2,14 @@ $(window).load(function() {
 	w = new widget("update", 1000, function(data) {
 		$("#loading").detach();
 		$("p").show();
-		$("#soc").text(data.soc.toFixed(2) + "%");
 		$("#tc").text(data.initialTotalCapacity + " kWh");
+		$("#age").text(data.percentageOfInitialCapacityLeft.toFixed(2) + "%");
+		$("#soc").text(data.soc.toFixed(2) + "%");
 		$("#mode").text(data.mode);
 		$("#voltage").text(data.voltage.toFixed(2) + " V");
 		$("#current").text(data.current.toFixed(2) + " A");
-		$("#power").text(data.chargingPower.toFixed(2) + " W");
-		$("#age").text(data.percentageOfInitialCapacityLeft.toFixed(2) + "%");
+		$("#power").text(data.chargingPower.toFixed(0) + " W");
+
 		
 		if(data.soc > 87) {
 			$("#icon").attr("src", "8.png");
