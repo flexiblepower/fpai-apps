@@ -53,6 +53,7 @@ public class PowerwallBatteryResourceManager extends GenericAdvancedBatteryResou
             newProperties.put("constantA", 60);
             newProperties.put("constantB", 3.4893);
             newProperties.put("internalResistanceOhms", 0.22857);
+            newProperties.put("batterySavingPowerWatts", 500);
 
             // Create a config
             config = Configurable.createConfigurable(GenericAdvancedBatteryConfig.class, newProperties);

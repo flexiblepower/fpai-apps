@@ -59,4 +59,8 @@ public interface GenericAdvancedBatteryConfig {
 
     @Meta.AD(deflt = "0.036", description = "*ADVANCED SETTINGS* The internal resistance in Ohms")
            double internalResistanceOhms();
+
+    @Meta.AD(deflt = "500",
+             description = "The battery's allowed maximum charging power in Watts when it approaches the minimum or maximum (which are fixed at 5% and 95%).")
+           double batterySavingPowerWatts();
 }

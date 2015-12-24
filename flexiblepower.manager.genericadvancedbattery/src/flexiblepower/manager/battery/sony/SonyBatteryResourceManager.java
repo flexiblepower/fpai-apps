@@ -51,6 +51,7 @@ public class SonyBatteryResourceManager extends GenericAdvancedBatteryResourceMa
             newProperties.put("constantA", 3);
             newProperties.put("constantB", 2.8);
             newProperties.put("internalResistanceOhms", 0.036);
+            newProperties.put("batterySavingPowerWatts", 500);
 
             // Create a config
             config = Configurable.createConfigurable(GenericAdvancedBatteryConfig.class, newProperties);

@@ -453,12 +453,41 @@
 		<config bundleId="flexiblepower.manager.genericadvancedbattery"
 			factoryId="flexiblepower.manager.genericadvancedbattery.GenericAdvancedBatteryResourceManager"
 			ref="genericadvancedbatteryresourcemanager-5">
-			<nrOfmodules>4</nrOfmodules>
-			<minimumFillLevelPercent>20.0</minimumFillLevelPercent>
+
 			<resourceId>GenericAdvancedBatteryManager</resourceId>
+
+			<maximumChargingRateWatts>1500.0</maximumChargingRateWatts>
+
+			<internalResistanceOhms>0.036</internalResistanceOhms>
+
+			<KValue>0.011</KValue>
+
+			<constantB>2.8</constantB>
+
+			<constantA>3.0</constantA>
+
 			<updateIntervalSeconds>30</updateIntervalSeconds>
+
+			<minimumFillLevelPercent>20.0</minimumFillLevelPercent>
+
+			<ratedVoltage>52.6793</ratedVoltage>
+
+			<nrOfCyclesBeforeEndOfLife>6000</nrOfCyclesBeforeEndOfLife>
+
+			<nrOfModulationSteps>9</nrOfModulationSteps>
+
+			<totalCapacityKWh>5.0</totalCapacityKWh>
+
+			<batterySavingPowerWatts>500.0</batterySavingPowerWatts>
+
 			<initialSocRatio>0.5</initialSocRatio>
+
+			<maximumDischargingRateWatts>1500.0</maximumDischargingRateWatts>
+
 			<maximumFillLevelPercent>90.0</maximumFillLevelPercent>
+
+			<ratedCapacityAh>24.0</ratedCapacityAh>
+
 		</config>
 
 		<config bundleId="flexiblepower.simulation.uncontrolled"
@@ -561,17 +590,41 @@
 			factoryId="flexiblepower.manager.battery.powerwall.PowerwallBatteryResourceManager"
 			ref="powerwallbatteryresourcemanager-5">
 
-			<maximumFillLevelPercent>90.0</maximumFillLevelPercent>
+    <resourceId>GenericAdvancedBatteryManager</resourceId>
 
-			<initialSocRatio>0.5</initialSocRatio>
+    <maximumChargingRateWatts>1500.0</maximumChargingRateWatts>
 
-			<updateIntervalSeconds>5</updateIntervalSeconds>
+    <internalResistanceOhms>0.036</internalResistanceOhms>
 
-			<minimumFillLevelPercent>20.0</minimumFillLevelPercent>
+    <KValue>0.011</KValue>
 
-			<resourceId>PowerwallBatteryManager</resourceId>
+    <constantB>2.8</constantB>
 
-		</config>
+    <constantA>3.0</constantA>
+
+    <updateIntervalSeconds>30</updateIntervalSeconds>
+
+    <minimumFillLevelPercent>20.0</minimumFillLevelPercent>
+
+    <ratedVoltage>52.6793</ratedVoltage>
+
+    <nrOfCyclesBeforeEndOfLife>6000</nrOfCyclesBeforeEndOfLife>
+
+    <nrOfModulationSteps>9</nrOfModulationSteps>
+
+    <totalCapacityKWh>5.0</totalCapacityKWh>
+
+    <batterySavingPowerWatts>500.0</batterySavingPowerWatts>
+
+    <initialSocRatio>0.5</initialSocRatio>
+
+    <maximumDischargingRateWatts>1500.0</maximumDischargingRateWatts>
+
+    <maximumFillLevelPercent>90.0</maximumFillLevelPercent>
+
+    <ratedCapacityAh>24.0</ratedCapacityAh>
+
+</config>
 
 		<config bundleId="net.powermatcher.fpai.controller" factoryId="net.powermatcher.fpai.widget.FullWidget">
 

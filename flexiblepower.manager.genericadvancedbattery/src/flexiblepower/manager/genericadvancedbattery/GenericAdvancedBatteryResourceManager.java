@@ -301,11 +301,11 @@ public class GenericAdvancedBatteryResourceManager implements BufferResourceMana
                                                                                    Measurable<Power> power) {
         String name;
         if (power.doubleValue(SI.WATT) > 0) {
-            name = "charing, " + power;
+            name = "charging, " + power;
         } else if (power.doubleValue(SI.WATT) < 0) {
             name = "discharging, " + power;
         } else {
-            name = "Idle";
+            name = "idle";
         }
         return new RunningMode<FillLevelFunction<RunningModeBehaviour>>(runningModeId,
                                                                         name,
@@ -314,11 +314,23 @@ public class GenericAdvancedBatteryResourceManager implements BufferResourceMana
     }
 
     private FillLevelFunction<RunningModeBehaviour> createFillLevelFunction(Measurable<Power> power) {
-        return FillLevelFunction.<RunningModeBehaviour> create(config.minimumFillLevelPercent())
-                                .add(config.maximumFillLevelPercent(),
+        // Here we check to enforce the charging limitations near the minimum and maximum for battery health reasons.
+        double lowerBoundPercent = config.minimumFillLevelPercent();
+        double upperBoundPercent = config.maximumFillLevelPercent();
+
+        if (power.doubleValue(SI.WATT) > config.batterySavingPowerWatts()) {
+            upperBoundPercent = Math.min(upperBoundPercent, 95);
+        } else if (power.doubleValue(SI.WATT) < -config.batterySavingPowerWatts()) {
+            lowerBoundPercent = Math.max(lowerBoundPercent, 5);
+        }
+
+        // Als chargen dan niet groter dan 500w en als dischargen dan niet groter dan -500W.
+        return FillLevelFunction.<RunningModeBehaviour> create(lowerBoundPercent)
+                                .add(upperBoundPercent,
                                      new RunningModeBehaviour(
                                                               power.doubleValue(SI.WATT)
-                                                              / batteryModel.getTotalCapacity().doubleValue(SI.JOULE)
+                                                              / batteryModel.getTotalCapacity()
+                                                                            .doubleValue(SI.JOULE)
                                                               * 100d
                                                               * batteryModel.getDischargeEfficiency(power),
                                                               CommodityMeasurables.electricity(power),

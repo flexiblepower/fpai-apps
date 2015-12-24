@@ -102,6 +102,11 @@ public class AdvancedBatteryDeviceModelTest {
                 return 24;
             }
 
+            @Override
+            public double batterySavingPowerWatts() {
+                return 500;
+            }
+
         };
         context = Mockito.mock(FlexiblePowerContext.class);
         Mockito.when(context.currentTimeMillis()).thenReturn(new Date().getTime());
