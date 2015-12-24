@@ -25,6 +25,7 @@ public class PowerwallBatteryResourceManager extends GenericAdvancedBatteryResou
 
     // TODO The real powerwall is less efficient (including inverter around 87% than the generic batteryModel).
     private static final double CAPACITY_KWH = 7;
+    private static final double RATED_VOLTAGE = 433.3507;
     private PowerwallBatteryConfig powerwallConfiguration;
 
     @Override
@@ -38,6 +39,7 @@ public class PowerwallBatteryResourceManager extends GenericAdvancedBatteryResou
             newProperties.put("totalCapacityKWh", CAPACITY_KWH);
             newProperties.put("maximumChargingRateWatts", 2000);
             newProperties.put("maximumDischargingRateWatts", 2000);
+            newProperties.put("ratedCapacityAh", CAPACITY_KWH * 1000 / RATED_VOLTAGE);
             newProperties.put("nrOfCyclesBeforeEndOfLife", 4000);
             newProperties.put("initialSocRatio", powerwallConfiguration.initialSocRatio());
             newProperties.put("nrOfModulationSteps", 19);
@@ -45,7 +47,7 @@ public class PowerwallBatteryResourceManager extends GenericAdvancedBatteryResou
             newProperties.put("maximumFillLevelPercent", powerwallConfiguration.maximumFillLevelPercent());
             newProperties.put("updateIntervalSeconds", powerwallConfiguration.updateIntervalSeconds());
 
-            newProperties.put("ratedVoltage", 433.3507);
+            newProperties.put("ratedVoltage", RATED_VOLTAGE);
             newProperties.put("KValue", 0.12903);
             newProperties.put("QAmpereHours", 17.5);
             newProperties.put("constantA", 60);

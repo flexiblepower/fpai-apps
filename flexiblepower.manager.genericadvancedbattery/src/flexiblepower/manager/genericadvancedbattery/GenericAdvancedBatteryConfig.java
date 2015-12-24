@@ -16,6 +16,9 @@ public interface GenericAdvancedBatteryConfig {
     @Meta.AD(deflt = "1500", description = "Maximum absolute discharging rate in Watts (Should be a positive value)")
            double maximumDischargingRateWatts();
 
+    @Meta.AD(deflt = "24", description = "The rated capacity of the battery in Ah")
+           double ratedCapacityAh();
+
     @Meta.AD(deflt = "6000", description = "Number of full discharge cycles until battery end of life (80% capacity)")
         int nrOfCyclesBeforeEndOfLife();
 
@@ -46,7 +49,8 @@ public interface GenericAdvancedBatteryConfig {
     @Meta.AD(deflt = "0.011", description = "*ADVANCED SETTINGS* The constant K (unitless) of the battery batteryModel")
            double KValue();
 
-    @Meta.AD(deflt = "24", description = "*ADVANCED SETTINGS* The constant Q in Ampere hours of the battery batteryModel")
+    @Meta.AD(deflt = "24",
+             description = "*ADVANCED SETTINGS* The constant Q in Ampere hours of the battery batteryModel")
            double QAmpereHours();
 
     @Meta.AD(deflt = "3",

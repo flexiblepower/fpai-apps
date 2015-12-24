@@ -110,9 +110,7 @@ public class GenericAdvancedBatteryDeviceModel implements Runnable {
         K = configuration.KValue();
         A = configuration.constantA();
         B = configuration.constantB();
-
-        Q = configuration.totalCapacityKWh() * 1000 / E0;
-        Q = 24;
+        Q = configuration.ratedCapacityAh();
         ratedQ = Q;
         Qsoc = Q * (23.22 / 24);
         // initialise extracted capacity using the config soc
