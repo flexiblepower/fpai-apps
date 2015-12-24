@@ -17,7 +17,7 @@ public interface GenericAdvancedBatteryConfig {
            double maximumDischargingRateWatts();
 
     @Meta.AD(deflt = "6000", description = "Number of full discharge cycles until battery end of life (80% capacity)")
-        int numberOfCyclesBeforeEndOfLife();
+        int nrOfCyclesBeforeEndOfLife();
 
     // TODO: Make this less confusing, what does 0.5 mean when min and max are
     // 20 and 90...

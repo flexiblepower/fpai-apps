@@ -88,7 +88,7 @@ public class GenericAdvancedBatteryDeviceModel implements Runnable {
 
     private GenericAdvancedBatteryMode mode = GenericAdvancedBatteryMode.IDLE;
     private GenericAdvancedBatteryMode oldMode = GenericAdvancedBatteryMode.IDLE;
-    private final GenericAdvancedBatteryConfig configuration;
+    private final GenericAdvancedBatteryConfig config;
     private final FlexiblePowerContext context;
     private Date previousRun;
 
@@ -98,7 +98,7 @@ public class GenericAdvancedBatteryDeviceModel implements Runnable {
     private double desiredChargePowerWatt;
 
     public GenericAdvancedBatteryDeviceModel(GenericAdvancedBatteryConfig configuration, FlexiblePowerContext context) {
-        this.configuration = configuration;
+        config = configuration;
         this.context = context;
         soc = configuration.initialSocRatio();
 
@@ -112,6 +112,7 @@ public class GenericAdvancedBatteryDeviceModel implements Runnable {
         B = configuration.constantB();
 
         Q = configuration.totalCapacityKWh() * 1000 / E0;
+        Q = 24;
         ratedQ = Q;
         Qsoc = Q * (23.22 / 24);
         // initialise extracted capacity using the config soc
@@ -125,10 +126,10 @@ public class GenericAdvancedBatteryDeviceModel implements Runnable {
     @Override
     public synchronized void run() {
         // Check if the mode is allowed in the soc
-        if ((soc < configuration.minimumFillLevelPercent() / 100 || batteryVolts < 32)
+        if ((soc < config.minimumFillLevelPercent() / 100 || batteryVolts < 32)
             && mode == GenericAdvancedBatteryMode.DISCHARGE) {
             mode = GenericAdvancedBatteryMode.IDLE;
-        } else if (soc > configuration.maximumFillLevelPercent() / 100 && mode == GenericAdvancedBatteryMode.CHARGE) {
+        } else if (soc > config.maximumFillLevelPercent() / 100 && mode == GenericAdvancedBatteryMode.CHARGE) {
             mode = GenericAdvancedBatteryMode.IDLE;
         }
 
@@ -302,7 +303,7 @@ public class GenericAdvancedBatteryDeviceModel implements Runnable {
     }
 
     public Measurable<Energy> getTotalCapacity() {
-        return Measure.valueOf(configuration.totalCapacityKWh(), NonSI.KWH);
+        return Measure.valueOf(config.totalCapacityKWh(), NonSI.KWH);
     }
 
     /**
@@ -352,11 +353,11 @@ public class GenericAdvancedBatteryDeviceModel implements Runnable {
     }
 
     public Measurable<Power> getMaximumChargeSpeed() {
-        return Measure.valueOf(configuration.maximumChargingRateWatts(), SI.WATT);
+        return Measure.valueOf(config.maximumChargingRateWatts(), SI.WATT);
     }
 
     public Measurable<Power> getMaximumDischargeSpeed() {
-        return Measure.valueOf(configuration.maximumDischargingRateWatts(), SI.WATT);
+        return Measure.valueOf(config.maximumDischargingRateWatts(), SI.WATT);
     }
 
     /**
@@ -414,13 +415,9 @@ public class GenericAdvancedBatteryDeviceModel implements Runnable {
      * Calculate the % reduction of total capacity due to battery aging battery end of life is when the capacity is
      * reduced to 80%
      */
-    public double getBatteryChangeCapacity(double dischargeDeltaSoc) {
-
-        double CyclePercent = 0.0053; // % drop in rated capacity / cycle
-
-        double changeCapacityPercentage = (dischargeDeltaSoc * CyclePercent / 100) * 100;
-
-        return changeCapacityPercentage;
+    private double getBatteryChangeCapacity(double dischargeDeltaSoc) {
+        double cyclePercent = 20.0 / config.nrOfCyclesBeforeEndOfLife();
+        return (dischargeDeltaSoc * cyclePercent / 100) * 100;
     }
 
 }

@@ -38,7 +38,7 @@ public class PowerwallBatteryResourceManager extends GenericAdvancedBatteryResou
             newProperties.put("totalCapacityKWh", CAPACITY_KWH);
             newProperties.put("maximumChargingRateWatts", 2000);
             newProperties.put("maximumDischargingRateWatts", 2000);
-            newProperties.put("numberOfCyclesBeforeEndOfLife", 4000);
+            newProperties.put("nrOfCyclesBeforeEndOfLife", 4000);
             newProperties.put("initialSocRatio", powerwallConfiguration.initialSocRatio());
             newProperties.put("nrOfModulationSteps", 19);
             newProperties.put("minimumFillLevelPercent", powerwallConfiguration.minimumFillLevelPercent());

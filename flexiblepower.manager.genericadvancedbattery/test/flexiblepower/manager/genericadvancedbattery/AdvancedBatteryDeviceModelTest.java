@@ -66,7 +66,7 @@ public class AdvancedBatteryDeviceModelTest {
 			}
 
 			@Override
-			public int numberOfCyclesBeforeEndOfLife() {
+			public int nrOfCyclesBeforeEndOfLife() {
 				return 6000;
 			}
 

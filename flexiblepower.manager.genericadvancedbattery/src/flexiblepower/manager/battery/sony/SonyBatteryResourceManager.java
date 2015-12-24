@@ -36,7 +36,7 @@ public class SonyBatteryResourceManager extends GenericAdvancedBatteryResourceMa
             newProperties.put("totalCapacityKWh", sonyConfiguration.nrOfmodules() * 1.2);
             newProperties.put("maximumChargingRateWatts", sonyConfiguration.nrOfmodules() == 1 ? 2500 : 5000);
             newProperties.put("maximumDischargingRateWatts", sonyConfiguration.nrOfmodules() == 1 ? 2500 : 5000);
-            newProperties.put("numberOfCyclesBeforeEndOfLife", 6000);
+            newProperties.put("nrOfCyclesBeforeEndOfLife", 6000);
             newProperties.put("initialSocRatio", sonyConfiguration.initialSocRatio());
             newProperties.put("nrOfModulationSteps", 19);
             newProperties.put("minimumFillLevelPercent", sonyConfiguration.minimumFillLevelPercent());
