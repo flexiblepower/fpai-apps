@@ -173,8 +173,14 @@ public class TimeshifterAgent extends FpaiAgent implements Runnable {
         long startWindow = startBefore - startAfter;
         double initialDemandWatt = getInitialDemand().doubleValue(SI.WATT);
 
+        // It should already start, so send the must-run bid
         if (startWindow <= 0) {
-            // It should already start, so send the must-run bid
+            return Bid.flatDemand(marketBasis, initialDemandWatt);
+        }
+
+        // It should already start, so send the must-run bid
+        if (startBefore <= context.currentTimeMillis()) {
+            // TODO: Bid in received profile here, for now initial demand
             return Bid.flatDemand(marketBasis, initialDemandWatt);
         }
 
