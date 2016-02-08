@@ -129,7 +129,7 @@ public class ElasticSearchWriter implements Runnable {
                 w.beginObject();
                 w.name("@timestamp").value(data.getObservation().getObservedAt());
                 for (Entry<String, Object> entry : data.getObservation().getValueMap().entrySet()) {
-                    w.write(entry.getKey(), entry.getValue());
+                    w.write(entry.getKey().replace('.', '_'), entry.getValue());
                 }
                 w.endObject();
                 sw.append('\n');
