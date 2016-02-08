@@ -12,6 +12,12 @@ import javax.measure.quantity.Power;
 import javax.measure.unit.SI;
 import javax.measure.unit.Unit;
 
+import net.powermatcher.api.AgentEndpoint;
+import net.powermatcher.api.data.Bid;
+import net.powermatcher.api.data.MarketBasis;
+import net.powermatcher.api.data.Price;
+import net.powermatcher.fpai.controller.AgentMessageSender;
+
 import org.flexiblepower.efi.timeshifter.SequentialProfile;
 import org.flexiblepower.efi.timeshifter.SequentialProfileAllocation;
 import org.flexiblepower.efi.timeshifter.TimeShifterAllocation;
@@ -26,12 +32,6 @@ import org.flexiblepower.ral.values.CommodityForecast;
 import org.flexiblepower.ral.values.CommodityUncertainMeasurables;
 import org.flexiblepower.ral.values.Profile.Element;
 import org.flexiblepower.time.TimeUtil;
-
-import net.powermatcher.api.AgentEndpoint;
-import net.powermatcher.api.data.Bid;
-import net.powermatcher.api.data.MarketBasis;
-import net.powermatcher.api.data.Price;
-import net.powermatcher.fpai.controller.AgentMessageSender;
 
 public class TimeshifterAgent extends FpaiAgent implements Runnable {
 
@@ -176,6 +176,11 @@ public class TimeshifterAgent extends FpaiAgent implements Runnable {
         if (startWindow <= 0) {
             // It should already start, so send the must-run bid
             return Bid.flatDemand(marketBasis, initialDemandWatt);
+        }
+
+        // Check if deadline is reached
+        if (endBefore <= context.currentTimeMillis()) {
+            return Bid.flatDemand(marketBasis, 0d);
         }
 
         long timeSinceAllowableStart = context.currentTimeMillis() - startAfter;
