@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+<link rel="stylesheet" href="/css/widget.css" />
+<link rel="stylesheet" href="/css/tooltip.css" />
+<link rel="stylesheet" href="style.css" />
+<script type="text/javascript" src="/js/vendor/jquery.min.js"></script>
+<script type="text/javascript" src="/js/widget.js"></script>
+<script type="text/javascript" src="script.js"></script>
+<title>Tesla Powerwall Battery</title>
+</head>
+<body class="widget" background=url("tesla.jpg"); >
+	<a class='tooltip info'> <img src='/img/info.png' /> <span>
+			The Tesla Powerwall is a battery that can store a total of 7 kWh.
+			This widget can not be controlled through the UI, but will be 
+			controlled by the smart grid application that is active. </span>
+	</a>
+	<img id="loading" src="/img/loading.gif" alt="Loading..." />
+	<div id="powerwall">
+	<p>
+		Total capacity <span id="tc">...</span>
+	</p>
+	<p>
+		State of charge <span id="soc">...</span>
+	</p>
+	<p id="chargeMode">	
+		<span id="mode">...</span><br/>
+		<span id="power">...</span>
+	</p>
+	</div>
+</body>
+</html>

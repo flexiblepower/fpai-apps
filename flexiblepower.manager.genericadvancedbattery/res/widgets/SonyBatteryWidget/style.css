@@ -1,0 +1,29 @@
+body {
+	background-image: url('single.png');
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+	color: white;
+}
+
+#loading {
+	position: absolute;
+	left: 45%;
+	top: 40%;
+}
+
+#icon {
+	position: absolute;
+	bottom: 0;
+	right: 1em;
+	height: 120px;
+}
+
+p {
+	height: 1.3em;
+	display: none;
+}
+
+#theNumbers {
+	margin: 5px 5px 0 0;
+	text-align: center;
+}

@@ -134,7 +134,7 @@ public class ScenarioManagerImpl implements ScenarioManager {
 
     @Deactivate
     public void deactivate() {
-        purgeAll();
+        // purgeAll();
     }
 
     @Override
