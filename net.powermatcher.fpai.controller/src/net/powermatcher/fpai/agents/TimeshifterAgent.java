@@ -178,15 +178,15 @@ public class TimeshifterAgent extends FpaiAgent implements Runnable {
             return Bid.flatDemand(marketBasis, initialDemandWatt);
         }
 
+        // Check if deadline is reached
+        if (endBefore <= context.currentTimeMillis()) {
+            return Bid.flatDemand(marketBasis, 0d);
+        }
+
         // It should already start, so send the must-run bid
         if (startBefore <= context.currentTimeMillis()) {
             // TODO: Bid in received profile here, for now initial demand
             return Bid.flatDemand(marketBasis, initialDemandWatt);
-        }
-
-        // Check if deadline is reached
-        if (endBefore <= context.currentTimeMillis()) {
-            return Bid.flatDemand(marketBasis, 0d);
         }
 
         long timeSinceAllowableStart = context.currentTimeMillis() - startAfter;
