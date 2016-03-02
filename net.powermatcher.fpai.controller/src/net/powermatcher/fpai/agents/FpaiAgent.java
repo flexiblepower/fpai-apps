@@ -1,5 +1,10 @@
 package net.powermatcher.fpai.agents;
 
+import org.flexiblepower.ral.messages.AllocationStatusUpdate;
+import org.flexiblepower.ral.messages.ControlSpaceRegistration;
+import org.flexiblepower.ral.messages.ControlSpaceRevoke;
+import org.flexiblepower.ral.messages.ControlSpaceUpdate;
+
 import net.powermatcher.api.AgentEndpoint;
 import net.powermatcher.api.data.Bid;
 import net.powermatcher.api.data.Price;
@@ -8,17 +13,18 @@ import net.powermatcher.api.messages.PriceUpdate;
 import net.powermatcher.core.BaseAgentEndpoint;
 import net.powermatcher.fpai.controller.AgentMessageSender;
 
-import org.flexiblepower.ral.messages.AllocationStatusUpdate;
-import org.flexiblepower.ral.messages.ControlSpaceRegistration;
-import org.flexiblepower.ral.messages.ControlSpaceRevoke;
-import org.flexiblepower.ral.messages.ControlSpaceUpdate;
-
 /**
  * Provides the common logic, interfaces and fields for all types of FpaiAgents, like Buffer agents and Unconstrained
  * agents.
  *
  */
 public abstract class FpaiAgent extends BaseAgentEndpoint implements Comparable<FpaiAgent> {
+
+    /**
+     * This lock makes sure that {@link FpaiAgent#createBid(net.powermatcher.api.AgentEndpoint.Status)} and
+     * {@link FpaiAgent#handlePriceUpdate(Price)} cannot be executed in parallel.
+     */
+    private final Object lock = new Object();
 
     final AgentMessageSender messageSender;
 
@@ -75,12 +81,20 @@ public abstract class FpaiAgent extends BaseAgentEndpoint implements Comparable<
 
     protected abstract Bid createBid(AgentEndpoint.Status currentStatus);
 
-    protected synchronized void doBidUpdate() {
+    protected void doBidUpdate() {
         AgentEndpoint.Status currentStatus = getStatus();
         if (currentStatus.isConnected()) {
-            Bid bid = createBid(currentStatus);
-            BidUpdate lastBidUpdate = getLastBidUpdate();
-            if (bid != null && (lastBidUpdate == null || !bid.equals(lastBidUpdate.getBid()))) {
+            Bid bid = null;
+            boolean publishBid = false;
+            synchronized (lock) {
+                bid = createBid(currentStatus);
+                BidUpdate lastBidUpdate = getLastBidUpdate();
+                if (bid != null && (lastBidUpdate == null || !bid.equals(lastBidUpdate.getBid()))) {
+                    // The bid is not null and is not equal to the last bid
+                    publishBid = true;
+                }
+            }
+            if (publishBid) {
                 publishBid(bid);
             }
         }
@@ -90,16 +104,19 @@ public abstract class FpaiAgent extends BaseAgentEndpoint implements Comparable<
      * Updates the internal PowerMatcher price field and calls the priceUpdated method to handle the new price.
      */
     @Override
-    public synchronized final void handlePriceUpdate(PriceUpdate priceUpdate) {
+    public final void handlePriceUpdate(PriceUpdate priceUpdate) {
         super.handlePriceUpdate(priceUpdate);
-        if (getLastBidUpdate() == null) {
+        BidUpdate lastBidUpdate = getLastBidUpdate();
+        if (lastBidUpdate == null) {
             LOGGER.info("Ignoring price update while no bid has been sent");
-        } else if (getLastBidUpdate().getBidNumber() != priceUpdate.getBidNumber()) {
+        } else if (lastBidUpdate.getBidNumber() != priceUpdate.getBidNumber()) {
             LOGGER.info("Ignoring price update on old bid (lastBid={} priceUpdate={})",
-                        getLastBidUpdate().getBidNumber(),
+                        lastBidUpdate.getBidNumber(),
                         priceUpdate.getBidNumber());
         } else {
-            handlePriceUpdate(priceUpdate.getPrice());
+            synchronized (lock) {
+                handlePriceUpdate(priceUpdate.getPrice());
+            }
         }
     }
 
