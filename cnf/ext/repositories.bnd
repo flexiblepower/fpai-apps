@@ -27,7 +27,7 @@
 		    cache=${workspace}/cnf/cache,\
 		aQute.bnd.deployer.repository.FixedIndexedRepo;\
 		    name=PowerMatcher (snapshot);\
-		    locations=http://fpai-ci.sensorlab.tno.nl/builds/powermatcher/refactor-bid/LATEST/repo/index.xml;\
+		    locations=http://fpai-ci.sensorlab.tno.nl/builds/powermatcher/powermatcher-2.1RC/LATEST/repo/index.xml;\
 		    cache=${workspace}/cnf/cache
 
 -releaserepo: Release
