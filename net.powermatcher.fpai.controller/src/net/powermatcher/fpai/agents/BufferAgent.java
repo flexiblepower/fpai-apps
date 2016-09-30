@@ -38,8 +38,7 @@ import net.powermatcher.fpai.controller.AgentMessageSender;
 /**
  * The BufferAgent constructs PowerMatcher bids and processes returned prices into allocations for the resource manager.
  *
- * @param
- *            <Q>
+ * @param <Q>
  *            The physical quantity that this Buffer stores and that belongs to the unit in which the fill level is
  *            expressed.
  */
@@ -156,7 +155,8 @@ public class BufferAgent<Q extends Quantity> extends FpaiAgent {
         BufferActuator<Q> actuator = bufferHelper.getElectricalActuators().get(0);
 
         Date now = now();
-        Collection<RunningMode<FillLevelFunction<RunningModeBehaviour>>> runningModes = actuator.getReachableRunningModes(now);
+        Collection<RunningMode<FillLevelFunction<RunningModeBehaviour>>> runningModes =
+                                                                                      actuator.getReachableRunningModes(now);
 
         if (runningModes.isEmpty()) {
             LOGGER.error("No reachable running mode found, sending must off bid.");
@@ -210,16 +210,10 @@ public class BufferAgent<Q extends Quantity> extends FpaiAgent {
     private double calculatePriority(double soc) {
         if (lastBufferTargetProfile != null) {
             TargetProfileHelper<Q> target = new TargetProfileHelper<Q>(lastBufferTargetProfile,
-                                                                       lastBufferTargetProfile.getTargetProfile(),
                                                                        registration,
                                                                        lastBufferSystemDescription,
                                                                        bufferHelper);
-            Date now = now();
-            if (target.targetIsValid(now)) {
-                return target.calculatePriority(now);
-            } else {
-                LOGGER.warn("Target is not valid, using normal bidding strategy");
-            }
+            return target.calculatePriority(now());
         }
         // Default behavior without target
         return 1 - 2 * soc;

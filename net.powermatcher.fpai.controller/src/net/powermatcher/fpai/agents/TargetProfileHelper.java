@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Date;
 
 import javax.measure.quantity.Quantity;
+import javax.measure.unit.SI;
 
 import org.flexiblepower.api.efi.bufferhelper.Buffer;
 import org.flexiblepower.efi.buffer.ActuatorBehaviour;
@@ -15,9 +16,15 @@ import org.flexiblepower.efi.buffer.RunningModeBehaviour;
 import org.flexiblepower.efi.util.FillLevelFunction;
 import org.flexiblepower.efi.util.FillLevelFunction.RangeElement;
 import org.flexiblepower.efi.util.RunningMode;
+import org.flexiblepower.ral.values.Constraint;
 import org.flexiblepower.ral.values.ConstraintProfile;
+import org.flexiblepower.ral.values.Profile.Element;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TargetProfileHelper<Q extends Quantity> {
+
+    private final static Logger LOG = LoggerFactory.getLogger(TargetProfileHelper.class);
 
     private final Date startDate;
     private final ConstraintProfile<Q> profile;
@@ -27,11 +34,10 @@ public class TargetProfileHelper<Q extends Quantity> {
     private final Buffer<Q> bufferHelper;
 
     public TargetProfileHelper(BufferTargetProfileUpdate<Q> targetProfile,
-                               ConstraintProfile<Q> profile,
                                BufferRegistration<Q> bufferRegistration,
                                BufferSystemDescription bufferSystemDescription,
                                Buffer<Q> bufferHelper) {
-        this.profile = profile;
+        this.profile = targetProfile.getTargetProfile();
         this.bufferRegistration = bufferRegistration;
         this.bufferSystemDescription = bufferSystemDescription;
         this.startDate = targetProfile.getValidFrom();
@@ -40,94 +46,146 @@ public class TargetProfileHelper<Q extends Quantity> {
         this.actuator = bufferSystemDescription.getActuators().iterator().next();
     }
 
-    private double getTargetLowerBound() {
-        return profile.get(0).getValue().getLowerBound().doubleValue(bufferRegistration.getFillLevelUnit());
-    }
-
-    private double getTargetUpperBound() {
-        return profile.get(0).getValue().getUpperBound().doubleValue(bufferRegistration.getFillLevelUnit());
-    }
-
-    public long timeToTarget(Date now) {
-        return startDate.getTime() - now.getTime();
-    }
-
-    public boolean targetIsValid(Date now) {
-        // TODO start looking for the next target
-        return timeToTarget(now) >= 0;
-    }
-
     public double calculatePriority(Date now) {
-        double minimumFillLevel = getMinimumFillLevelForTarget(now);
-        double maximumFillLevel = getMaximumFillLevelForTarget(now);
+        // Set default values
+        double minimumFillLevel = bufferHelper.getMinimumFillLevel();
+        double maximumFillLevel = bufferHelper.getMaximumFillLevel();
 
-        if (maximumFillLevel == minimumFillLevel) {
-            throw new IllegalStateException("Maximum and Minimum Fill Level may not be the same.");
-        } else if (maximumFillLevel < minimumFillLevel) {
-            throw new IllegalStateException("Maximum Fill level may not be below Minimum Fill Level.");
+        long elementStartMS = startDate.getTime();
+        long nowMs = now.getTime();
+
+        // Iterate through Constraints. Constraints in the past will be ignored, the current Constraint (if any) and the
+        // first Constraint in the future (in any) will be taken into consideration.
+        for (Element<Constraint<Q>> element : profile) {
+            long elementEndMS = elementStartMS + element.getDuration().longValue(SI.MILLI(SI.SECOND));
+            if (elementEndMS < nowMs) {
+                // Element is in the past and can be ignored
+            } else if (elementStartMS > nowMs) {
+                // Element is in the future
+                long timeToConstraintMs = elementStartMS - nowMs;
+                double elementMinFillLevel = getMinimumFillLevelForFutureTarget(now,
+                                                                                element.getValue(),
+                                                                                timeToConstraintMs);
+                double elementMaxFillLevel = getMaximumFillLevelForFutureTarget(now,
+                                                                                element.getValue(),
+                                                                                timeToConstraintMs);
+                // Take the most restrictive of the two
+                minimumFillLevel = Math.max(minimumFillLevel, elementMinFillLevel);
+                maximumFillLevel = Math.min(maximumFillLevel, elementMaxFillLevel);
+                // For robustness we only consider one future element. It might depend on the use case what is the best
+                // strategy here.
+                break;
+            } else {
+                // Element is currently in use
+                double elementMinFillLevel = element.getValue()
+                                                    .getLowerBound()
+                                                    .doubleValue(bufferRegistration.getFillLevelUnit());
+                double elementMaxFillLevel = element.getValue()
+                                                    .getUpperBound()
+                                                    .doubleValue(bufferRegistration.getFillLevelUnit());
+                // Take the most restrictive of the two
+                minimumFillLevel = Math.max(minimumFillLevel, elementMinFillLevel);
+                maximumFillLevel = Math.min(maximumFillLevel, elementMaxFillLevel);
+            }
         }
 
-        double soc = (bufferHelper.getCurrentFillLevel().doubleValue(bufferRegistration.getFillLevelUnit()) - minimumFillLevel) / (maximumFillLevel - minimumFillLevel);
+        double currentFillLevel = bufferHelper.getCurrentFillLevel().doubleValue(bufferRegistration.getFillLevelUnit());
+
+        if (maximumFillLevel <= minimumFillLevel) {
+            LOG.warn("The TargetProfile being used is too restrictive. Given the model of the device it is not possible to follow the profile. Using best effort startegy.");
+            double avg = (maximumFillLevel + minimumFillLevel) / 2;
+            if (avg > currentFillLevel) {
+                return -1;
+            } else {
+                return 1;
+            }
+        }
+
+        double soc = (currentFillLevel - minimumFillLevel) / (maximumFillLevel - minimumFillLevel);
         return 1 - 2 * soc;
     }
 
-    public double getMinimumFillLevelForTarget(Date now) {
+    /**
+     * Calculate the minimum fill level at this moment in which it is still possible (given the right Running Mode and
+     * considering leakage) to achieve the given Constraint in the future.
+     *
+     * @param now
+     *            Current Date
+     * @param constraint
+     *            Constraint to consider
+     * @param timeToConstraintMs
+     *            Time between now and the start of the Constraint
+     * @return Theoretical minimum fill level at this moment that would allow the device to achieve the given target
+     */
+    private double getMinimumFillLevelForFutureTarget(Date now, Constraint<Q> constraint, long timeToConstraintMs) {
         double bufferMinimum = bufferHelper.getMinimumFillLevel();
-        double targetMinimum = getTargetLowerBound();
+        double targetMinimum = constraint.getLowerBound().doubleValue(bufferRegistration.getFillLevelUnit());
         if (targetMinimum <= bufferMinimum) {
             // Target is not restrictive
             return bufferMinimum;
         }
         double toCharge = targetMinimum - bufferMinimum;
-        RunningMode<FillLevelFunction<RunningModeBehaviour>> rm = getFastestChargingRunningMode(actuator.getRunningModes());
+        RunningMode<FillLevelFunction<RunningModeBehaviour>> rm =
+                                                                getFastestChargingRunningMode(actuator.getRunningModes());
         double fillingRate = netFillingRate(rm, bufferSystemDescription.getBufferLeakage());
         if (fillingRate <= 0) {
             // The "deadline line" is horizontal
             return targetMinimum;
         }
         long chargeTimeMs = (long) ((toCharge / fillingRate) * 1000.0);
-        long timeToTargetMs = timeToTarget(now);
-        if (timeToTargetMs <= 0) {
+        if (timeToConstraintMs <= 0) {
             // Target is already here
             return targetMinimum;
         }
-        if (timeToTargetMs >= chargeTimeMs) {
+        if (timeToConstraintMs >= chargeTimeMs) {
             // It is not yet necessary to change the priority in order to reach the target
             return bufferMinimum;
         }
         // Do linear interpolation
-        long timeSinceDesiredStart = chargeTimeMs - timeToTargetMs;
+        long timeSinceDesiredStart = chargeTimeMs - timeToConstraintMs;
         double slope = ((double) timeSinceDesiredStart) / chargeTimeMs;
         double addition = slope * toCharge;
         return bufferMinimum + addition;
     }
 
-    public double getMaximumFillLevelForTarget(Date now) {
+    /**
+     * Calculate the maximum fill level at this moment in which it is still possible (given the right Running Mode and
+     * considering leakage) to achieve the given Constraint in the future.
+     *
+     * @param now
+     *            Current Date
+     * @param constraint
+     *            Constraint to consider
+     * @param timeToConstraintMs
+     *            Time between now and the start of the Constraint
+     * @return Theoretical maximum fill level at this moment that would allow the device to achieve the given target
+     */
+    private double getMaximumFillLevelForFutureTarget(Date now, Constraint<Q> constraint, long timeToConstraintMs) {
         double bufferMaximum = bufferHelper.getMaximumFillLevel();
-        double targetMaximum = getTargetUpperBound();
+        double targetMaximum = constraint.getUpperBound().doubleValue(bufferRegistration.getFillLevelUnit());
         if (targetMaximum >= bufferMaximum) {
             // Target is not restrictive
             return bufferMaximum;
         }
         double toDischarge = bufferMaximum - targetMaximum;
-        RunningMode<FillLevelFunction<RunningModeBehaviour>> rm = getFastestDischargingRunningMode(actuator.getRunningModes());
+        RunningMode<FillLevelFunction<RunningModeBehaviour>> rm =
+                                                                getFastestDischargingRunningMode(actuator.getRunningModes());
         double fillingRate = netFillingRate(rm, bufferSystemDescription.getBufferLeakage());
         if (fillingRate >= 0) {
             // The "deadline line" is horizontal
             return targetMaximum;
         }
         long dischargeTimeMs = (long) ((toDischarge / (-fillingRate)) * 1000.0);
-        long timeToTargetMs = timeToTarget(now);
-        if (timeToTargetMs <= 0) {
+        if (timeToConstraintMs <= 0) {
             // Target is already here
             return targetMaximum;
         }
-        if (timeToTargetMs >= dischargeTimeMs) {
+        if (timeToConstraintMs >= dischargeTimeMs) {
             // It is not yet necessary to change the priority in order to reach the target
             return bufferMaximum;
         }
         // Do linear interpolation
-        long timeSinceDesiredStart = dischargeTimeMs - timeToTargetMs;
+        long timeSinceDesiredStart = dischargeTimeMs - timeToConstraintMs;
         double slope = ((double) timeSinceDesiredStart) / dischargeTimeMs;
         return bufferMaximum - (slope * toDischarge);
     }

@@ -12,17 +12,6 @@ import javax.measure.quantity.Temperature;
 import javax.measure.unit.NonSI;
 import javax.measure.unit.SI;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
-import net.powermatcher.api.data.Bid;
-import net.powermatcher.api.data.MarketBasis;
-import net.powermatcher.api.data.Price;
-import net.powermatcher.api.messages.BidUpdate;
-import net.powermatcher.api.messages.PriceUpdate;
-import net.powermatcher.fpai.test.BidAnalyzer;
-import net.powermatcher.fpai.test.MockAgentSender;
-import net.powermatcher.fpai.test.MockSession;
-
 import org.flexiblepower.efi.buffer.Actuator;
 import org.flexiblepower.efi.buffer.ActuatorBehaviour;
 import org.flexiblepower.efi.buffer.ActuatorUpdate;
@@ -42,6 +31,17 @@ import org.flexiblepower.ral.values.CommodityMeasurables;
 import org.flexiblepower.ral.values.CommoditySet;
 import org.flexiblepower.ral.values.Constraint;
 import org.flexiblepower.ral.values.ConstraintProfile;
+
+import junit.framework.Assert;
+import junit.framework.TestCase;
+import net.powermatcher.api.data.Bid;
+import net.powermatcher.api.data.MarketBasis;
+import net.powermatcher.api.data.Price;
+import net.powermatcher.api.messages.BidUpdate;
+import net.powermatcher.api.messages.PriceUpdate;
+import net.powermatcher.fpai.test.BidAnalyzer;
+import net.powermatcher.fpai.test.MockAgentSender;
+import net.powermatcher.fpai.test.MockSession;
 
 /**
  * Test suite for BufferAgent
@@ -85,13 +85,14 @@ public class BufferAgentTest extends TestCase {
                                                                                                                        NonSI.EUR_PER_HOUR)))
                                                                          .build();
 
-        RunningMode<FillLevelFunction<RunningModeBehaviour>> off = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(0,
-                                                                                                                            "off",
-                                                                                                                            offFF,
-                                                                                                                            Collections.singleton(Transition.create(1)
-                                                                                                                                                            .starts(minOnTimer)
-                                                                                                                                                            .isBlockedBy(minOffTimer)
-                                                                                                                                                            .build()));
+        RunningMode<FillLevelFunction<RunningModeBehaviour>> off =
+                                                                 new RunningMode<FillLevelFunction<RunningModeBehaviour>>(0,
+                                                                                                                          "off",
+                                                                                                                          offFF,
+                                                                                                                          Collections.singleton(Transition.create(1)
+                                                                                                                                                          .starts(minOnTimer)
+                                                                                                                                                          .isBlockedBy(minOffTimer)
+                                                                                                                                                          .build()));
 
         FillLevelFunction<RunningModeBehaviour> onFF = FillLevelFunction.<RunningModeBehaviour> create(20)
                                                                         .add(120,
@@ -102,14 +103,16 @@ public class BufferAgentTest extends TestCase {
                                                                                                                       NonSI.EUR_PER_HOUR)))
                                                                         .build();
 
-        RunningMode<FillLevelFunction<RunningModeBehaviour>> on = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(1,
-                                                                                                                           "on",
-                                                                                                                           onFF,
-                                                                                                                           Collections.singleton(Transition.create(0)
-                                                                                                                                                           .starts(minOffTimer)
-                                                                                                                                                           .isBlockedBy(minOnTimer)
-                                                                                                                                                           .build()));
-        Collection<RunningMode<FillLevelFunction<RunningModeBehaviour>>> runningModes = new ArrayList<RunningMode<FillLevelFunction<RunningModeBehaviour>>>();
+        RunningMode<FillLevelFunction<RunningModeBehaviour>> on =
+                                                                new RunningMode<FillLevelFunction<RunningModeBehaviour>>(1,
+                                                                                                                         "on",
+                                                                                                                         onFF,
+                                                                                                                         Collections.singleton(Transition.create(0)
+                                                                                                                                                         .starts(minOffTimer)
+                                                                                                                                                         .isBlockedBy(minOnTimer)
+                                                                                                                                                         .build()));
+        Collection<RunningMode<FillLevelFunction<RunningModeBehaviour>>> runningModes =
+                                                                                      new ArrayList<RunningMode<FillLevelFunction<RunningModeBehaviour>>>();
         runningModes.add(on);
         runningModes.add(off);
         ActuatorBehaviour ab = new ActuatorBehaviour(0, runningModes);
@@ -141,50 +144,54 @@ public class BufferAgentTest extends TestCase {
                                          .isBlockedBy(minProduceTimer)
                                          .build());
 
-        RunningMode<FillLevelFunction<RunningModeBehaviour>> off = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(0,
-                                                                                                                            "off",
-                                                                                                                            FillLevelFunction.<RunningModeBehaviour> create(-20)
-                                                                                                                                             .add(120,
-                                                                                                                                                  new RunningModeBehaviour(0,
-                                                                                                                                                                           CommodityMeasurables.electricity(Measure.valueOf(NOMINAL_POWER_OFF,
-                                                                                                                                                                                                                            SI.WATT)),
-                                                                                                                                                                           Measure.valueOf(0,
-                                                                                                                                                                                           NonSI.EUR_PER_HOUR)))
-                                                                                                                                             .build(),
-                                                                                                                            transitionsFromOff);
+        RunningMode<FillLevelFunction<RunningModeBehaviour>> off =
+                                                                 new RunningMode<FillLevelFunction<RunningModeBehaviour>>(0,
+                                                                                                                          "off",
+                                                                                                                          FillLevelFunction.<RunningModeBehaviour> create(-20)
+                                                                                                                                           .add(120,
+                                                                                                                                                new RunningModeBehaviour(0,
+                                                                                                                                                                         CommodityMeasurables.electricity(Measure.valueOf(NOMINAL_POWER_OFF,
+                                                                                                                                                                                                                          SI.WATT)),
+                                                                                                                                                                         Measure.valueOf(0,
+                                                                                                                                                                                         NonSI.EUR_PER_HOUR)))
+                                                                                                                                           .build(),
+                                                                                                                          transitionsFromOff);
 
-        RunningMode<FillLevelFunction<RunningModeBehaviour>> consume = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(1,
-                                                                                                                                "consume",
-                                                                                                                                FillLevelFunction.<RunningModeBehaviour> create(20)
-                                                                                                                                                 .add(120,
-                                                                                                                                                      new RunningModeBehaviour(1,
-                                                                                                                                                                               CommodityMeasurables.electricity(Measure.valueOf(NOMINAL_POWER_ON,
-                                                                                                                                                                                                                                SI.WATT)),
-                                                                                                                                                                               Measure.valueOf(0,
-                                                                                                                                                                                               NonSI.EUR_PER_HOUR)))
-                                                                                                                                                 .build(),
-                                                                                                                                Collections.singleton(Transition.create(0)
-                                                                                                                                                                .starts(minOffTimer)
-                                                                                                                                                                .isBlockedBy(minConsumeTimer)
-                                                                                                                                                                .isBlockedBy(minProduceTimer)
-                                                                                                                                                                .build()));
+        RunningMode<FillLevelFunction<RunningModeBehaviour>> consume =
+                                                                     new RunningMode<FillLevelFunction<RunningModeBehaviour>>(1,
+                                                                                                                              "consume",
+                                                                                                                              FillLevelFunction.<RunningModeBehaviour> create(20)
+                                                                                                                                               .add(120,
+                                                                                                                                                    new RunningModeBehaviour(1,
+                                                                                                                                                                             CommodityMeasurables.electricity(Measure.valueOf(NOMINAL_POWER_ON,
+                                                                                                                                                                                                                              SI.WATT)),
+                                                                                                                                                                             Measure.valueOf(0,
+                                                                                                                                                                                             NonSI.EUR_PER_HOUR)))
+                                                                                                                                               .build(),
+                                                                                                                              Collections.singleton(Transition.create(0)
+                                                                                                                                                              .starts(minOffTimer)
+                                                                                                                                                              .isBlockedBy(minConsumeTimer)
+                                                                                                                                                              .isBlockedBy(minProduceTimer)
+                                                                                                                                                              .build()));
 
-        RunningMode<FillLevelFunction<RunningModeBehaviour>> produce = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(2,
-                                                                                                                                "produce",
-                                                                                                                                FillLevelFunction.<RunningModeBehaviour> create(20)
-                                                                                                                                                 .add(120,
-                                                                                                                                                      new RunningModeBehaviour(-1,
-                                                                                                                                                                               CommodityMeasurables.electricity(Measure.valueOf(-1000,
-                                                                                                                                                                                                                                SI.WATT)),
-                                                                                                                                                                               Measure.valueOf(0,
-                                                                                                                                                                                               NonSI.EUR_PER_HOUR)))
-                                                                                                                                                 .build(),
-                                                                                                                                Collections.singleton(Transition.create(0)
-                                                                                                                                                                .starts(minOffTimer)
-                                                                                                                                                                .isBlockedBy(minConsumeTimer)
-                                                                                                                                                                .build()));
+        RunningMode<FillLevelFunction<RunningModeBehaviour>> produce =
+                                                                     new RunningMode<FillLevelFunction<RunningModeBehaviour>>(2,
+                                                                                                                              "produce",
+                                                                                                                              FillLevelFunction.<RunningModeBehaviour> create(20)
+                                                                                                                                               .add(120,
+                                                                                                                                                    new RunningModeBehaviour(-1,
+                                                                                                                                                                             CommodityMeasurables.electricity(Measure.valueOf(-1000,
+                                                                                                                                                                                                                              SI.WATT)),
+                                                                                                                                                                             Measure.valueOf(0,
+                                                                                                                                                                                             NonSI.EUR_PER_HOUR)))
+                                                                                                                                               .build(),
+                                                                                                                              Collections.singleton(Transition.create(0)
+                                                                                                                                                              .starts(minOffTimer)
+                                                                                                                                                              .isBlockedBy(minConsumeTimer)
+                                                                                                                                                              .build()));
 
-        Collection<RunningMode<FillLevelFunction<RunningModeBehaviour>>> runningModes = new ArrayList<RunningMode<FillLevelFunction<RunningModeBehaviour>>>();
+        Collection<RunningMode<FillLevelFunction<RunningModeBehaviour>>> runningModes =
+                                                                                      new ArrayList<RunningMode<FillLevelFunction<RunningModeBehaviour>>>();
         runningModes.add(consume);
         runningModes.add(off);
         runningModes.add(produce);
@@ -283,10 +290,11 @@ public class BufferAgentTest extends TestCase {
                                                                                                                        NonSI.EUR_PER_HOUR)))
                                                                          .build();
 
-        RunningMode<FillLevelFunction<RunningModeBehaviour>> off = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(0,
-                                                                                                                            "off",
-                                                                                                                            offFF,
-                                                                                                                            Collections.<Transition> emptySet());
+        RunningMode<FillLevelFunction<RunningModeBehaviour>> off =
+                                                                 new RunningMode<FillLevelFunction<RunningModeBehaviour>>(0,
+                                                                                                                          "off",
+                                                                                                                          offFF,
+                                                                                                                          Collections.<Transition> emptySet());
 
         FillLevelFunction<RunningModeBehaviour> onFF = FillLevelFunction.<RunningModeBehaviour> create(20)
                                                                         .add(120,
@@ -297,11 +305,13 @@ public class BufferAgentTest extends TestCase {
                                                                                                                       NonSI.EUR_PER_HOUR)))
                                                                         .build();
         // There is no way to leave this mode.
-        RunningMode<FillLevelFunction<RunningModeBehaviour>> on = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(1,
-                                                                                                                           "on",
-                                                                                                                           onFF,
-                                                                                                                           Collections.<Transition> emptySet());
-        Collection<RunningMode<FillLevelFunction<RunningModeBehaviour>>> runningModes = new ArrayList<RunningMode<FillLevelFunction<RunningModeBehaviour>>>();
+        RunningMode<FillLevelFunction<RunningModeBehaviour>> on =
+                                                                new RunningMode<FillLevelFunction<RunningModeBehaviour>>(1,
+                                                                                                                         "on",
+                                                                                                                         onFF,
+                                                                                                                         Collections.<Transition> emptySet());
+        Collection<RunningMode<FillLevelFunction<RunningModeBehaviour>>> runningModes =
+                                                                                      new ArrayList<RunningMode<FillLevelFunction<RunningModeBehaviour>>>();
         runningModes.add(on);
         runningModes.add(off);
         ActuatorBehaviour ab = new ActuatorBehaviour(0, runningModes);
@@ -418,19 +428,22 @@ public class BufferAgentTest extends TestCase {
 
         Assert.assertEquals(1, (((BufferAllocation) (agentSender.getLastMessage())).getActuatorAllocations()
                                                                                    .iterator()
-                                                                                   .next().getRunningModeId()));
+                                                                                   .next()
+                                                                                   .getRunningModeId()));
 
         agent.handlePriceUpdate(new PriceUpdate(new Price(marketBasis, marketBasis.getMinimumPrice()), 1));
 
         Assert.assertEquals(1, (((BufferAllocation) (agentSender.getLastMessage())).getActuatorAllocations()
                                                                                    .iterator()
-                                                                                   .next().getRunningModeId()));
+                                                                                   .next()
+                                                                                   .getRunningModeId()));
 
         agent.handlePriceUpdate(new PriceUpdate(new Price(marketBasis, marketBasis.getMaximumPrice()), 1));
 
         Assert.assertEquals(1, (((BufferAllocation) (agentSender.getLastMessage())).getActuatorAllocations()
                                                                                    .iterator()
-                                                                                   .next().getRunningModeId()));
+                                                                                   .next()
+                                                                                   .getRunningModeId()));
 
     }
 
@@ -467,14 +480,16 @@ public class BufferAgentTest extends TestCase {
 
         Assert.assertEquals(1, (((BufferAllocation) (agentSender.getLastMessage())).getActuatorAllocations()
                                                                                    .iterator()
-                                                                                   .next().getRunningModeId()));
+                                                                                   .next()
+                                                                                   .getRunningModeId()));
 
         // Maximum price means go off!
         agent.handlePriceUpdate(new PriceUpdate(new Price(marketBasis, marketBasis.getMaximumPrice()), 1));
 
         Assert.assertEquals(0, (((BufferAllocation) (agentSender.getLastMessage())).getActuatorAllocations()
                                                                                    .iterator()
-                                                                                   .next().getRunningModeId()));
+                                                                                   .next()
+                                                                                   .getRunningModeId()));
     }
 
     /**
@@ -505,19 +520,22 @@ public class BufferAgentTest extends TestCase {
         System.out.println(agentSender.getLastMessage());
         Assert.assertEquals(0, (((BufferAllocation) (agentSender.getLastMessage())).getActuatorAllocations()
                                                                                    .iterator()
-                                                                                   .next().getRunningModeId()));
+                                                                                   .next()
+                                                                                   .getRunningModeId()));
 
         agent.handlePriceUpdate(new PriceUpdate(new Price(marketBasis, marketBasis.getMaximumPrice()), 1));
 
         Assert.assertEquals(0, (((BufferAllocation) (agentSender.getLastMessage())).getActuatorAllocations()
                                                                                    .iterator()
-                                                                                   .next().getRunningModeId()));
+                                                                                   .next()
+                                                                                   .getRunningModeId()));
 
         agent.handlePriceUpdate(new PriceUpdate(new Price(marketBasis, 50), 1));
 
         Assert.assertEquals(0, (((BufferAllocation) (agentSender.getLastMessage())).getActuatorAllocations()
                                                                                    .iterator()
-                                                                                   .next().getRunningModeId()));
+                                                                                   .next()
+                                                                                   .getRunningModeId()));
 
     }
 
@@ -582,7 +600,8 @@ public class BufferAgentTest extends TestCase {
         System.out.println(agentSender.getLastMessage());
         Assert.assertEquals(1, (((BufferAllocation) (agentSender.getLastMessage())).getActuatorAllocations()
                                                                                    .iterator()
-                                                                                   .next().getRunningModeId()));
+                                                                                   .next()
+                                                                                   .getRunningModeId()));
 
         agent.handlePriceUpdate(new PriceUpdate(new Price(marketBasis, marketBasis.getMaximumPrice()), 1));
         System.out.println("faler:" + agentSender.getLastMessage());
@@ -593,13 +612,15 @@ public class BufferAgentTest extends TestCase {
         System.out.println("faler:" + bid);
         Assert.assertEquals(1, (((BufferAllocation) (agentSender.getLastMessage())).getActuatorAllocations()
                                                                                    .iterator()
-                                                                                   .next().getRunningModeId()));
+                                                                                   .next()
+                                                                                   .getRunningModeId()));
 
         agent.handlePriceUpdate(new PriceUpdate(new Price(marketBasis, 50), bid.getBidNumber()));
 
         Assert.assertEquals(1, (((BufferAllocation) (agentSender.getLastMessage())).getActuatorAllocations()
                                                                                    .iterator()
-                                                                                   .next().getRunningModeId()));
+                                                                                   .next()
+                                                                                   .getRunningModeId()));
     }
 
     /**
@@ -631,7 +652,8 @@ public class BufferAgentTest extends TestCase {
 
         Assert.assertEquals(1, (((BufferAllocation) (agentSender.getLastMessage())).getActuatorAllocations()
                                                                                    .iterator()
-                                                                                   .next().getRunningModeId()));
+                                                                                   .next()
+                                                                                   .getRunningModeId()));
 
         // Current running mode is Off. Buffer is empty.
         BufferStateUpdate<Temperature> bsu2 = new BufferStateUpdate<Temperature>(registration,
@@ -675,7 +697,8 @@ public class BufferAgentTest extends TestCase {
         // Should discharge (empty buffer) when buffer is full.
         Assert.assertEquals(2, (((BufferAllocation) (agentSender.getLastMessage())).getActuatorAllocations()
                                                                                    .iterator()
-                                                                                   .next().getRunningModeId()));
+                                                                                   .next()
+                                                                                   .getRunningModeId()));
     }
 
     /**
@@ -710,10 +733,11 @@ public class BufferAgentTest extends TestCase {
                                                                                                                        NonSI.EUR_PER_HOUR)))
                                                                          .build();
 
-        RunningMode<FillLevelFunction<RunningModeBehaviour>> off = new RunningMode<FillLevelFunction<RunningModeBehaviour>>(1,
-                                                                                                                            "off",
-                                                                                                                            offFF,
-                                                                                                                            Collections.<Transition> emptySet());
+        RunningMode<FillLevelFunction<RunningModeBehaviour>> off =
+                                                                 new RunningMode<FillLevelFunction<RunningModeBehaviour>>(1,
+                                                                                                                          "off",
+                                                                                                                          offFF,
+                                                                                                                          Collections.<Transition> emptySet());
 
         agentSender.handleMessage(new BufferSystemDescription(registration,
                                                               context.currentTime(),
@@ -845,7 +869,7 @@ public class BufferAgentTest extends TestCase {
         agentSender.handleMessage(new BufferStateUpdate<Temperature>(registration,
                                                                      context.currentTime(),
                                                                      context.currentTime(),
-                                                                     Measure.valueOf(70, SI.CELSIUS),
+                                                                     Measure.valueOf(110, SI.CELSIUS),
                                                                      Collections.singleton(au)));
         BidUpdate bidT3 = session.getLastBid();
 
