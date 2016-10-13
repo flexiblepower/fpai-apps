@@ -19,15 +19,15 @@
 		    cache=${workspace}/cnf/cache,\
 		aQute.bnd.deployer.repository.FixedIndexedRepo;\
 		    name=FlexiblePower Base (snapshot);\
-		    locations=http://fpai-ci.sensorlab.tno.nl/builds/flexiblepower-base/development/LATEST/repo/index.xml;\
+		    locations=http://fan-ci.sensorlab.tno.nl/builds/flexiblepower-base/development/LATEST/repo/index.xml;\
 		    cache=${workspace}/cnf/cache,\
 		aQute.bnd.deployer.repository.FixedIndexedRepo;\
 		    name=FPAI Core (snapshot);\
-		    locations=http://fpai-ci.sensorlab.tno.nl/builds/fpai-core/development/LATEST/repo/index.xml;\
+		    locations=http://fan-ci.sensorlab.tno.nl/builds/fpai-core/development/LATEST/repo/index.xml;\
 		    cache=${workspace}/cnf/cache,\
 		aQute.bnd.deployer.repository.FixedIndexedRepo;\
 		    name=PowerMatcher (snapshot);\
-		    locations=http://fpai-ci.sensorlab.tno.nl/builds/powermatcher/development/LATEST/repo/index.xml;\
+		    locations=http://fan-ci.sensorlab.tno.nl/builds/powermatcher/development/LATEST/repo/index.xml;\
 		    cache=${workspace}/cnf/cache
 
 -releaserepo: Release
