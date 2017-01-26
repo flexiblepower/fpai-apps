@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Map.Entry;
 import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledFuture;
 
@@ -123,6 +124,7 @@ public class ElasticSearchWriter implements Runnable {
                 w.beginObject().name("create").beginObject();
                 w.name("_index").value(indexName);
                 w.name("_type").value(data.getType());
+                w.name("_id").value(UUID.randomUUID().toString());
                 w.endObject().endObject();
                 sw.append('\n');
 
