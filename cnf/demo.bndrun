@@ -67,5 +67,5 @@
 	org.apache.felix.webconsole.plugins.ds;version='[1.0.0,1.0.1)',\
 	org.slf4j.osgi-over-slf4j;version='[1.7.7,1.7.8)',\
 	slf4j.api;version='[1.7.7,1.7.8)',\
-	flexiblepower.api;version='[3.1.0,3.1.1)',\
-	flexiblepower.runtime;version='[3.1.0,3.1.1)'
+	flexiblepower.api;version='[3.0.0,3.0.1)',\
+	flexiblepower.runtime;version='[3.0.0,3.0.1)'

@@ -18,12 +18,12 @@
 		    locations=https://raw.githubusercontent.com/flexiblepower/bundle-hub/split-repos/test/index.xml;\
 		    cache=${workspace}/cnf/cache,\
 		aQute.bnd.deployer.repository.FixedIndexedRepo;\
-		    name=FlexiblePower Base (snapshot);\
-		    locations=http://fpai-ci.sensorlab.tno.nl/builds/flexiblepower-base/development/LATEST/repo/index.xml;\
+		    name=FlexiblePower Base 15.04;\
+		    locations=https://github.com/flexiblepower/flexiblepower-base/releases/download/15.04/index.xml;\
 		    cache=${workspace}/cnf/cache,\
 		aQute.bnd.deployer.repository.FixedIndexedRepo;\
-		    name=FPAI Core (snapshot);\
-		    locations=http://fpai-ci.sensorlab.tno.nl/builds/fpai-core/development/LATEST/repo/index.xml;\
+		    name=FPAI Core 15.05;\
+		    locations=https://github.com/flexiblepower/fpai-core/releases/download/v15.05/index.xml;\
 		    cache=${workspace}/cnf/cache,\
 		aQute.bnd.deployer.repository.FixedIndexedRepo;\
 		    name=PowerMatcher 2.1;\
