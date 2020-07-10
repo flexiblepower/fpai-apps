@@ -26,8 +26,8 @@
 		    locations=http://fpai-ci.sensorlab.tno.nl/builds/fpai-core/development/LATEST/repo/index.xml;\
 		    cache=${workspace}/cnf/cache,\
 		aQute.bnd.deployer.repository.FixedIndexedRepo;\
-		    name=PowerMatcher (snapshot);\
-		    locations=http://fpai-ci.sensorlab.tno.nl/builds/powermatcher/powermatcher-2.1RC/LATEST/repo/index.xml;\
+		    name=PowerMatcher 2.1;\
+		    locations=https://github.com/flexiblepower/powermatcher/releases/download/v2.1/index.xml;\
 		    cache=${workspace}/cnf/cache
 
 -releaserepo: Release
